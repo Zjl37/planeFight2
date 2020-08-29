@@ -1,6 +1,6 @@
 ![planeFight introduction image](https://i.loli.net/2020/08/29/GsaIE34g5zuV7BX.png)
 
-English | [简体中文]()
+English | [简体中文](README_zh_Hans.md)
 
 ## PlaneFight Introduction
 
@@ -37,7 +37,7 @@ A plane is destroyed if its head is hit. A player who first destory all three pl
 
 - Battle field size
 
-	Currently not changeable in this program. See [plan]().
+	Currently not changeable in this program. See [plan](plan.md).
 
 - Completely-destroy
 
@@ -75,11 +75,11 @@ To get the best game experience,
 
 ## Contribution
 
-- ~~Translate the game and all documents.~~ (Multi-language support will soon be added to the program, then there will be more specific steps. See [plan]().)
+- ~~Translate the game and all documents.~~ (Multi-language support will soon be added to the program, then there will be more specific steps. See [plan](plan.md).)
 	- All English translations were done by myself. Limited by my English proficiency, there may be grammar mistakes or improper / not idiomatic expressions. Any English translation suggestions is welcomed.
 
 - Maybe make a bot server (with a smart AI)?
 
 ## Plan
 
-See [plan]().
+See [plan](plan.md).
