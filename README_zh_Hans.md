@@ -1,6 +1,6 @@
-![planeFight introduction image]()
+![planeFight introduction image](https://i.loli.net/2020/08/29/GsaIE34g5zuV7BX.png)
 
-[English]() | 简体中文
+[English](README.md) | 简体中文
 
 ## 游戏介绍
 
@@ -12,11 +12,11 @@
 
 每个人的“战场”是一个 10x10 的地图，不能给对方看到。战场上要放 3 架飞机。一架飞机是指以下的 4x5 像素图案，可以旋转四个方向：
 
-![what is a plane image]()
+![what is a plane image](https://i.loli.net/2020/08/29/WdzxaIkBpTghqSn.png)
 
 如上图，用红叉标出的 1x1 格子叫做**飞机头**。飞机不能重叠，也不能摆放在边界外。下图显示一种合法的摆放：
 
-![valid bf example]()
+![valid bf example](https://i.loli.net/2020/08/29/YMQgi6EomTcNJdx.png)
 
 当双方都准备完成时游戏开始。每回合一位玩家报一个坐标，表示攻击对方战场的这个位置。对方必须且只能回复“空”“中”“击毁”中的一种，分别表示该坐标所对应位置 _没有飞机_ / _有飞机但不是头_ / _是飞机头_。双方交替进行攻击。
 
@@ -28,7 +28,7 @@
 
 	当此选项启用时，飞机可以跨越边界放置，溢出的部分就显示在地图另一边。像这样：
 
-	![valid bf cw example]()
+	![valid bf cw example](https://i.loli.net/2020/08/29/RSfxZ1MNETDyFva.png)
 
 - 飞机数量
 
@@ -36,7 +36,7 @@
 
 - 地图大小
 
-	目前程序里改不了。参见 [plan]().
+	目前程序里改不了。参见 [plan](plan.md).
 
 - 完全摧毁
 
@@ -76,10 +76,10 @@ PlaneFight 基于 Windows 控制台，用 C++ 语言编写，是对上面介绍�
 
 ## 贡献
 
-- ~~翻译游戏和所有文档~~ (现在还不支持多语言，到时候会弄个语言包什么的。参阅 [plan]().)
+- ~~翻译游戏和所有文档~~ (现在还不支持多语言，到时候会弄个语言包什么的。参阅 [plan](plan.md).)
 
 - 写个 AI 服务器？
 
 ## 计划
 
-参阅 [plan]().
+参阅 [plan](plan.md).
