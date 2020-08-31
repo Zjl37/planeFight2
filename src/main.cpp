@@ -345,6 +345,7 @@ void setPage(int x) {
 	page=x;
 	if(page==2) {
 		memset(tab,0,sizeof tab);
+		isFirst=rand()&1;
 		if(curGame.d==2) {
 			if(!curGame.n) {
 				curGame.n=3;
@@ -577,7 +578,7 @@ void p2Start() {
 			refreshPage();
 			return;
 		}
-		isFirst=rand()&1;
+		// isFirst=rand()&1;
 	} else {
 		strcpy(sendbuf+6,"ready");
 		int ret=send(sockClient,sendbuf,12,0);
@@ -605,7 +606,8 @@ void p2Start() {
 			isFirst=!*(bool*)(buf+11);
 		} else {
 			strcpy(sendbuf+6,"start");
-			*(bool*)(sendbuf+11)=isFirst=rand()&1;
+			// *(bool*)(sendbuf+11)=isFirst=rand()&1;
+			*(bool*)(sendbuf+11)=isFirst;
 			ret=send(sockClient,sendbuf,12,0);
 			// check ret
 		}
@@ -870,14 +872,17 @@ void buildUiElem() {
 				ue[10]=pfLabel(pfTextElem(tmp.str(),text[33].d),ue[9].right()+2,11+curGame.h,dfc,dbc,0,0,false);
 				ue[11]=pfLabel(text[34],ue[10].right()+2,11+curGame.h,black,yellow,black,darkYellow,false);
 				ue[11].clickFunc=[] { p2AddPl(1); };
-				nue=11;
+				ue[12]=pfLabel(text[89]+(isFirst?text[87]:text[88]),4,14+curGame.h,dfc,dbc,grey,black,false);
+				ue[12].clickFunc=[] { isFirst=!isFirst, refreshPage(); };
 			} else {
 				tmp.str("");
 				tmp<<text[75].s<<curGame.n;
 				ue[9]=pfLabel(pfTextElem(tmp.str(),text[75].d),4,11+curGame.h,dfc,dbc,0,0,false);
 				ue[10]=pfLabel(text[curGame.d==-1?78:79],4,13+curGame.h,dfc,dbc,0,0,false);
-				nue=10;
+				ue[11]=pfLabel();
+				ue[12]=pfLabel(text[89]+(isFirst?text[87]:text[88]),4,14+curGame.h,dfc,dbc,grey,black,false);
 			}
+			nue=12;
 		}
 	} else if(page==5) {
 		ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back
@@ -942,7 +947,9 @@ void buildUiElem() {
 		ue[9].clickFunc=[] {
 			curGame.cd=!curGame.cd; refreshPage();
 		};
-		nue=9;
+		ue[10]=pfLabel(text[89]+(isFirst?text[87]:text[88]),4,13,dfc,dbc,grey,black,false);
+		ue[10].clickFunc=[] { isFirst=!isFirst, refreshPage(); };
+		nue=10;
 	} else if(page==51) {
 		ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back
 		ue[2].clickFunc=[] { setPage(1); };
