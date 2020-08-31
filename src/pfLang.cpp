@@ -1,4 +1,5 @@
 #include <string>
+#include <vector>
 #include "pfUI.hpp"
 #include "pfLang.hpp"
 using namespace std;
@@ -13,7 +14,7 @@ pfTextElem text[ntext];
 void clear();
 extern SMALL_RECT winr;
 
-char buf1[65536];
+char buf1[65536],filename[65536];
 
 void pfLangRead(const char Lang[]) {
 	GetPrivateProfileStringA("main","inner_title","Lang pack missing",buf1,65536,Lang), text[0]=buf1;
@@ -96,8 +97,6 @@ void pfLangRead(const char Lang[]) {
 	GetPrivateProfileStringA("socket","msg9","Lang pack missing",buf1,65536,Lang), text[69]=buf1;
 	GetPrivateProfileStringA("socket","err10","Lang pack missing",buf1,65536,Lang), text[70]=buf1;
 	GetPrivateProfileStringA("socket","bad_msg","Lang pack missing",buf1,65536,Lang), text[71]=buf1;
-	// for(int i=0;i<ntext;i++) if(text[i].s.size())
-	// 	text[i].s.pop_back();
 	text[12]="planeFight ";
 	text[13]=" by Zjl37 ";
 	text[37]="AI";
@@ -106,10 +105,65 @@ void pfLangRead(const char Lang[]) {
 	pfLangInit(winr.Right); 
 }
 
-void pfLangDetect() {
+pfLangFile lfi;
+vector<pfLangFile> lf;
+int curLfi=-1, fbLfi=-1;
+
+WIN32_FIND_DATAA ffd;
+
+bool pfLangDetect() {
 	LANGID lid = GetSystemDefaultLangID();
-	if((lid&0xff)==0x04) pfLangRead("lang/zh-Hans.txt");
-	else pfLangRead("lang/en.txt");
+	HANDLE h=FindFirstFileA("./lang/*.*",&ffd);
+	if(h==INVALID_HANDLE_VALUE)
+		return false;
+	int ret=0;
+	strcpy(filename,"./lang/");
+	do {
+		strcpy(filename+7,ffd.cFileName);
+		GetPrivateProfileStringA("lang","match_lid_lb","Lang pack missing",buf1,65536,filename);
+		if(strcpy(buf1,"Lang pack missing")) {
+			lfi.dir=filename;
+			stringstream tmp(buf1);
+			tmp>>lfi.lidlb;
+			lfi.lidrb.clear();
+			GetPrivateProfileStringA("lang","match_lid_rb","Lang pack missing",buf1,65536,filename);
+			if(strcmp(buf1,"Lang pack missing")) {
+				tmp.str(buf1);
+				int lidrbi=0;
+				while(tmp>>lidrbi)
+					lfi.lidrb.push_back(lidrbi);
+			}
+			GetPrivateProfileStringA("lang","lang_name","Lang pack missing",buf1,65536,filename);
+			gotoXY(0,4);
+			cout<<buf1;
+			lfi.langName.s=buf1;
+			lfi.langName.d=lfi.langName.s.length()-(getY()-4)*winr.Right-getX();
+		}
+		ret=FindNextFileA(h,&ffd);
+	} while(ret==TRUE);
+	FindClose(h);
+	if(!lf.size()) return false;
+	for(int i=0; i<lf.size(); i++) {
+		if(lid&0xff==lf[i].lidlb) {
+			if(!lf[i].lidrb.size()) {
+				curLfi=i;
+			} else {
+				bool flag=false;
+				for(short j: lf[i].lidrb) if(j==lid&0xff00) {
+					flag=1; break;
+				}
+				if(flag) curLfi=i;
+			}
+		}
+		if(lid&0xff==9)
+			fbLfi=i;
+	}
+	if(~curLfi)
+		pfLangRead(lf[curLfi].dir.c_str());
+	else if(~fbLfi)
+		pfLangRead(lf[fbLfi].dir.c_str());
+	else pfLangRead(lf[0].dir.c_str());
+	return true;
 }
 
 void pfLangInit(int winw) {

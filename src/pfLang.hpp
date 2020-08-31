@@ -15,10 +15,16 @@ typedef struct pfTextElem {
 } pfTextElem;
 pfTextElem operator+(const pfTextElem &, const pfTextElem &);
 
+typedef struct pfLangFile {
+	string dir;
+	pfTextElem langName;
+	short lidlb;
+	vector<short> lidrb;
+} pfLangFile;
+
 extern pfTextElem text[];
-extern pfTextElem text_zh_Hans[];
-extern pfTextElem text_en[];
+extern vector<pfLangFile> lf;
 
 void pfLangRead(const char[]);
-void pfLangDetect();
+bool pfLangDetect();
 void pfLangInit(int);

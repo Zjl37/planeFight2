@@ -806,10 +806,14 @@ void buildUiElem() {
 		ue[3]=pfLabel(text[7],2,10,black,yellow,black,darkYellow,false);
 		ue[3].clickFunc=p0InputOK;
 		ue[4]=pfLabel(text[6]+playername,2,8,dfc,dbc,0,0,false);
-		ue[5]=pfLabel(text_en[4],2,12,dfc,dbc,grey,black,false);
-		ue[5].clickFunc=[] { pfLangRead("lang/en.txt"); refreshPage(); };
-		ue[6]=pfLabel(text_zh_Hans[4],ue[5].right()+2,12,dfc,dbc,grey,black,false);
-		ue[6].clickFunc=[] { pfLangRead("lang/zh-Hans.txt"); refreshPage(); };
+		// determine nue according to @lf.size()
+
+		// implement here...
+
+		// ue[5]=pfLabel(text_en[4],2,12,dfc,dbc,grey,black,false);
+		// ue[5].clickFunc=[] { pfLangRead("lang/en.txt"); refreshPage(); };
+		// ue[6]=pfLabel(text_zh_Hans[4],ue[5].right()+2,12,dfc,dbc,grey,black,false);
+		// ue[6].clickFunc=[] { pfLangRead("lang/zh-Hans.txt"); refreshPage(); };
 		nue=6;
 	} else if(page==1) {
 		tmp.str("");
@@ -1093,8 +1097,10 @@ int main(int argc, char** argv) {
 	srand(time(0));
 	conInit();
 	SetConsoleWindowInfo(hOut,true,&winr);
-	pfLangDetect();
-	// pfLangInit(csbi.dwSize.X);
+	if(!pfLangDetect()) {
+		banner((string)"Language file not found! Go to https://github.com/Zjl37/planeFight2 and re-download the game.",getY()+2,white,red);
+		return 1;
+	}
 	GetConsoleScreenBufferInfo(hOut,&csbi);
 	winr=csbi.srWindow;
 	p0GenBg();

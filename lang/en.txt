@@ -1,9 +1,12 @@
+[lang]
+lang_name=" English "
+match_lid_lb=9
+
 [main]
 inner_title="  PlaneFight - Console Game"
 title="PlaneFight - Console Game"
 welcome="Welcome to planeFight Console Game!"
 error="Error: Cannot read console input."
-lang_name=" English "
 loading="Loading language files, please wait……"
 input_username="Enter your username: "
 enter=" Confirm(Enter) "
