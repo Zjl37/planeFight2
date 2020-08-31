@@ -807,9 +807,9 @@ void buildUiElem() {
 		ue[3].clickFunc=p0InputOK;
 		ue[4]=pfLabel(text[6]+playername,2,8,dfc,dbc,0,0,false);
 		ue[5]=pfLabel(text_en[4],2,12,dfc,dbc,grey,black,false);
-		ue[5].clickFunc=[] { text=text_en; clear(); pfLangInit(winr.Right); refreshPage(); };
+		ue[5].clickFunc=[] { pfLangRead("lang/en.txt"); refreshPage(); };
 		ue[6]=pfLabel(text_zh_Hans[4],ue[5].right()+2,12,dfc,dbc,grey,black,false);
-		ue[6].clickFunc=[] { text=text_zh_Hans; clear(); pfLangInit(winr.Right); refreshPage(); };
+		ue[6].clickFunc=[] { pfLangRead("lang/zh-Hans.txt"); refreshPage(); };
 		nue=6;
 	} else if(page==1) {
 		tmp.str("");
@@ -1086,7 +1086,6 @@ void process() {
 }
 
 int main(int argc, char** argv) {
-	pfLangDetect();
 	SetConsoleCP(65001);
 	SetConsoleOutputCP(65001);
 	hIn=GetStdHandle(STD_INPUT_HANDLE);
@@ -1094,7 +1093,8 @@ int main(int argc, char** argv) {
 	srand(time(0));
 	conInit();
 	SetConsoleWindowInfo(hOut,true,&winr);
-	pfLangInit(csbi.dwSize.X);
+	pfLangDetect();
+	// pfLangInit(csbi.dwSize.X);
 	GetConsoleScreenBufferInfo(hOut,&csbi);
 	winr=csbi.srWindow;
 	p0GenBg();
