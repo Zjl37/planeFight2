@@ -15,9 +15,10 @@ typedef struct pfTextElem {
 } pfTextElem;
 pfTextElem operator+(const pfTextElem &, const pfTextElem &);
 
-extern pfTextElem *text;
+extern pfTextElem text[];
 extern pfTextElem text_zh_Hans[];
 extern pfTextElem text_en[];
 
+void pfLangRead(const char[]);
 void pfLangDetect();
 void pfLangInit(int);
