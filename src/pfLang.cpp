@@ -97,7 +97,9 @@ pfTextElem text_zh_Hans[ntext] = {
 	"√已启用完全摧毁",
 	"发送数据时出现错误：连接已断开。", // 85
 	"接收数据时出现错误：连接已断开。",
-	""
+	"我先手",
+	"对方先手",
+	"○"
 };
 
 pfTextElem text_en[ntext] = {
@@ -188,7 +190,9 @@ pfTextElem text_en[ntext] = {
 	"√ Completely-destroy enabled",
 	"Failed to send message: connection lost.", // 85
 	"Failed to receive message: connection lost.",
-	""
+	"I am the first",
+	"The other player is the first",
+	"○"
 };
 
 void pfLangDetect() {
