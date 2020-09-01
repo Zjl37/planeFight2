@@ -1,5 +1,3 @@
-#include <string>
-#include <vector>
 #include "pfUI.hpp"
 #include "pfLang.hpp"
 using namespace std;
@@ -121,7 +119,7 @@ bool pfLangDetect() {
 	do {
 		strcpy(filename+7,ffd.cFileName);
 		GetPrivateProfileStringA("lang","match_lid_lb","Lang pack missing",buf1,65536,filename);
-		if(strcpy(buf1,"Lang pack missing")) {
+		if(strcmp(buf1,"Lang pack missing")) {
 			lfi.dir=filename;
 			stringstream tmp(buf1);
 			tmp>>lfi.lidlb;
@@ -138,6 +136,7 @@ bool pfLangDetect() {
 			cout<<buf1;
 			lfi.langName.s=buf1;
 			lfi.langName.d=lfi.langName.s.length()-(getY()-4)*winr.Right-getX();
+			lf.push_back(lfi);
 		}
 		ret=FindNextFileA(h,&ffd);
 	} while(ret==TRUE);

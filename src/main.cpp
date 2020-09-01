@@ -806,15 +806,18 @@ void buildUiElem() {
 		ue[3]=pfLabel(text[7],2,10,black,yellow,black,darkYellow,false);
 		ue[3].clickFunc=p0InputOK;
 		ue[4]=pfLabel(text[6]+playername,2,8,dfc,dbc,0,0,false);
-		// determine nue according to @lf.size()
 
-		// implement here...
-
-		// ue[5]=pfLabel(text_en[4],2,12,dfc,dbc,grey,black,false);
-		// ue[5].clickFunc=[] { pfLangRead("lang/en.txt"); refreshPage(); };
-		// ue[6]=pfLabel(text_zh_Hans[4],ue[5].right()+2,12,dfc,dbc,grey,black,false);
-		// ue[6].clickFunc=[] { pfLangRead("lang/zh-Hans.txt"); refreshPage(); };
-		nue=6;
+		ue[5]=pfLabel(lf[0].langName,2,12,dfc,dbc,grey,black,false);
+		ue[5].clickFunc=[] {};
+		for(int i=1; i<lf.size(); i++) {
+			if(ue[4+i].right()+2+lf[i].langName.len()>winr.Right) {
+				ue[5+i]=pfLabel(lf[i].langName,2,ue[4+i].y+1,dfc,dbc,grey,black,false);
+			} else {
+				ue[5+i]=pfLabel(lf[i].langName,ue[4+i].right()+2,ue[4+i].y,dfc,dbc,grey,black,false);
+			}
+			ue[5+i].clickFunc=[] {};
+		}
+		nue=4+lf.size();
 	} else if(page==1) {
 		tmp.str("");
 		tmp<<setw(winr.Right-1+text[8].d)<<text[8].s;
@@ -988,8 +991,11 @@ void pop_back_utf8(string &s) {
 
 void processMouseClick() {
 	for(int i=1; i<=nue; i++)
-		if(ue[i].click(mx,my))
+		if(ue[i].click(mx,my)) {
+			if(page==0 && i>=5)
+				pfLangRead(lf[i-5].dir.c_str()), refreshPage();
 			return;
+		}
 	if(page==2 && tab[0]==0) {
 		if(my>=10+curGame.h && my<=16+curGame.h) {
 			if(mx>=4 && mx<=17) tab[1]=0;
@@ -1028,7 +1034,6 @@ void processMouseClick() {
 				drawMarker();
 			}
 		}
-
 	}
 }
 
@@ -1098,7 +1103,8 @@ int main(int argc, char** argv) {
 	conInit();
 	SetConsoleWindowInfo(hOut,true,&winr);
 	if(!pfLangDetect()) {
-		banner((string)"Language file not found! Go to https://github.com/Zjl37/planeFight2 and re-download the game.",getY()+2,white,red);
+		setColor(white,red);
+		cout<<"Language file not found! Go to https://github.com/Zjl37/planeFight2 and re-download the game."<<endl;
 		return 1;
 	}
 	GetConsoleScreenBufferInfo(hOut,&csbi);
