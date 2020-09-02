@@ -59,7 +59,7 @@ void pfBF::draw(bool forceClear) {
 }
 void pfBF::basic_placeplane(short x, short y, short d, bool cw) {
 	for(int i=0; i<10; i++) {
-		int tx=x+plShape[d][i].dx, ty=y+plShape[d][i].dy;
+		short tx=x+plShape[d][i].dx, ty=y+plShape[d][i].dy;
 		if(cw) {
 			if(tx<0) tx+=w;
 			if(tx>=w) tx-=w;
@@ -76,7 +76,7 @@ bool pfBF::placeplane(short x, short y, short d, bool cw) {
 		for(int i=0; i<10; i++)
 			if(x+plShape[d][i].dx>=w||x+plShape[d][i].dx<0||y+plShape[d][i].dy>=h||y+plShape[d][i].dy<0) return false;
 	for(int i=0; i<10; i++) {
-		int tx=x+plShape[d][i].dx, ty=y+plShape[d][i].dy;
+		short tx=x+plShape[d][i].dx, ty=y+plShape[d][i].dy;
 		if(cw) {
 			if(tx<0) tx+=w;
 			if(tx>=w) tx-=w;
@@ -660,9 +660,17 @@ short attackL(int x, int y, vector<short> &pl, vector<short> &mk) {
 		return -1;
 	if(pl[x+y*curGame.w]&8) {
 		if(curGame.cd) {
-			int d=pl[x+y*curGame.w]&3;
-			for(int i=0; i<10; i++)
-				pl[x+plShape[d][i].dx+(y+plShape[d][i].dy)*curGame.w]|=16;
+			short d=pl[x+y*curGame.w]&3;
+			for(int i=0; i<10; i++) {
+				short tx=x+plShape[d][i].dx, ty=y+plShape[d][i].dy;
+				if(curGame.cw) {
+					if(tx<0) tx+=curGame.w;
+					if(tx>=curGame.w) tx-=curGame.w;
+					if(ty<0) ty+=curGame.h;
+					if(ty>=curGame.h) ty-=curGame.h;
+				}
+				pl[tx+ty*curGame.w]|=16;
+			}
 		}
 		return mk[x+y*curGame.w]=darkRed, 2;
 	}
