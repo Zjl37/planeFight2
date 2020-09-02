@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 using namespace std;
 
 typedef struct pfTextElem {
@@ -15,9 +16,16 @@ typedef struct pfTextElem {
 } pfTextElem;
 pfTextElem operator+(const pfTextElem &, const pfTextElem &);
 
-extern pfTextElem *text;
-extern pfTextElem text_zh_Hans[];
-extern pfTextElem text_en[];
+typedef struct pfLangFile {
+	string dir;
+	pfTextElem langName;
+	short lidlb;
+	vector<short> lidrb;
+} pfLangFile;
 
-void pfLangDetect();
+extern pfTextElem text[];
+extern vector<pfLangFile> lf;
+
+void pfLangRead(const char[]);
+bool pfLangDetect();
 void pfLangInit(int);
