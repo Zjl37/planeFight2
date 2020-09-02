@@ -143,7 +143,7 @@ bool pfLangDetect() {
 	FindClose(h);
 	if(!lf.size()) return false;
 	for(int i=0; i<lf.size(); i++) {
-		if(lid&0xff==lf[i].lidlb) {
+		if((lid&0xff)==lf[i].lidlb) {
 			if(!lf[i].lidrb.size()) {
 				curLfi=i;
 			} else {
@@ -154,7 +154,7 @@ bool pfLangDetect() {
 				if(flag) curLfi=i;
 			}
 		}
-		if(lid&0xff==9)
+		if((lid&0xff)==9)
 			fbLfi=i;
 	}
 	if(~curLfi)

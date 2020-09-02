@@ -9,8 +9,8 @@
 
 using namespace std;
 
-#define pfVersion "2.0"
-#define pfVerStr "planefight 2.0"
+#define pfVersion "2.1"
+#define pfVerStr "planefight 2.1"
 
 const string marker[]={
 	"\u2501 ","\u2503 ","\u254b ","\u2523 ","\u252b ","\u2533 ","\u253b ",
@@ -113,8 +113,16 @@ inline void clear() {
 }
 
 int pfCheckVer(const string &s) {
-	if(s==pfVerStr) return 0;
-	else return -1;
+	stringstream curVer(pfVerStr), iVer(s);
+	char ch;
+	int curVerSec1=0, iVerSec1=0, curVerSec2=0, iVerSec2=0;
+	string curGName, iGName;
+	curVer>>curGName>>curVerSec1>>ch>>curVerSec2;
+	iVer>>iGName>>iVerSec1>>ch>>iVerSec2;
+	if(curGName!=iGName||curVerSec1!=iVerSec1)
+		return -1;
+	if(curVerSec2!=iVerSec2) return 1;
+	return 0;
 }
 
 void showErrorMsg(const pfTextElem &t, int rpage) {

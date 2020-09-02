@@ -19,7 +19,7 @@ start21="> 发起一场游戏（将本机IP地址告诉你的好友）"
 start22="> 加入一场游戏（需要知道对方IP地址）"
 resize_win_msg="←↑请调整窗口大小↓→"
 [about]
-msg=" 本项目即将部署到 Github 上，请访问 https://github.com/Zjl37/planeFight2 以获取游戏玩法和其他信息。"
+msg=" 本项目在 Github 上开源，请访问 https://github.com/Zjl37/planeFight2 以获取游戏玩法和其他信息。"
 repo=" 访问 Github 仓库 "
 [game_init]
 tab0=" 布置 "
