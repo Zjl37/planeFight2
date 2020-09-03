@@ -75,7 +75,7 @@ To get the best game experience,
 
 ## Contribution
 
-- ~~Translate the game and all documents.~~ (Multi-language support will soon be added to the program, then there will be more specific steps. See [plan](plan.md).)
+- Translate the game and all documents.
 	- All English translations were done by myself. Limited by my English proficiency, there may be grammar mistakes or improper / not idiomatic expressions. Any English translation suggestions is welcomed.
 
 - Maybe make a bot server (with a smart AI)?
