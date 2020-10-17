@@ -95,6 +95,7 @@ void pfLangRead(const char Lang[]) {
 	GetPrivateProfileStringA("socket","msg9","Lang pack missing",buf1,65536,Lang), text[69]=buf1;
 	GetPrivateProfileStringA("socket","err10","Lang pack missing",buf1,65536,Lang), text[70]=buf1;
 	GetPrivateProfileStringA("socket","bad_msg","Lang pack missing",buf1,65536,Lang), text[71]=buf1;
+	GetPrivateProfileStringA("game","msg_map_size","Lang pack missing",buf1,65536,Lang), text[90]=buf1;
 	text[12]="planeFight ";
 	text[13]=" by Zjl37 ";
 	text[37]="AI";

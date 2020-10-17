@@ -505,6 +505,8 @@ void drawUiElem() {
 		drawBF(false);
 		if(tab[0]==0)
 			drawPark();
+	} else if(page==4) {
+		box(bf1.x,bf1.y,curGame.w*2,curGame.h,2);
 	} else if(page==10) {
 		drawBF(false);
 		gotoXY(winr.Right-10,1), cout<<"#"<<turn;
@@ -905,8 +907,25 @@ void buildUiElem() {
 				ue[11]=pfLabel();
 				ue[12]=pfLabel(text[89]+(isFirst?text[87]:text[88]),4,14+curGame.h,dfc,dbc,grey,black,false);
 			}
-			nue=12;
+			tmp.str("");
+			tmp<<curGame.h<<"*"<<curGame.w;
+			if(curGame.d>0)
+				ue[13]=pfLabel(text[90]+tmp.str(),4,16+curGame.h,black,yellow,black,darkYellow,false),
+				ue[13].clickFunc=[] { tab[15]=page; setPage(4); };
+			else
+				ue[13]=pfLabel(text[90]+tmp.str(),4,16+curGame.h,dfc,dbc,grey,black,false);
+			nue=13;
 		}
+	} else if(page==4) {
+		ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back
+		ue[2].clickFunc=[] {
+			bf1.resize(curGame.w,curGame.h), bf2.resize(curGame.w,curGame.h), bf3.resize(curGame.w,curGame.h);
+			setPage(tab[15]);
+		};
+		tmp.str("");
+		tmp<<curGame.h<<"*"<<curGame.w;
+		ue[3]=pfLabel(text[90]+tmp.str(),bf1.x,2,dfc,dbc,grey,black,false);
+		nue=3;
 	} else if(page==5) {
 		ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back
 		ue[2].clickFunc=[] { setPage(1); };
@@ -972,7 +991,11 @@ void buildUiElem() {
 		};
 		ue[10]=pfLabel(text[89]+(isFirst?text[87]:text[88]),4,13,dfc,dbc,grey,black,false);
 		ue[10].clickFunc=[] { isFirst=!isFirst, refreshPage(); };
-		nue=10;
+		tmp.str("");
+		tmp<<curGame.h<<"*"<<curGame.w;
+		ue[11]=pfLabel(text[90]+tmp.str(),4,15,black,yellow,black,darkYellow,false),
+		ue[11].clickFunc=[] { tab[15]=page; setPage(4); };
+		nue=11;
 	} else if(page==51) {
 		ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back
 		ue[2].clickFunc=[] { setPage(1); };
@@ -1032,6 +1055,12 @@ void processMouseClick() {
 				gotoXY(2,7+curGame.h), cout<<text[curGame.cw?27:28].s;
 			}
 			drawBF(false);
+		}
+	} else if(page==4) {
+		int nx=(mx-bf1.x)/2, ny=my-bf1.y;
+		if(nx>=5&&nx<=winr.Right&&ny>=5) if(nx!=curGame.w||ny!=curGame.h) {
+			curGame.w=nx; curGame.h=ny;
+			refreshPage();
 		}
 	} else if(page==10) {
 		if(mx>=bf2.x && mx<bf2.x+bf2.w*2 && my>=bf2.y && my<bf2.y+bf2.h) {
