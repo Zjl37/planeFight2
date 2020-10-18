@@ -9,8 +9,8 @@
 
 using namespace std;
 
-#define pfVersion "2.1"
-#define pfVerStr "planefight 2.1"
+#define pfVersion "2.2"
+#define pfVerStr "planefight 2.2"
 
 const string marker[]={
 	"\u2501 ","\u2503 ","\u254b ","\u2523 ","\u252b ","\u2533 ","\u253b ",
