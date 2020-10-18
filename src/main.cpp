@@ -321,8 +321,13 @@ void pfExchangeMap() {
 	for(int i=0; i<(int)bf1.ch.size(); i++) {
 		*(short*)(sendbuf+8)=bf1.pl[i];
 		int ret=send(sockClient,sendbuf,10,0);
-		// check ret
+		if(ret<=0) {
+			showErrorMsg(text[85],1); break;
+		}
 		ret=recv(sockClient,buf,10,0);
+		if(ret<=0) {
+			showErrorMsg(text[86],1); break;
+		}
 		if(!pfCheckMsg(buf,"mp"))
 			return;
 		bf2.pl[i]=*(short*)(buf+8);
@@ -506,6 +511,7 @@ void drawUiElem() {
 		if(tab[0]==0)
 			drawPark();
 	} else if(page==4) {
+		bf1.x=4, bf1.y=5;
 		box(bf1.x,bf1.y,curGame.w*2,curGame.h,2);
 	} else if(page==10) {
 		drawBF(false);
@@ -592,7 +598,9 @@ void p2Start() {
 	} else {
 		strcpy(sendbuf+6,"ready");
 		int ret=send(sockClient,sendbuf,12,0);
-		// check ret...
+		if(ret<=0) {
+			showErrorMsg(text[85],1); return;
+		}
 		gotoXY((winr.Right-text[82].len())/2,winr.Bottom*2/3), cout<<text[82].s;
 		ret=recv(sockClient,buf,12,0);
 		// check ret
@@ -827,7 +835,7 @@ void buildUiElem() {
 
 		ue[5]=pfLabel(lf[0].langName,2,12,dfc,dbc,grey,black,false);
 		ue[5].clickFunc=[] {};
-		for(int i=1; i<lf.size(); i++) {
+		for(int i=1; i<(int)lf.size(); i++) {
 			if(ue[4+i].right()+2+lf[i].langName.len()>winr.Right) {
 				ue[5+i]=pfLabel(lf[i].langName,2,ue[4+i].y+1,dfc,dbc,grey,black,false);
 			} else {
@@ -924,7 +932,7 @@ void buildUiElem() {
 		};
 		tmp.str("");
 		tmp<<curGame.h<<"*"<<curGame.w;
-		ue[3]=pfLabel(text[90]+tmp.str(),bf1.x,2,dfc,dbc,grey,black,false);
+		ue[3]=pfLabel(text[90]+tmp.str(),4,2,dfc,dbc,grey,black,false);
 		nue=3;
 	} else if(page==5) {
 		ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back

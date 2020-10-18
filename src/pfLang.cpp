@@ -143,13 +143,13 @@ bool pfLangDetect() {
 	} while(ret==TRUE);
 	FindClose(h);
 	if(!lf.size()) return false;
-	for(int i=0; i<lf.size(); i++) {
+	for(int i=0; i<(int)lf.size(); i++) {
 		if((lid&0xff)==lf[i].lidlb) {
 			if(!lf[i].lidrb.size()) {
 				curLfi=i;
 			} else {
 				bool flag=false;
-				for(short j: lf[i].lidrb) if(j==lid&0xff00) {
+				for(short j: lf[i].lidrb) if(j==(lid&0xff00)) {
 					flag=1; break;
 				}
 				if(flag) curLfi=i;
