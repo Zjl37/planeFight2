@@ -9,8 +9,8 @@
 
 using namespace std;
 
-#define pfVersion "2.2"
-#define pfVerStr "planefight 2.2"
+#define pfVersion "2.3"
+#define pfVerStr "planefight 2.3"
 
 const string marker[]={
 	"\u2501 ","\u2503 ","\u254b ","\u2523 ","\u252b ","\u2533 ","\u253b ",
@@ -481,8 +481,11 @@ void drawBF(bool showBf2) {
 		gotoXY(bf1.x-4,bf1.y+i), cout<<i;
 		gotoXY(bf2.x-4,bf2.y+i), cout<<i;
 	}
+	setColor(isMyTurn() ? white : grey,dbc);
 	gotoXY(bf1.x,2), cout<<playername.s<<endl;
+	setColor(isMyTurn() ? grey : white,dbc);
 	gotoXY(bf2.x,2), cout<<enemyname.s<<endl;
+	setDefaultColor();
 	bf1.draw(true);
 	if(showBf2) bf2.draw(true);
 	else bf3.draw(true);
@@ -1072,7 +1075,7 @@ void processMouseClick() {
 		}
 	} else if(page==10) {
 		if(mx>=bf2.x && mx<bf2.x+bf2.w*2 && my>=bf2.y && my<bf2.y+bf2.h) {
-			if(tab[0]==0 && bf3.mk[(mx-bf2.x)/2+(my-bf2.y)*bf3.w]==black) {
+			if(tab[0]==0 && isMyTurn() && bf3.mk[(mx-bf2.x)/2+(my-bf2.y)*bf3.w]==black) {
 				attack((mx-bf2.x)/2,my-bf2.y);
 			} else if(tab[0]==1) {
 				bf3.ch[(mx-bf2.x)/2+(my-bf2.y)*bf3.w]=marker[tab[1]];
@@ -1091,7 +1094,7 @@ void processMouseClick() {
 }
 
 void process() {
-	if(page==10 && !isMyTurn()) {
+	if(curGame.d>=0 && page==10 && !isMyTurn()) {
 		p10EnemyTurn();
 		return;
 	}
@@ -1165,6 +1168,7 @@ int main(int argc, char** argv) {
 	p0GenBg();
 	setPage(0);
 	while(true) {
+		DWORD tmp;
 		GetConsoleScreenBufferInfo(hOut,&csbi);
 		if(winr.Right!=csbi.srWindow.Right||winr.Bottom!=csbi.srWindow.Bottom) {
 			winr=csbi.srWindow;
@@ -1172,15 +1176,32 @@ int main(int argc, char** argv) {
 			uptCursorState();
 			refreshPage();
 		}
-		WINBOOL ret=ReadConsoleInput(hIn,&rec,1,&nEvents);
-		if(winr.Right<70||winr.Bottom<28) {
-			clear();
-			banner(text[35],winr.Bottom/2-1,white,red);
-		} else if(ret) {
-			process();
+		GetNumberOfConsoleInputEvents(hIn,&nEvents);
+		while(nEvents--) {
+			WINBOOL ret=ReadConsoleInput(hIn,&rec,1,&tmp);
+			if(winr.Right<70||winr.Bottom<28) {
+				clear();
+				banner(text[35],winr.Bottom/2-1,white,red);
+			} else if(ret) {
+				process();
+			} else {
+				banner(text[3],1,white,red);
+				break;
+			}
+		}
+		if(curGame.d<0 && page==10 && !isMyTurn()) {
+			// aware of client socket event
+			FD_SET fds;
+			FD_ZERO(&fds);
+			FD_SET(sockClient,&fds);
+			timeval tv={0,100000};
+			select(0,&fds,NULL,NULL,&tv);
+			if(FD_ISSET(sockClient,&fds)) {
+				p10EnemyTurn();
+			}
 		} else {
-			banner(text[3],1,white,red);
-			break;
+			// if not aware of any socket event, let PeekConsoleInput stuck the loop.
+			PeekConsoleInput(hIn,&rec,1,&tmp);
 		}
 	}
 	return 0;
