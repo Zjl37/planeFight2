@@ -425,7 +425,7 @@ void drawPlane(short x, short y, short d, bool r) {
 		if(r) {
 			if(tx<bf1.x) tx+=bf1.w*2;
 			if(tx>=bf1.x+bf1.w*2) tx-=bf1.w*2;
-			if(ty<bf1.y) ty+=bf1.y*2;
+			if(ty<bf1.y) ty+=bf1.h*2;
 			if(ty>=bf1.y+bf1.h) ty-=bf1.h;
 		}
 		gotoXY(tx,ty);
@@ -459,8 +459,10 @@ void drawBF(bool showBf2) {
 	box(bf1.x,bf1.y,bf1.w*2,bf1.h,2);
 	box(bf2.x,bf2.y,bf2.w*2,bf2.h,2);
 	for(int i=0; i<curGame.w; i++) {
-		gotoXY(bf1.x+i*2,bf1.y-2), cout<<setw(2)<<i;
-		gotoXY(bf2.x+i*2,bf2.y-2), cout<<setw(2)<<i;
+		int j=i;
+		while(j && j%10==0) j/=10;
+		gotoXY(bf1.x+i*2,bf1.y-2), cout<<setw(2)<<j%10;
+		gotoXY(bf2.x+i*2,bf2.y-2), cout<<setw(2)<<j%10;
 	}
 	for(int i=0; i<curGame.h; i++) {
 		gotoXY(bf1.x-4,bf1.y+i), cout<<i;
