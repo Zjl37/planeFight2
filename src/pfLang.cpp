@@ -13,89 +13,103 @@ void clear();
 extern SMALL_RECT winr;
 
 char buf1[65536],filename[65536];
+struct pfLfIdx {
+	int id;
+	string sec,key;
+};
+const vector<pfLfIdx> idx {
+	{0,"main","inner_title"},
+	{1,"main","title"},
+	{2,"main","welcome"},
+	{3,"main","error"},
+	{4,"main","lang_name"},
+	{5,"main","loading"},
+	{6,"main","input_username"},
+	{7,"main","enter"},
+	{8,"main","start1"},
+	{9,"main","start2"},
+	{10,"main","start3"},
+	{11,"main","back"},
+	{20,"main","start21"},
+	{21,"main","start22"},
+	{35,"main","resize_win_msg"},
+	{14,"about","msg"},
+	{19,"about","repo"},
+	{22,"game_init","tab0"},
+	{23,"game_init","tab1"},
+	{24,"game_init","tab2"},
+	{25,"game_init","play"},
+	{26,"game_init","clear"},
+	{27,"game_init","wrong_plane1"},
+	{28,"game_init","wrong_plane2"},
+	{29,"game_init","button_unselect"},
+	{30,"game_init","button_select"},
+	{32,"game_init","button_dec"},
+	{34,"game_init","button_inc"},
+	{89,"game_init","button_switch"},
+	{31,"game_init","cross_border_mode"},
+	{33,"game_init","plane_num"},
+	{36,"game","game_starting"},
+	{38,"game","surrender"},
+	{39,"game","attack"},
+	{40,"game","cursor"},
+	{41,"game","void"},
+	{42,"game","hit"},
+	{43,"game","destroy"},
+	{44,"game","victory"},
+	{45,"game","lose"},
+	{46,"game","lose2"},
+	{47,"game","victory2"},
+	{48,"game","back_to_main"},
+	{49,"game","mark"},
+	{50,"game","erase"},
+	{74,"game","msg_cross_border_mode"},
+	{75,"game","msg_plane_num"},
+	{76,"game","give_up"},
+	{77,"game","ready"},
+	{78,"game","setting_info1"},
+	{79,"game","setting_info2"},
+	{80,"game","msg_give_up"},
+	{81,"game","err_bad_ready"},
+	{82,"game","wait_ready"},
+	{83,"game","completely_destroy"},
+	{84,"game","msg_completely_destroy"},
+	{85,"game","connection_lost1"},
+	{86,"game","connection_lost2"},
+	{87,"game","first1"},
+	{88,"game","first2"},
+	{52,"socket","err1"},
+	{53,"socket","msg1"},
+	{54,"socket","msg2"},
+	{55,"socket","msg3"},
+	{56,"socket","err4"},
+	{57,"socket","msg4"},
+	{58,"socket","err5"},
+	{59,"socket","msg5"},
+	{60,"socket","err6"},
+	{61,"socket","msg6"},
+	{62,"socket","err7"},
+	{63,"socket","msg7"},
+	{64,"socket","bad_ver1"},
+	{65,"socket","bad_ver2"},
+	{66,"socket","err8"},
+	{67,"socket","msg8"},
+	{68,"socket","err9"},
+	{69,"socket","msg9"},
+	{70,"socket","err10"},
+	{71,"socket","bad_msg"},
+	{90,"game","msg_map_size"},
+};
 
 void pfLangRead(const char Lang[]) {
-	GetPrivateProfileStringA("main","inner_title","Lang pack missing",buf1,65536,Lang), text[0]=buf1;
-	GetPrivateProfileStringA("main","title","Lang pack missing",buf1,65536,Lang), text[1]=buf1;
-	GetPrivateProfileStringA("main","welcome","Lang pack missing",buf1,65536,Lang), text[2]=buf1;
-	GetPrivateProfileStringA("main","error","Lang pack missing",buf1,65536,Lang), text[3]=buf1;
-	GetPrivateProfileStringA("main","lang_name","Lang pack missing",buf1,65536,Lang), text[4]=buf1;
-	GetPrivateProfileStringA("main","loading","Lang pack missing",buf1,65536,Lang), text[5]=buf1;
-	GetPrivateProfileStringA("main","input_username","Lang pack missing",buf1,65536,Lang), text[6]=buf1;
-	GetPrivateProfileStringA("main","enter","Lang pack missing",buf1,65536,Lang), text[7]=buf1;
-	GetPrivateProfileStringA("main","start1","Lang pack missing",buf1,65536,Lang), text[8]=buf1;
-	GetPrivateProfileStringA("main","start2","Lang pack missing",buf1,65536,Lang), text[9]=buf1;
-	GetPrivateProfileStringA("main","start3","Lang pack missing",buf1,65536,Lang), text[10]=buf1;
-	GetPrivateProfileStringA("main","back","Lang pack missing",buf1,65536,Lang), text[11]=buf1;
-	GetPrivateProfileStringA("main","start21","Lang pack missing",buf1,65536,Lang), text[20]=buf1;
-	GetPrivateProfileStringA("main","start22","Lang pack missing",buf1,65536,Lang), text[21]=buf1;
-	GetPrivateProfileStringA("main","resize_win_msg","Lang pack missing",buf1,65536,Lang), text[35]=buf1;
-	GetPrivateProfileStringA("about","msg","Lang pack missing",buf1,65536,Lang), text[14]=buf1;
-	GetPrivateProfileStringA("about","repo","Lang pack missing",buf1,65536,Lang), text[19]=buf1;
-	GetPrivateProfileStringA("game_init","tab0","Lang pack missing",buf1,65536,Lang), text[22]=buf1;
-	GetPrivateProfileStringA("game_init","tab1","Lang pack missing",buf1,65536,Lang), text[23]=buf1;
-	GetPrivateProfileStringA("game_init","tab2","Lang pack missing",buf1,65536,Lang), text[24]=buf1;
-	GetPrivateProfileStringA("game_init","play","Lang pack missing",buf1,65536,Lang), text[25]=buf1;
-	GetPrivateProfileStringA("game_init","clear","Lang pack missing",buf1,65536,Lang), text[26]=buf1;
-	GetPrivateProfileStringA("game_init","wrong_plane1","Lang pack missing",buf1,65536,Lang), text[27]=buf1;
-	GetPrivateProfileStringA("game_init","wrong_plane2","Lang pack missing",buf1,65536,Lang), text[28]=buf1;
-	GetPrivateProfileStringA("game_init","button_unselect","Lang pack missing",buf1,65536,Lang), text[29]=buf1;
-	GetPrivateProfileStringA("game_init","button_select","Lang pack missing",buf1,65536,Lang), text[30]=buf1;
-	GetPrivateProfileStringA("game_init","button_dec","Lang pack missing",buf1,65536,Lang), text[32]=buf1;
-	GetPrivateProfileStringA("game_init","button_inc","Lang pack missing",buf1,65536,Lang), text[34]=buf1;
-	GetPrivateProfileStringA("game_init","button_switch","Lang pack missing",buf1,65536,Lang), text[89]=buf1;
-	GetPrivateProfileStringA("game_init","cross_border_mode","Lang pack missing",buf1,65536,Lang), text[31]=buf1;
-	GetPrivateProfileStringA("game_init","plane_num","Lang pack missing",buf1,65536,Lang), text[33]=buf1;
-	GetPrivateProfileStringA("game","game_starting","Lang pack missing",buf1,65536,Lang), text[36]=buf1;
-	GetPrivateProfileStringA("game","surrender","Lang pack missing",buf1,65536,Lang), text[38]=buf1;
-	GetPrivateProfileStringA("game","attack","Lang pack missing",buf1,65536,Lang), text[39]=buf1;
-	GetPrivateProfileStringA("game","cursor","Lang pack missing",buf1,65536,Lang), text[40]=buf1;
-	GetPrivateProfileStringA("game","void","Lang pack missing",buf1,65536,Lang), text[41]=buf1;
-	GetPrivateProfileStringA("game","hit","Lang pack missing",buf1,65536,Lang), text[42]=buf1;
-	GetPrivateProfileStringA("game","destroy","Lang pack missing",buf1,65536,Lang), text[43]=buf1;
-	GetPrivateProfileStringA("game","victory","Lang pack missing",buf1,65536,Lang), text[44]=buf1;
-	GetPrivateProfileStringA("game","lose","Lang pack missing",buf1,65536,Lang), text[45]=buf1;
-	GetPrivateProfileStringA("game","lose2","Lang pack missing",buf1,65536,Lang), text[46]=buf1;
-	GetPrivateProfileStringA("game","victory2","Lang pack missing",buf1,65536,Lang), text[47]=buf1;
-	GetPrivateProfileStringA("game","back_to_main","Lang pack missing",buf1,65536,Lang), text[48]=buf1;
-	GetPrivateProfileStringA("game","mark","Lang pack missing",buf1,65536,Lang), text[49]=buf1;
-	GetPrivateProfileStringA("game","erase","Lang pack missing",buf1,65536,Lang), text[50]=buf1;
-	GetPrivateProfileStringA("game","msg_cross_border_mode","Lang pack missing",buf1,65536,Lang), text[74]=buf1;
-	GetPrivateProfileStringA("game","msg_plane_num","Lang pack missing",buf1,65536,Lang), text[75]=buf1;
-	GetPrivateProfileStringA("game","give_up","Lang pack missing",buf1,65536,Lang), text[76]=buf1;
-	GetPrivateProfileStringA("game","ready","Lang pack missing",buf1,65536,Lang), text[77]=buf1;
-	GetPrivateProfileStringA("game","setting_info1","Lang pack missing",buf1,65536,Lang), text[78]=buf1;
-	GetPrivateProfileStringA("game","setting_info2","Lang pack missing",buf1,65536,Lang), text[79]=buf1;
-	GetPrivateProfileStringA("game","msg_give_up","Lang pack missing",buf1,65536,Lang), text[80]=buf1;
-	GetPrivateProfileStringA("game","err_bad_ready","Lang pack missing",buf1,65536,Lang), text[81]=buf1;
-	GetPrivateProfileStringA("game","wait_ready","Lang pack missing",buf1,65536,Lang), text[82]=buf1;
-	GetPrivateProfileStringA("game","completely_destroy","Lang pack missing",buf1,65536,Lang), text[83]=buf1;
-	GetPrivateProfileStringA("game","msg_completely_destroy","Lang pack missing",buf1,65536,Lang), text[84]=buf1;
-	GetPrivateProfileStringA("game","connection_lost1","Lang pack missing",buf1,65536,Lang), text[85]=buf1;
-	GetPrivateProfileStringA("game","connection_lost2","Lang pack missing",buf1,65536,Lang), text[86]=buf1;
-	GetPrivateProfileStringA("game","first1","Lang pack missing",buf1,65536,Lang), text[87]=buf1;
-	GetPrivateProfileStringA("game","first2","Lang pack missing",buf1,65536,Lang), text[88]=buf1;
-	GetPrivateProfileStringA("socket","err1","Lang pack missing",buf1,65536,Lang), text[52]=buf1;
-	GetPrivateProfileStringA("socket","msg1","Lang pack missing",buf1,65536,Lang), text[53]=buf1;
-	GetPrivateProfileStringA("socket","msg2","Lang pack missing",buf1,65536,Lang), text[54]=buf1;
-	GetPrivateProfileStringA("socket","msg3","Lang pack missing",buf1,65536,Lang), text[55]=buf1;
-	GetPrivateProfileStringA("socket","err4","Lang pack missing",buf1,65536,Lang), text[56]=buf1;
-	GetPrivateProfileStringA("socket","msg4","Lang pack missing",buf1,65536,Lang), text[57]=buf1;
-	GetPrivateProfileStringA("socket","err5","Lang pack missing",buf1,65536,Lang), text[58]=buf1;
-	GetPrivateProfileStringA("socket","msg5","Lang pack missing",buf1,65536,Lang), text[59]=buf1;
-	GetPrivateProfileStringA("socket","err6","Lang pack missing",buf1,65536,Lang), text[60]=buf1;
-	GetPrivateProfileStringA("socket","msg6","Lang pack missing",buf1,65536,Lang), text[61]=buf1;
-	GetPrivateProfileStringA("socket","err7","Lang pack missing",buf1,65536,Lang), text[62]=buf1;
-	GetPrivateProfileStringA("socket","msg7","Lang pack missing",buf1,65536,Lang), text[63]=buf1;
-	GetPrivateProfileStringA("socket","bad_ver1","Lang pack missing",buf1,65536,Lang), text[64]=buf1;
-	GetPrivateProfileStringA("socket","bad_ver2","Lang pack missing",buf1,65536,Lang), text[65]=buf1;
-	GetPrivateProfileStringA("socket","err8","Lang pack missing",buf1,65536,Lang), text[66]=buf1;
-	GetPrivateProfileStringA("socket","msg8","Lang pack missing",buf1,65536,Lang), text[67]=buf1;
-	GetPrivateProfileStringA("socket","err9","Lang pack missing",buf1,65536,Lang), text[68]=buf1;
-	GetPrivateProfileStringA("socket","msg9","Lang pack missing",buf1,65536,Lang), text[69]=buf1;
-	GetPrivateProfileStringA("socket","err10","Lang pack missing",buf1,65536,Lang), text[70]=buf1;
-	GetPrivateProfileStringA("socket","bad_msg","Lang pack missing",buf1,65536,Lang), text[71]=buf1;
-	GetPrivateProfileStringA("game","msg_map_size","Lang pack missing",buf1,65536,Lang), text[90]=buf1;
+	for(auto i: idx) {
+		GetPrivateProfileStringA(i.sec.c_str(),i.key.c_str(),"",buf1,65536,Lang);
+		if(!buf1[0]) {
+			stringstream tmp("");
+			tmp<<"LANG-"<<i.id;
+			text[i.id]=tmp.str();
+		} else text[i.id]=buf1;
+	}
 	text[12]="planeFight ";
 	text[13]=" by Zjl37 ";
 	text[37]="AI";
