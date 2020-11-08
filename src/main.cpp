@@ -90,7 +90,8 @@ bool pfBF::placeplane(short x, short y, short d, bool cw) {
 }
 pfBF bg,bf1,bf2,bf3;
 
-int p2npl,p10des1,p10des2,p10srd;
+int p2npl,p2isP1Ready,p2isP2Ready;
+int p10des1,p10des2,p10srd;
 WSADATA wsaData;
 char buf[65536],sendbuf[65536]="pf",tmpbuf[65536];
 string sIP;
@@ -362,7 +363,7 @@ void setPage(int x) {
 			bf2.resize(curGame.w,curGame.h),
 			bf3.resize(curGame.w,curGame.h);
 		}
-		p2npl=0;
+		p2isP1Ready=p2isP2Ready=p2npl=0;
 	} else if(x==10) {
 		memset(tab,0,sizeof tab);
 		p10des1=p10des2=p10srd=0;
@@ -574,6 +575,12 @@ void p2Tab1() {
 	refreshPage();
 }
 void p2Start() {
+	turn=1;
+	banner(text[36],winr.Bottom/3,white,pink);
+	Sleep(1000);
+	setPage(10);
+}
+void p2Ready() {
 	if(p2npl!=curGame.n) return;
 	if(curGame.d>0) {
 		bool tmp=bfInit(bf2);
@@ -581,46 +588,52 @@ void p2Start() {
 			refreshPage();
 			return;
 		}
-		// isFirst=rand()&1;
+		p2Start();
 	} else {
-		strcpy(sendbuf+6,"ready");
-		int ret=send(sockClient,sendbuf,12,0);
-		if(ret<=0) {
-			showErrorMsg(text[85],1); return;
-		}
-		gotoXY((winr.Right-text[82].len())/2,winr.Bottom*2/3), cout<<text[82].s;
-		ret=recv(sockClient,buf,12,0);
-		// check ret
-		if(!pfCheckMsg(buf,NULL)) return;
-		memcpy(tmpbuf,buf+6,6);
-		tmpbuf[6]=0;
-		if(strcmp(tmpbuf,"giveup")==0) {
-			showErrorMsg(text[80],1);
-			return;
-		}
-		tmpbuf[11]=0;
-		if(strcmp(tmpbuf,"ready")) {
-			showErrorMsg(text[81],1);
-			return;
-		}
-		if(curGame.d&1) {
-			// client
-			ret=recv(sockClient,buf,12,0);
-			if(!pfCheckMsg(buf,"start"))
+		int ret;
+		if(!p2isP1Ready) {
+			p2isP1Ready=1;
+			strcpy(sendbuf+6,"ready");
+			ret=send(sockClient, sendbuf, 12, 0);
+			if(ret<=0) {
+				showErrorMsg(text[85], 1);
 				return;
-			isFirst=!*(bool*)(buf+11);
-		} else {
-			strcpy(sendbuf+6,"start");
-			// *(bool*)(sendbuf+11)=isFirst=rand()&1;
-			*(bool*)(sendbuf+11)=isFirst;
-			ret=send(sockClient,sendbuf,12,0);
-			// check ret
+			}
+			if(!(curGame.d&1) && p2isP2Ready) {
+				strcpy(sendbuf+6,"start");
+				*(bool*)(sendbuf+11)=isFirst;
+				ret=send(sockClient,sendbuf,12,0);
+				p2Start();
+			}
 		}
 	}
-	turn=1;
-	banner(text[36],winr.Bottom/3,white,pink);
-	Sleep(1000);
-	setPage(10);
+}
+void p2Recv() {
+	int ret=recv(sockClient,buf,12,0);
+	if(!pfCheckMsg(buf,NULL)) return;
+	memcpy(tmpbuf,buf+6,6);
+	tmpbuf[6]=0;
+	if(strcmp(tmpbuf,"giveup")==0) {
+		closesocket(sockClient);
+		showErrorMsg(text[80],1);
+		return;
+	}
+	tmpbuf[5]=0;
+	if(strcmp(tmpbuf,"ready")==0) {
+		p2isP2Ready=1;
+		if(!(curGame.d&1) && p2isP1Ready) {
+			strcpy(sendbuf+6,"start");
+			*(bool*)(sendbuf+11)=isFirst;
+			ret=send(sockClient,sendbuf,12,0);
+			p2Start();
+		} else refreshPage();
+	} else if((curGame.d&1) && strcmp(tmpbuf,"start")==0) {
+		isFirst=!*(bool*)(buf+11);
+		p2Start();
+	} else {
+		showErrorMsg(text[81],1);
+		return;
+	}
 }
 void p2SwitchCw() {
 	if(curGame.cw) {
@@ -864,11 +877,15 @@ void buildUiElem() {
 			ue[6]=pfLabel(text[curGame.d>0?25:77],(winr.Right-text[curGame.d>0?25:77].len())/2,10,black,yellow,black,darkYellow,true);
 		else
 			ue[6]=pfLabel();
-		ue[6].clickFunc=p2Start;
+		ue[6].clickFunc=p2Ready;
 		if(tab[0]==0) {
-			ue[7]=pfLabel(text[26],12,18+curGame.h,black,yellow,black,darkYellow,false);
-			ue[7].clickFunc=[] { bf1.clear(), p2npl=0, refreshPage(); };
-			nue=7;
+			if(p2isP1Ready) {
+				nue=6;
+			} else {
+				ue[7]=pfLabel(text[26],12,18+curGame.h,black,yellow,black,darkYellow,false);
+				ue[7].clickFunc=[] { if(!p2isP1Ready) bf1.clear(), p2npl=0, refreshPage(); };
+				nue=7;
+			}
 		} else if(tab[0]==1) {
 			if(curGame.d>0) {
 				ue[7]=pfLabel((curGame.cw?text[30]:text[29])+text[31],4,10+curGame.h,dfc,dbc,grey,black,false);
@@ -911,6 +928,10 @@ void buildUiElem() {
 				ue[13]=pfLabel(text[90]+tmp.str(),4,16+curGame.h,dfc,dbc,grey,black,false);
 			nue=13;
 		}
+		if(p2isP2Ready)
+			ue[++nue]=pfLabel(text[91].s,(winr.Right-text[91].len())/2,winr.Bottom*2/3,yellow,dbc,darkYellow,dbc,false);
+		else if(p2isP1Ready)
+			ue[++nue]=pfLabel(text[82].s,(winr.Right-text[82].len())/2,winr.Bottom*2/3,yellow,dbc,darkYellow,dbc,false);
 	} else if(page==4) {
 		ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back
 		ue[2].clickFunc=[] {
@@ -1047,7 +1068,7 @@ void processMouseClick() {
 			else if(mx>=52 && mx<=65) tab[1]=3;
 			drawPark();
 		}
-		if(mx>=bf1.x && mx<bf1.x+bf1.w*2 && my>=bf1.y && my<bf1.y+bf1.h && p2npl<curGame.n) {
+		if(mx>=bf1.x && mx<bf1.x+bf1.w*2 && my>=bf1.y && my<bf1.y+bf1.h && p2npl<curGame.n && !p2isP1Ready) {
 			setDefaultColor();
 			clearR(0,7+curGame.h,winr.Right,7+curGame.h);
 			if(bf1.placeplane((mx-bf1.x)>>1,my-bf1.y,tab[1],curGame.cw)) {
@@ -1087,7 +1108,7 @@ void processMouseClick() {
 }
 
 void process() {
-	if(curGame.d>=0 && page==10 && !isMyTurn()) {
+	if(curGame.d>0 && page==10 && !isMyTurn()) {
 		p10EnemyTurn();
 		return;
 	}
@@ -1095,7 +1116,7 @@ void process() {
 		if(isLmbPressed) {
 			processMouseClick();
 		} else if(page==2) {
-			if(mx>=bf1.x && mx<bf1.x+bf1.w*2 && my>=bf1.y && my<bf1.y+bf1.h && tab[0]==0 && p2npl<curGame.n && bf1.ch[(mx-bf1.x)/2+(my-bf1.y)*bf1.w].empty()) {
+			if(mx>=bf1.x && mx<bf1.x+bf1.w*2 && my>=bf1.y && my<bf1.y+bf1.h && tab[0]==0 && p2npl<curGame.n && bf1.ch[(mx-bf1.x)/2+(my-bf1.y)*bf1.w].empty() && !p2isP1Ready) {
 				drawBF(false);
 				setColor(grey,black);
 				drawPlane(bf1.x+((mx-bf1.x)&(short)-2),my,tab[1],true);
@@ -1183,15 +1204,19 @@ int main(int argc, char** argv) {
 				break;
 			}
 		}
-		if(curGame.d<0 && page==10 && !isMyTurn()) {
+		if(curGame.d<=0 && (page==2 || (page==10 && !isMyTurn()))) {
 			// aware of client socket event
 			FD_SET fds;
 			FD_ZERO(&fds);
 			FD_SET(sockClient,&fds);
 			timeval tv={0,100000};
 			select(0,&fds,NULL,NULL,&tv);
-			if(FD_ISSET(sockClient,&fds))
-				p10EnemyTurn();
+			if(FD_ISSET(sockClient,&fds)) {
+				if(page==2)
+					p2Recv();
+				else if(page==10)
+					p10EnemyTurn();
+			}
 		} else if(page==42) {
 			// aware of server socket event
 			FD_SET fds;
@@ -1200,7 +1225,7 @@ int main(int argc, char** argv) {
 			timeval tv={0,100000};
 			select(0,&fds,NULL,NULL,&tv);
 			if(FD_ISSET(sockServer,&fds) && pfServerAccept())
-					setPage(2);
+				setPage(2);
 		} else {
 			// if not aware of any socket event, let PeekConsoleInput stuck the loop.
 			PeekConsoleInput(hIn,&rec,1,&tmp);

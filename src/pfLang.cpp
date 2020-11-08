@@ -72,6 +72,7 @@ const vector<pfLfIdx> idx {
 	{80,"game","msg_give_up"},
 	{81,"game","err_bad_ready"},
 	{82,"game","wait_ready"},
+	{91,"game","wait_ready1"},
 	{83,"game","completely_destroy"},
 	{84,"game","msg_completely_destroy"},
 	{85,"game","connection_lost1"},
