@@ -174,19 +174,13 @@ bool pfServerInit() {
 		showErrorMsg(text[52],1);
 		return false;
 	}
-	gotoXY(0,3), cout<<text[53].s;
-	gotoXY(0,getY()+1);
-	if(getIP())
-		cout<<text[54].s<<sIP;
-	else
-		cout<<text[55].s;
+	sIP=""; getIP();
 	sockServer=socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
 	if(sockServer==INVALID_SOCKET) {
 		WSACleanup();
 		showErrorMsg(text[56],1);
 		return false;
 	}
-	gotoXY(0,getY()+1), cout<<text[57].s;
 	addrServer.sin_addr.S_un.S_addr=htonl(INADDR_ANY);
 	addrServer.sin_family=AF_INET;
 	addrServer.sin_port=htons(51937);
@@ -197,7 +191,6 @@ bool pfServerInit() {
 		showErrorMsg(text[58],1);
 		return false;
 	}
-	gotoXY(0,getY()+1), cout<<text[59].s;
 	ret=listen(sockServer,1);
 	if(ret==SOCKET_ERROR) {
 		closesocket(sockServer);
@@ -205,15 +198,13 @@ bool pfServerInit() {
 		showErrorMsg(text[60],1);
 		return false;
 	}
-	gotoXY(0,getY()+1), cout<<text[61].s;
-	int len=sizeof(SOCKADDR);
+	return true;
+}
+bool pfServerAccept() {
+	int len=sizeof(SOCKADDR), ret=0;
 	sockClient=accept(sockServer,(SOCKADDR*)&addrClient,&len);
-	if(sockClient==INVALID_SOCKET) {
-		closesocket(sockServer);
-		WSACleanup();
-		showErrorMsg(text[62],1);
+	if(sockClient==INVALID_SOCKET)
 		return false;
-	}
 	closesocket(sockServer);
 	gotoXY(0,getY()+1), cout<<text[63].s;
 	ret=recv(sockClient,buf,65536,0);
@@ -355,8 +346,7 @@ void uptCursorState() {
 }
 
 void setPage(int x) {
-	page=x;
-	if(page==2) {
+	if(x==2) {
 		memset(tab,0,sizeof tab);
 		isFirst=rand()&1;
 		if(curGame.d==2) {
@@ -373,12 +363,12 @@ void setPage(int x) {
 			bf3.resize(curGame.w,curGame.h);
 		}
 		p2npl=0;
-	} else if(page==10) {
+	} else if(x==10) {
 		memset(tab,0,sizeof tab);
 		p10des1=p10des2=p10srd=0;
-	} else if(page==19) {
+	} else if(x==19) {
 		bf2.mk=bf3.mk;
-	} else if(page==41) {
+	} else if(x==41) {
 		if(!curGame.n) {
 			curGame.n=3;
 			bf1.resize(10,10), bf2.resize(10,10), bf3.resize(10,10);
@@ -386,20 +376,15 @@ void setPage(int x) {
 		} else {
 			bf1.clear(), bf2.clear(), bf3.clear();
 		}
-	} else if(page==42) {
+	} else if(x==42) {
 		curGame.d=-2;
-		if(pfServerInit())
-			setPage(2);
-	} else if(page==51) {
+		if(!pfServerInit()) return;
+	} else if(x==51) {
 		curGame.d=-1;
 		sIP="";
-		pfClientInit();
-	} else if(page==52) {
-		gotoXY(0,1);
-		for(int i=0; i<winr.Right; i++) putchar(' ');
-		if(pfClientConnect())
-			setPage(2);
+		if(!pfClientInit()) return;
 	}
+	page=x;
 	refreshPage();
 }
 
@@ -481,11 +466,8 @@ void drawBF(bool showBf2) {
 		gotoXY(bf1.x-4,bf1.y+i), cout<<i;
 		gotoXY(bf2.x-4,bf2.y+i), cout<<i;
 	}
-	setColor(isMyTurn() ? white : grey,dbc);
 	gotoXY(bf1.x,2), cout<<playername.s<<endl;
-	setColor(isMyTurn() ? grey : white,dbc);
 	gotoXY(bf2.x,2), cout<<enemyname.s<<endl;
-	setDefaultColor();
 	bf1.draw(true);
 	if(showBf2) bf2.draw(true);
 	else bf3.draw(true);
@@ -1007,6 +989,15 @@ void buildUiElem() {
 		ue[11]=pfLabel(text[90]+tmp.str(),4,15,black,yellow,black,darkYellow,false),
 		ue[11].clickFunc=[] { tab[15]=page; setPage(4); };
 		nue=11;
+	} else if(page==42) {
+		ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back
+		ue[2].clickFunc=[] { closesocket(sockServer); setPage(1); };
+		if(sIP.empty())
+			ue[3]=pfLabel(text[55],0,4,dfc,dbc,dfc,dbc,false);
+		else
+			ue[3]=pfLabel(text[54]+sIP,0,4,dfc,dbc,dfc,dbc,false);
+		ue[4]=pfLabel(text[61],0,6,dfc,dbc,dfc,dbc,false);
+		nue=4;
 	} else if(page==51) {
 		ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back
 		ue[2].clickFunc=[] { setPage(1); };
@@ -1132,7 +1123,8 @@ void process() {
 			}
 		} else if(page==51) {
 			if(vkCode==13) { // enter
-				setPage(52);
+				if(pfClientConnect())
+					setPage(2);
 			} else if(vkCode==8) { // backspace
 				if(sIP.length()) {
 					sIP.pop_back();
@@ -1196,9 +1188,17 @@ int main(int argc, char** argv) {
 			FD_SET(sockClient,&fds);
 			timeval tv={0,100000};
 			select(0,&fds,NULL,NULL,&tv);
-			if(FD_ISSET(sockClient,&fds)) {
+			if(FD_ISSET(sockClient,&fds))
 				p10EnemyTurn();
-			}
+		} else if(page==42) {
+			// aware of server socket event
+			FD_SET fds;
+			FD_ZERO(&fds);
+			FD_SET(sockServer,&fds);
+			timeval tv={0,100000};
+			select(0,&fds,NULL,NULL,&tv);
+			if(FD_ISSET(sockServer,&fds) && pfServerAccept())
+					setPage(2);
 		} else {
 			// if not aware of any socket event, let PeekConsoleInput stuck the loop.
 			PeekConsoleInput(hIn,&rec,1,&tmp);
