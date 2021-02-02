@@ -18,7 +18,9 @@ const string marker[]={
 	"\u2550 ","\u2551 ","\u256c ","\u2560 ","\u2563 ","\u2566 ","\u2569 ",
 	"\uff1f","\uff01"
 };
+const int P1_NNLUE = 5;
 
+bool _fl_ = 1;
 bool isFirst;
 int page,tab[16],nue,turn;
 DWORD nEvents;
@@ -552,18 +554,8 @@ void p1Play22() {
 }
 
 void p1Play2() {
-	if(ue[4].y-ue[3].y>4) {
-		ue[4].y=ue[3].y+4;
-		nue=4;
-	} else {
-		ue[4].y=ue[3].y+7;
-		ue[5]=pfLabel(text[20],8,10,dfc,dbc,grey,dbc,false);
-		ue[5].clickFunc=p1Play21;
-		ue[6]=pfLabel(text[21],8,11,dfc,dbc,grey,dbc,false);
-		ue[6].clickFunc=p1Play22;
-		nue=6;
-	}
-	drawUiElem();
+	tab[0]=!tab[0];
+	refreshPage();
 }
 
 void p2Tab0() {
@@ -832,18 +824,20 @@ void buildUiElem() {
 		ue[3]=pfLabel(text[7],2,10,black,yellow,black,darkYellow,false);
 		ue[3].clickFunc=p0InputOK;
 		ue[4]=pfLabel(text[6]+playername,2,8,dfc,dbc,0,0,false);
+		ue[5]=pfLabel(text[92],ue[3].right()+2,10,white,red,white,darkRed,false);
+		ue[5].clickFunc=[] { _fl_ = 0; };
 
-		ue[5]=pfLabel(lf[0].langName,2,12,dfc,dbc,grey,black,false);
-		ue[5].clickFunc=[] {};
+		ue[P1_NNLUE+1]=pfLabel(lf[0].langName,2,12,dfc,dbc,grey,black,false);
+		ue[P1_NNLUE+1].clickFunc=[] {};
 		for(int i=1; i<(int)lf.size(); i++) {
-			if(ue[4+i].right()+2+lf[i].langName.len()>winr.Right) {
-				ue[5+i]=pfLabel(lf[i].langName,2,ue[4+i].y+1,dfc,dbc,grey,black,false);
+			if(ue[P1_NNLUE+i].right()+2+lf[i].langName.len()>winr.Right) {
+				ue[P1_NNLUE+1+i]=pfLabel(lf[i].langName,2,ue[P1_NNLUE+i].y+1,dfc,dbc,grey,black,false);
 			} else {
-				ue[5+i]=pfLabel(lf[i].langName,ue[4+i].right()+2,ue[4+i].y,dfc,dbc,grey,black,false);
+				ue[P1_NNLUE+1+i]=pfLabel(lf[i].langName,ue[P1_NNLUE+i].right()+2,ue[P1_NNLUE+i].y,dfc,dbc,grey,black,false);
 			}
-			ue[5+i].clickFunc=[] {};
+			ue[P1_NNLUE+1+i].clickFunc=[] {};
 		}
-		nue=4+lf.size();
+		nue=P1_NNLUE+lf.size();
 	} else if(page==1) {
 		tmp.str("");
 		tmp<<setw(winr.Right-1+text[8].d)<<text[8].s;
@@ -858,6 +852,22 @@ void buildUiElem() {
 		ue[4]=pfLabel(pfTextElem(tmp.str(),text[10].d),9,11,black,white,black,lightGrey,true);
 		ue[4].clickFunc=[] { setPage(5); };
 		nue=4;
+
+		ue[5]=pfLabel(text[16],12,15,white,red,white,darkRed,true);
+		ue[5].clickFunc=[] { _fl_=0; };
+		if(ue[5].right()+2+text[17].len() < winr.Right)
+			ue[6]=pfLabel(text[17],ue[5].right()+2,15,black,white,black,lightGrey,true);
+		else
+			ue[6]=pfLabel(text[17],ue[5].x,19,black,white,black,lightGrey,true);
+		ue[6].clickFunc=[] { setPage(0); };
+		nue=6;
+		if(tab[0]) {
+			ue[7]=pfLabel(text[20],8,10,dfc,dbc,grey,dbc,false);
+			ue[7].clickFunc=p1Play21;
+			ue[8]=pfLabel(text[21],8,11,dfc,dbc,grey,dbc,false);
+			ue[8].clickFunc=p1Play22;
+			nue=8;
+		}
 	} else if(page==2) {
 		if(curGame.d>0) {
 			ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back
@@ -951,9 +961,7 @@ void buildUiElem() {
 		setDefaultColor();
 		ue[5]=pfLabel(text[14],3,4,dfc,dbc,0,0,false);
 		ue[6]=pfLabel(text[15],3,5,dfc,dbc,0,0,false);
-		ue[7]=pfLabel(text[16],3,6,dfc,dbc,0,0,false);
-		ue[8]=pfLabel(text[17],3,7,dfc,dbc,0,0,false);
-		nue=8;
+		nue=6;
 	} else if(page==10) {
 		ue[2]=pfLabel(text[38],0,1,black,yellow,black,darkYellow,false); // back
 		ue[2].clickFunc=p10Surrender;
@@ -1054,10 +1062,17 @@ void pop_back_utf8(string &s) {
 #define my rec.Event.MouseEvent.dwMousePosition.Y
 
 void processMouseClick() {
-	for(int i=1; i<=nue; i++)
+	if(page==0) {
+		for(int i=P1_NNLUE; i>=1; i--) {
+			if(ue[i].click(mx,my))
+				return;
+		}
+		for(int i=P1_NNLUE+1; i<=nue; i++) {
+			if(ue[i].click(mx,my))
+				pfLangRead(lf[i-P1_NNLUE-1].dir.c_str()), refreshPage();
+		}
+	} else for(int i=nue; i>=1; i--)
 		if(ue[i].click(mx,my)) {
-			if(page==0 && i>=5)
-				pfLangRead(lf[i-5].dir.c_str()), refreshPage();
 			return;
 		}
 	if(page==2 && tab[0]==0) {
@@ -1130,14 +1145,16 @@ void process() {
 		}
 	} else if(isKeyEvent && rec.Event.KeyEvent.bKeyDown) {
 		if(page==0) {
-			if(vkCode==13) { // enter
+			if(vkCode==VK_RETURN) {
 				ue[3]._click();
-			} else if(vkCode==8) { // backspace
+			} else if(vkCode==VK_BACK) {
 				pop_back_utf8(playername.s);
 				gotoXY(2,8);
 				cout<<setw(csbi.srWindow.Right)<<"";
 				gotoXY(2,8);
 				cout<<text[6].s<<playername.s;
+			} else if(vkCode==VK_ESCAPE) {
+				ue[5]._click();
 			} else if(vkCode==0||vkCode>=32) {
 				memset(buf,0,5);
 				WideCharToMultiByte(65001,0,&rec.Event.KeyEvent.uChar.UnicodeChar,1,buf,4,NULL,NULL);
@@ -1145,10 +1162,10 @@ void process() {
 				cout<<buf;
 			}
 		} else if(page==51) {
-			if(vkCode==13) { // enter
+			if(vkCode==VK_RETURN) {
 				if(pfClientConnect())
 					setPage(2);
-			} else if(vkCode==8) { // backspace
+			} else if(vkCode==VK_BACK) {
 				if(sIP.length()) {
 					sIP.pop_back();
 					gotoX(getX()-1), cout<<" ";
@@ -1176,13 +1193,14 @@ int main(int argc, char** argv) {
 	if(!pfLangDetect()) {
 		setColor(white,red);
 		cout<<"Language file not found! Go to https://github.com/Zjl37/planeFight2 and re-download the game."<<endl;
+		setDefaultColor();
 		return 1;
 	}
 	GetConsoleScreenBufferInfo(hOut,&csbi);
 	winr=csbi.srWindow;
 	p0GenBg();
 	setPage(0);
-	while(true) {
+	while(_fl_) {
 		DWORD tmp;
 		GetConsoleScreenBufferInfo(hOut,&csbi);
 		if(winr.Right!=csbi.srWindow.Right||winr.Bottom!=csbi.srWindow.Bottom) {
