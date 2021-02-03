@@ -561,7 +561,6 @@ void p0InputOK() {
 		refreshPage();
 		return;
 	}
-	playername.d=getX()-(2+text[6].len())+(getY()-8)*csbi.srWindow.Right;
 	setDefaultColor();
 	setPage(1);
 }
@@ -1156,21 +1155,26 @@ void process() {
 		}
 	} else if(isKeyEvent && rec.Event.KeyEvent.bKeyDown) {
 		if(page==0) {
+			bool uptName = 0;
 			if(vkCode==VK_RETURN) {
 				ue[3]._click();
 			} else if(vkCode==VK_BACK) {
 				pop_back_utf8(playername.s);
+				uptName = 1;
 				gotoXY(2,8);
 				cout<<setw(csbi.srWindow.Right)<<"";
-				gotoXY(2,8);
-				cout<<text[6].s<<playername.s;
 			} else if(vkCode==VK_ESCAPE) {
 				ue[5]._click();
 			} else if(vkCode==0||vkCode>=32) {
 				memset(buf,0,5);
 				WideCharToMultiByte(65001,0,&rec.Event.KeyEvent.uChar.UnicodeChar,1,buf,4,NULL,NULL);
 				playername.s+=buf;
-				cout<<buf;
+				uptName = 1;
+			}
+			if(uptName) {
+				gotoXY(2,8);
+				cout<<text[6].s<<playername.s;
+				playername.d=playername.s.length()-(getX()-(2+text[6].len())+(getY()-8)*winr.Right);
 			}
 		} else if(page==51) {
 			if(vkCode==VK_RETURN) {
