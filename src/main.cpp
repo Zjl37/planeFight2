@@ -26,7 +26,7 @@ bool _fl_ = 1;
 bool isFirst;
 int page,tab[16],nue,turn;
 DWORD nEvents;
-HANDLE hIn,hOut,hOutOrg;
+HANDLE hIn,hOut,hOutOrg,hErr;
 SMALL_RECT winr={0,0,80,30};
 INPUT_RECORD rec;
 CONSOLE_CURSOR_INFO cci;
@@ -105,6 +105,7 @@ void setPage(int);
 void conInit() {
 	hIn = GetStdHandle(STD_INPUT_HANDLE);
 	hOutOrg = GetStdHandle(STD_OUTPUT_HANDLE);
+	hErr = GetStdHandle(STD_ERROR_HANDLE);
 	hOut = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
 	SetStdHandle(STD_OUTPUT_HANDLE, hOut);
 	SetConsoleActiveScreenBuffer(hOut);
@@ -1210,10 +1211,15 @@ void process() {
 int main(int argc, char** argv) {
 	srand(time(0));
 	conInit();
-	if(!pfLangDetect()) {
-		setColor(white,red);
-		cout<<"Language file not found! Go to https://github.com/Zjl37/planeFight2 and re-download the game."<<endl;
-		setDefaultColor();
+	string langDir = argv[0];
+	while(*langDir.rbegin()!='\\')
+		langDir.pop_back();
+	langDir.append("lang\\");
+	if(!pfLangDetect(langDir)) {
+		cerr<<pfVerStr<<endl;
+		setColor_(red,black,hErr);
+		cerr<<"Language file not found! Make sure folder \"lang\" is in the same directory as the executeable is. Or go to https://github.com/Zjl37/planeFight2 and re-download the game."<<endl;
+		setDefaultColor_(hErr);
 		return 1;
 	}
 	p0GenBg();

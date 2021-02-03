@@ -27,5 +27,5 @@ extern pfTextElem text[];
 extern vector<pfLangFile> lf;
 
 void pfLangRead(const char[]);
-bool pfLangDetect();
+bool pfLangDetect(const string &langDir);
 void pfLangInit(int);

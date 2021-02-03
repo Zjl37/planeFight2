@@ -32,6 +32,7 @@ void gotoXY_(short,short,HANDLE);
 
 #define dfc lightGrey
 #define dbc black
+#define setDefaultColor_(h) setColor_(dfc,dbc,h)
 #define setDefaultColor() setColor(dfc,dbc)
 
 void setColor_(short fgc, short bgc, HANDLE hStdout);

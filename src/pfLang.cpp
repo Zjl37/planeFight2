@@ -12,7 +12,7 @@ pfTextElem text[ntext];
 void clear();
 extern SMALL_RECT winr;
 
-char buf1[65536],filename[65536];
+char buf1[65536];
 struct pfLfIdx {
 	int id;
 	string sec,key;
@@ -132,29 +132,28 @@ int curLfi=-1, fbLfi=-1;
 
 WIN32_FIND_DATAA ffd;
 
-bool pfLangDetect() {
+bool pfLangDetect(const string &langDir) {
 	LANGID lid = GetSystemDefaultLangID();
-	HANDLE h=FindFirstFileA("./lang/*.*",&ffd);
+	HANDLE h=FindFirstFileA((langDir+"*.txt").c_str(),&ffd);
 	if(h==INVALID_HANDLE_VALUE)
 		return false;
 	int ret=0;
-	strcpy(filename,"./lang/");
 	do {
-		strcpy(filename+7,ffd.cFileName);
-		GetPrivateProfileStringA("lang","match_lid_lb","Lang pack missing",buf1,65536,filename);
+		string filename = langDir+ffd.cFileName;
+		GetPrivateProfileStringA("lang","match_lid_lb","Lang pack missing",buf1,65536,filename.c_str());
 		if(strcmp(buf1,"Lang pack missing")) {
 			lfi.dir=filename;
 			stringstream tmp(buf1);
 			tmp>>lfi.lidlb;
 			lfi.lidrb.clear();
-			GetPrivateProfileStringA("lang","match_lid_rb","Lang pack missing",buf1,65536,filename);
+			GetPrivateProfileStringA("lang","match_lid_rb","Lang pack missing",buf1,65536,filename.c_str());
 			if(strcmp(buf1,"Lang pack missing")) {
 				tmp.str(buf1);
 				int lidrbi=0;
 				while(tmp>>lidrbi)
 					lfi.lidrb.push_back(lidrbi);
 			}
-			GetPrivateProfileStringA("lang","lang_name","Lang pack missing",buf1,65536,filename);
+			GetPrivateProfileStringA("lang","lang_name","Lang pack missing",buf1,65536,filename.c_str());
 			gotoXY(0,4);
 			cout<<buf1;
 			lfi.langName.s=buf1;
