@@ -14,7 +14,9 @@ using namespace std;
 #define pfVersion "2.3"
 #define pfVerStr "planefight 2.3"
 
-const string marker[]={
+const int PF_NMARKER = 23;
+
+const string marker[PF_NMARKER]={
 	"\u2501 ","\u2503 ","\u254b ","\u2523 ","\u252b ","\u2533 ","\u253b ",
 	"\u2500 ","\u2502 ","\u253c ","\u251c ","\u2524 ","\u252c ","\u2534 ",
 	"\u2550 ","\u2551 ","\u256c ","\u2560 ","\u2563 ","\u2566 ","\u2569 ",
@@ -504,12 +506,6 @@ void drawBF(bool showBf2) {
 	else bf3.draw(true);
 }
 
-void drawMarker() {
-	for(int i=0; i<23; i++)
-		i==tab[1]?setColor(white,darkYellow):setColor(black,yellow),
-		gotoXY(3+i%7*4,10+curGame.h+i/7*2), cout<<marker[i];
-}
-
 void drawUiElem() {
 	setDefaultColor(), clear();
 	if(page==0||page==1)
@@ -522,7 +518,7 @@ void drawUiElem() {
 	}
 	if(page==0) {
 		gotoXY(ue[4].right(),ue[4].y);
-	} if(page==2) {
+	} else if(page==2) {
 		drawBF(false);
 		if(tab[0]==0)
 			drawPark();
@@ -532,8 +528,6 @@ void drawUiElem() {
 	} else if(page==10) {
 		drawBF(false);
 		gotoXY(winr.Right-10,1), cout<<"#"<<turn;
-		if(tab[0]==1)
-			drawMarker();
 	} else if(page==19) {
 		drawBF(true);
 		gotoXY(winr.Right-10,1), cout<<"#"<<turn;
@@ -854,14 +848,16 @@ void buildUiElem() {
 		ue[5].clickFunc=[] { _fl_ = 0; };
 
 		ue[P1_NNLUE+1]=pfLabel(lf[0].langName,2,12,dfc,dbc,grey,black,false);
-		ue[P1_NNLUE+1].clickFunc=[] {};
+		ue[P1_NNLUE+1].clickFunc=[] {
+			pfLangRead(lf[0].dir.c_str()), refreshPage();
+		};
 		for(int i=1; i<(int)lf.size(); i++) {
 			if(ue[P1_NNLUE+i].right()+2+lf[i].langName.len()>winr.Right) {
 				ue[P1_NNLUE+1+i]=pfLabel(lf[i].langName,2,ue[P1_NNLUE+i].y+1,dfc,dbc,grey,black,false);
 			} else {
 				ue[P1_NNLUE+1+i]=pfLabel(lf[i].langName,ue[P1_NNLUE+i].right()+2,ue[P1_NNLUE+i].y,dfc,dbc,grey,black,false);
 			}
-			ue[P1_NNLUE+1+i].clickFunc=[] {};
+			ue[P1_NNLUE+1+i].clickFunc=[i] { pfLangRead(lf[i].dir.c_str()), refreshPage(); };
 		}
 		nue=P1_NNLUE+lf.size();
 	} else if(page==1) {
@@ -999,7 +995,13 @@ void buildUiElem() {
 		ue[5].clickFunc=[] { tab[0]=2, refreshPage(); };
 		if(tab[0]>=0&&tab[0]<=2)
 			ue[3+tab[0]].fgc=black, ue[3+tab[0]].bgc=green;
-		nue=5;
+		if(tab[0]==1) {
+			for(int i=0; i<PF_NMARKER; i++) {
+				ue[6+i]=pfLabel(pfTextElem(marker[i], 1), 3+i%7*4, 10+curGame.h+i/7*2, i==tab[1] ? white : black, i==tab[1] ? darkYellow : yellow, white, darkYellow, false);
+				ue[6+i].clickFunc=[i] { tab[1]=i; refreshPage(); };
+			}
+			nue=5+PF_NMARKER;
+		} else nue=5;
 	} else if(page==19) {
 		if(p10srd==2)
 			ue[2]=pfLabel(text[47],(winr.Right-text[47].len())/2,4,white,darkGreen,grey,darkGreen,true);
@@ -1068,9 +1070,6 @@ void refreshPage() {
 	if(winr.Right<70||winr.Bottom<28) return;
 	buildUiElem();
 	drawUiElem();
-	if(page==0) {
-		p0GenBg();
-	}
 }
 
 void pop_back_utf8(string &s) {
@@ -1088,16 +1087,7 @@ void pop_back_utf8(string &s) {
 #define my rec.Event.MouseEvent.dwMousePosition.Y
 
 void processMouseClick() {
-	if(page==0) {
-		for(int i=P1_NNLUE; i>=1; i--) {
-			if(ue[i].click(mx,my))
-				return;
-		}
-		for(int i=P1_NNLUE+1; i<=nue; i++) {
-			if(ue[i].click(mx,my))
-				pfLangRead(lf[i-P1_NNLUE-1].dir.c_str()), refreshPage();
-		}
-	} else for(int i=nue; i>=1; i--)
+	for(int i=nue; i>=1; i--)
 		if(ue[i].click(mx,my)) {
 			return;
 		}
@@ -1138,11 +1128,6 @@ void processMouseClick() {
 			} else if(tab[0]==2) {
 				bf3.ch[(mx-bf2.x)/2+(my-bf2.y)*bf3.w]="";
 				drawBF(false);
-			}
-		} else if(tab[0]==1) {
-			for(int i=0; i<23; i++) if(my==10+curGame.h+i/7*2 && mx>=3+i%7*4 && mx<=5+i%7*4) {
-				tab[1]=i;
-				drawMarker();
 			}
 		}
 	}
