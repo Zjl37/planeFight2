@@ -158,9 +158,6 @@ bool pfLangDetect(const string &langDir) {
 			cout<<buf1;
 			lfi.langName.s=buf1;
 			lfi.langName.d=lfi.langName.s.length()-(getY()-4)*winr.Right-getX();
-			if(lfi.langName.d > 80) {
-				puts("| this string has many none-asciis.");
-			}
 			lf.push_back(lfi);
 		}
 		ret=FindNextFileA(h,&ffd);

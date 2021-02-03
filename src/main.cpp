@@ -1200,7 +1200,12 @@ void process() {
 int main(int argc, char** argv) {
 	srand(time(0));
 	conInit();
-	string langDir = argv[0];
+	string langDir;
+	{
+		char buf[65536];
+		GetModuleFileNameA(NULL, buf, 65536);
+		langDir = buf;
+	}
 	while(*langDir.rbegin()!='\\')
 		langDir.pop_back();
 	langDir.append("lang\\");
