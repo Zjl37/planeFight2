@@ -2,3 +2,4 @@
 *.exe
 .vscode/
 lang/test.txt
+compile_flags.txt

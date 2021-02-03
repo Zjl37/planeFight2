@@ -40,6 +40,15 @@ void setColor_(short fgc, short bgc, HANDLE hStdout) {
 	SetConsoleTextAttribute(hStdout,fgc+(bgc<<4));
 }
 
+void clear() {
+	setDefaultColor();
+	GetConsoleScreenBufferInfo(hOut, &csbi);
+	int cnt=csbi.dwSize.X * csbi.dwSize.Y;
+	DWORD _cnt;
+	FillConsoleOutputCharacter(hOut, ' ', cnt, {0, 0}, &_cnt);
+	FillConsoleOutputAttribute(hOut, csbi.wAttributes, cnt, {0, 0}, &_cnt);
+}
+
 void showCursor_(bool f, HANDLE hStdout) {
 	cci.dwSize=1, cci.bVisible=f;
 	SetConsoleCursorInfo(hStdout,&cci);

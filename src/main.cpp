@@ -1,3 +1,5 @@
+#include <io.h>
+#include <fcntl.h>
 #include <ctime>
 #include <vector>
 #include <sstream>
@@ -24,7 +26,7 @@ bool _fl_ = 1;
 bool isFirst;
 int page,tab[16],nue,turn;
 DWORD nEvents;
-HANDLE hIn,hOut;
+HANDLE hIn,hOut,hOutOrg;
 SMALL_RECT winr={0,0,80,30};
 INPUT_RECORD rec;
 CONSOLE_CURSOR_INFO cci;
@@ -101,6 +103,33 @@ string sIP;
 void setPage(int);
 
 void conInit() {
+	hIn = GetStdHandle(STD_INPUT_HANDLE);
+	hOutOrg = GetStdHandle(STD_OUTPUT_HANDLE);
+	hOut = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
+	SetStdHandle(STD_OUTPUT_HANDLE, hOut);
+	SetConsoleActiveScreenBuffer(hOut);
+	fclose(stdout);
+	*stdout = *_fdopen(_open_osfhandle((intptr_t)hOut, _O_APPEND), "w");
+	/*
+		Create a new CSB for this program so that the
+		original console screen get reserved after exit.
+		Redirect stdout to the new CSB.
+	*/
+
+	SetConsoleCP(65001);
+	SetConsoleOutputCP(65001);
+
+	GetConsoleScreenBufferInfo(hOut, &csbi);
+	csbi.dwSize.X = max((short)80, csbi.dwSize.X);
+	csbi.dwSize.Y = max((short)30, csbi.dwSize.Y);
+	if(csbi.srWindow.Right<80 || csbi.srWindow.Bottom<30) {
+		SetConsoleScreenBufferSize(hOut, csbi.dwSize);
+		csbi.srWindow.Right = csbi.dwSize.X-1;
+		csbi.srWindow.Bottom = csbi.dwSize.Y-1;
+		SetConsoleWindowInfo(hOut, true, &csbi.srWindow);
+	}
+	winr=csbi.srWindow;
+
 	DWORD mode;
 	GetConsoleMode(hIn,&mode);
 	mode |= ENABLE_PROCESSED_INPUT;
@@ -109,10 +138,6 @@ void conInit() {
 	mode -= ENABLE_QUICK_EDIT_MODE;
 	mode |= ENABLE_WINDOW_INPUT;
 	SetConsoleMode(hIn,mode);
-}
-
-inline void clear() {
-	system("cls"), conInit();
 }
 
 int pfCheckVer(const string &s) {
@@ -1183,21 +1208,14 @@ void process() {
 }
 
 int main(int argc, char** argv) {
-	SetConsoleCP(65001);
-	SetConsoleOutputCP(65001);
-	hIn=GetStdHandle(STD_INPUT_HANDLE);
-	hOut=GetStdHandle(STD_OUTPUT_HANDLE);
 	srand(time(0));
 	conInit();
-	SetConsoleWindowInfo(hOut,true,&winr);
 	if(!pfLangDetect()) {
 		setColor(white,red);
 		cout<<"Language file not found! Go to https://github.com/Zjl37/planeFight2 and re-download the game."<<endl;
 		setDefaultColor();
 		return 1;
 	}
-	GetConsoleScreenBufferInfo(hOut,&csbi);
-	winr=csbi.srWindow;
 	p0GenBg();
 	setPage(0);
 	while(_fl_) {

@@ -35,6 +35,7 @@ void gotoXY_(short,short,HANDLE);
 #define setDefaultColor() setColor(dfc,dbc)
 
 void setColor_(short fgc, short bgc, HANDLE hStdout);
+void clear();
 void showCursor_(bool f, HANDLE hStdout);
 
 extern HANDLE hIn,hOut;

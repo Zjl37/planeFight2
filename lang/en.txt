@@ -17,6 +17,7 @@ back="<<Back"
 start21="> Start a game (by telling your friend your IP address)"
 start22="> Join a game (given the other players's IP address)"
 resize_win_msg="←↑ Resize the window to resume the game ↓→"
+exit0=" Exit(Esc) "
 exit="  Exit  "
 chlang="  Language  "
 [about]
