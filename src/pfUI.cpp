@@ -5,22 +5,22 @@ using namespace std;
 extern HANDLE hIn, hOut;
 extern SMALL_RECT winr;
 extern CONSOLE_CURSOR_INFO cci;
-extern CONSOLE_SCREEN_BUFFER_INFO csbi; 
+extern CONSOLE_SCREEN_BUFFER_INFO csbi;
 
 short getX_(HANDLE hStdout) {
-	GetConsoleScreenBufferInfo(hStdout, &csbi); 
+	GetConsoleScreenBufferInfo(hStdout, &csbi);
 	return csbi.dwCursorPosition.X;
 }
 
 short getY_(HANDLE hStdout) {
-	GetConsoleScreenBufferInfo(hStdout, &csbi); 
+	GetConsoleScreenBufferInfo(hStdout, &csbi);
 	return csbi.dwCursorPosition.Y;
 }
 
 void gotoX_(short x, HANDLE hStdout) {
 	GetConsoleScreenBufferInfo(hStdout,&csbi);
 	csbi.dwCursorPosition.X = x;
-	SetConsoleCursorPosition(hStdout,csbi.dwCursorPosition);   
+	SetConsoleCursorPosition(hStdout,csbi.dwCursorPosition);
 }
 
 void gotoY_(short y, HANDLE hStdout) {

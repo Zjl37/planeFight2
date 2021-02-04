@@ -11,6 +11,7 @@ pfTextElem text[ntext];
 
 void clear();
 extern SMALL_RECT winr;
+extern int forceCP;
 
 char buf1[65536];
 struct pfLfIdx {
@@ -116,7 +117,14 @@ void pfLangRead(const char Lang[]) {
 			stringstream tmp("");
 			tmp<<"LANG-"<<i.id;
 			text[i.id]=tmp.str();
-		} else text[i.id]=buf1;
+		} else {
+			if(forceCP) {
+				wchar_t _wbuf[65536];
+				MultiByteToWideChar(65001, 0, buf1, -1, _wbuf, 65536);
+				WideCharToMultiByte(forceCP, 0, _wbuf, -1, buf1, 65536, NULL, NULL);
+			}
+			text[i.id]=buf1;
+		}
 	}
 	text[12]="planeFight ";
 	text[13]=" by Zjl37 ";

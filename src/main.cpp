@@ -24,6 +24,8 @@ const string marker[PF_NMARKER]={
 };
 const int P1_NNLUE = 5;
 
+int forceCP;
+
 bool _fl_ = 1;
 bool isFirst;
 int page,tab[16],nue,turn;
@@ -118,9 +120,8 @@ void conInit() {
 		original console screen get reserved after exit.
 		Redirect stdout to the new CSB.
 	*/
-
-	SetConsoleCP(65001);
-	SetConsoleOutputCP(65001);
+	SetConsoleCP(forceCP ? forceCP : 65001);
+	SetConsoleOutputCP(forceCP ? forceCP : 65001);
 
 	GetConsoleScreenBufferInfo(hOut, &csbi);
 	csbi.dwSize.X = max((short)80, csbi.dwSize.X);
@@ -1197,7 +1198,46 @@ void process() {
 	}
 }
 
+void processArg(int argc, char** argv) {
+	if(argc<2)
+		return;
+	bool pause=0;
+	for(int i=1; i<argc; i++) {
+		string a=argv[i];
+		if(a[0]!='-') {
+			clog<<"planefight: ignoring parameter "<<a<<endl;
+			pause=1;
+		} else if(a[1]!='-') {
+			if(a=="-v") {
+				clog<<pfVerStr<<endl;
+				exit(0);
+			} else if(a=="-cp") {
+				if(i==argc-1 || argv[i+1][0]=='-') {
+					clog<<"planefight: error: expected number after -cp option."<<endl;
+					exit(233);
+				}
+				stringstream _ss(argv[i+1]);
+				_ss>>forceCP;
+				clog<<"planefight: info: set code page "<<forceCP<<"."<<endl;
+				pause=1;
+				++i;
+			} else {
+				clog<<"planefight: unknown option "<<a<<endl;
+				pause=1;
+			}
+		} else {
+			clog<<"planefight: unknown option "<<a<<endl;
+			pause=1;
+		}
+	}
+	if(pause) {
+		clog<<"Press enter to continue...";
+		cin.get();
+	}
+}
+
 int main(int argc, char** argv) {
+	processArg(argc, argv);
 	srand(time(0));
 	conInit();
 	string langDir;
