@@ -14,7 +14,7 @@ Each player begins with a 10x10 gird called "battle field", invisible to the oth
 
 ![what is a plane image](https://i.loli.net/2020/08/29/WdzxaIkBpTghqSn.png)
 
-In the above picture, blue 1x1 girds are called **portion of a plane**, while white ones are not. Especially, 1x1 gird marked by red X are called **head of a plane**. Planes cannot overlap, nor be placed out of border. The following picture shows a valid arrangement.
+In the above picture, blue girds are called **portion of a plane**, while white ones are not. Especially, the gird marked by red X are called **head of a plane**. Planes cannot overlap, nor be placed out of border. The following picture shows a valid arrangement.
 
 ![valid bf example](https://i.loli.net/2020/08/29/YMQgi6EomTcNJdx.png)
 
@@ -37,43 +37,41 @@ A plane is destroyed if its head is hit. A player who first destory all three pl
 
 - Battle field size
 
-	Currently not changeable in this program. See [plan](plan.md).
-
 - Completely-destroy
 
 	With this option disabled, missiles targeted at a portion of a destroyed plane returns "HIT", otherwise, "VOID".
 
 ### Game history
 
-The game was originally created by students in _Wenzhou Experimental Middle School, Zhejiang_, and is honored as one of "the three cultural treasures of game of WEMS".
+The game was originally invented by students of _Wenzhou Experimental Middle School, Zhejiang_, and is honored as one of "the three cultural treasures of game of WEMS".
 
 Although I'm not a student of that school, I'm glad to witness its spread throughout other high schools of the city as graduates from WEMS went to different high schools. Thus I decided to contribute my force and find a small corner for it in the wide open source world. That's the birth of PlaneFight Console Game.
 
 ## PlaneFight Console Application
 
-PlaneFight Console Game is an implementation of the above game based on Windows Console, written in C++. It **read**s **console input** so you can just interact with mouse click. It offers 2 game experience: "play against computer" and "multiplayer game". **Winsock** is used in the latter exp for communication functionality between computers in local network.
+PlaneFight Console Game is an implementation of the above game based on Windows Console, written in C++. It **read**s **console input** so you can just interact with mouse click. It offers 2 game experience: "play against computer" and "multiplayer game". **Winsock** is used in the for communication functionality between computers in local network.
 
 This repo is also the very first one through which I learn github.
 
 ## How to play
 
-1. Use pen and pieces of paper. It is strongly recommended to play around in real world before downloading the program!
-
 1. Go to release page and download the latest version.
 
-1. Or download the source code and compile it yourself.
+2. Or download the source code and compile it yourself.
 
 ### Tips
 
 To get the best game experience, 
 
-- Be sure to run this program in default console / powershell window (conhost), not in some integrated console of IDE / code editor, otherwise the program might not receive mouse event.
+- Be sure to run this program in default console window (conhost), not in integrated console of some IDE / code editors, otherwise the program won't receive mouse event.
 
 - Suggest using a monospace font that shows [box drawing characters](https://unicode-table.com/en/blocks/box-drawing/) full-width.
 
-- Note that this program only runs on Windows. Suggest running on latest version of Windows 10.
+- Suggest running on latest version of Windows 10, as the program doesn't support [Legacy Console](https://go.microsoft.com/fwlink/?LinkId=871150). 
 
 ## Contribution
+
+You're welcomed to
 
 - Translate the game and all documents.
 	- All English translations were done by myself. Limited by my English proficiency, there may be grammar mistakes or improper / not idiomatic expressions. Any English translation suggestions is welcomed.

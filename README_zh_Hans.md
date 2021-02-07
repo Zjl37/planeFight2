@@ -1,20 +1,20 @@
-![planeFight introduction image](https://i.loli.net/2020/08/29/GsaIE34g5zuV7BX.png)
+****![planeFight introduction image](https://i.loli.net/2020/08/29/GsaIE34g5zuV7BX.png)
 
 [English](README.md) | 简体中文
 
 ## 游戏介绍
 
-人们都把这款游戏叫做“打飞机”。这是一个益智的双人回合制纸上小游戏，目标是判断出对方所有的“飞机”的摆放位置并将其击毁。
+这是一个益智的双人回合制纸上小游戏，目标是判断出对方所有的“飞机”的摆放位置并将其击毁。
 
 ### 基本规则
 
 一局普通的游戏规则如下：
 
-每个人的“战场”是一个 10x10 的地图，不能给对方看到。战场上要放 3 架飞机。一架飞机是指以下的 4x5 像素图案，可以旋转四个方向：
+每个人的“战场”是一个 10x10 的地图，对对方不可见，上面要放 3 架飞机。飞机是指以下的 4x5 像素图案，可以朝任意四个方向：
 
 ![what is a plane image](https://i.loli.net/2020/08/29/WdzxaIkBpTghqSn.png)
 
-如上图，用红叉标出的 1x1 格子叫做**飞机头**。飞机不能重叠，也不能摆放在边界外。下图显示一种合法的摆放：
+如上图，用红叉标出的格子叫做**飞机头**。飞机不能重叠，也不能摆放在边界外。下图显示一种合法的摆放：
 
 ![valid bf example](https://i.loli.net/2020/08/29/YMQgi6EomTcNJdx.png)
 
@@ -36,8 +36,6 @@
 
 - 地图大小
 
-	目前程序里改不了。参见 [plan](plan.md).
-
 - 完全摧毁
 
 	当此选项未启用时，攻击已击毁的飞机，返回的是“中”，否则返回的是“空”。
@@ -56,25 +54,25 @@ PlaneFight 基于 Windows 控制台，用 C++ 语言编写，是对上面介绍�
 
 ## 开始游戏
 
-1. 强烈建议下载程序前先用纸笔玩一玩！
-
 1. 去 release 页面下载最新版本。
 
-1. 下载源码，自己编译。
+2. 或者自己编译：
 
-~~（这个序号不是步骤，是不同的方法qwq）~~
+	g++ src/main.cpp src/pfUI.cpp src/pfLang.cpp src/pfAI.cpp -DUNICODE -o planeFight.exe -static -lwsock32
 
 ### 注意
 
 为确保最佳游戏体验， 
 
-- 一定要在 Windows 默认的控制台 / Powershell 窗口（conhost）里运行，不要在 IDE 或编辑器的集成控制台中运行，不然程序可能收不到鼠标事件。
+- 一定要在 Windows 默认的控制台窗口（conhost）里运行，不要在 IDE 或编辑器的集成控制台中运行，不然程序收不到鼠标事件。
 
-- 建议在控制台中使用 [制表符](https://unicode-table.com/cn/blocks/box-drawing/)与汉字同宽 的等宽字体。
+- 建议在控制台中使用 [制表符](https://unicode-table.com/cn/blocks/box-drawing/)与汉字同宽 的等宽字体。对于简体中文用户来说，你的控制台字体一般就是新宋体，所以无需注意这点。
 
-- 注意本程序只支持 Windows 系统。建议在最新版本的 Windows 10 上运行。
+- 建议在最新版本的 Windows 10 上运行。本程序目前只支持[新版控制台](https://go.microsoft.com/fwlink/?LinkId=507549)，在[旧版控制台](https://go.microsoft.com/fwlink/?LinkId=871150)中会乱码。
 
 ## 贡献
+
+你也许可以
 
 - 翻译游戏和所有文档。
 
