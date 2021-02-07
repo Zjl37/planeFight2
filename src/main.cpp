@@ -104,6 +104,17 @@ string sIP;
 
 void setPage(int);
 
+void conSetMode() {
+	DWORD mode;
+	GetConsoleMode(hIn,&mode);
+	mode |= ENABLE_PROCESSED_INPUT;
+	mode |= ENABLE_MOUSE_INPUT;
+	mode |= ENABLE_QUICK_EDIT_MODE;
+	mode -= ENABLE_QUICK_EDIT_MODE;
+	mode |= ENABLE_WINDOW_INPUT;
+	SetConsoleMode(hIn,mode);
+}
+
 void conInit() {
 	hIn = GetStdHandle(STD_INPUT_HANDLE);
 	hOutOrg = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -133,14 +144,7 @@ void conInit() {
 	}
 	winr=csbi.srWindow;
 
-	DWORD mode;
-	GetConsoleMode(hIn,&mode);
-	mode |= ENABLE_PROCESSED_INPUT;
-	mode |= ENABLE_MOUSE_INPUT;
-	mode |= ENABLE_QUICK_EDIT_MODE;
-	mode -= ENABLE_QUICK_EDIT_MODE;
-	mode |= ENABLE_WINDOW_INPUT;
-	SetConsoleMode(hIn,mode);
+	conSetMode();
 }
 
 int pfCheckVer(const string &s) {
@@ -977,7 +981,11 @@ void buildUiElem() {
 		ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back
 		ue[2].clickFunc=[] { setPage(1); };
 		ue[3]=pfLabel(text[19],(winr.Right-text[19].len())/2,10,black,yellow,black,darkYellow,false);
-		ue[3].clickFunc=[] { system("explorer https://github.com/Zjl37/planeFight2"); refreshPage(); };
+		ue[3].clickFunc=[] {
+			system("explorer https://github.com/Zjl37/planeFight2"); 
+			conSetMode();
+			refreshPage();
+		};
 		ue[4]=pfLabel(text[12]+pfTextElem(pfVersion)+text[13],1,2,dfc,dbc,0,0,false);
 		setDefaultColor();
 		ue[5]=pfLabel(text[14],3,4,dfc,dbc,0,0,false);
