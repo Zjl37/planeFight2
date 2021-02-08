@@ -162,6 +162,11 @@ bool pfLangDetect(const string &langDir) {
 					lfi.lidrb.push_back(lidrbi);
 			}
 			GetPrivateProfileStringA("lang","lang_name","Lang pack missing",buf1,65536,filename.c_str());
+			if(forceCP) {
+				wchar_t _wbuf[65536];
+				MultiByteToWideChar(65001, 0, buf1, -1, _wbuf, 65536);
+				WideCharToMultiByte(forceCP, 0, _wbuf, -1, buf1, 65536, NULL, NULL);
+			}
 			gotoXY(0,4);
 			cout<<buf1;
 			lfi.langName.s=buf1;
