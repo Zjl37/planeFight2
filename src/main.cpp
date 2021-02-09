@@ -17,20 +17,20 @@ using namespace std;
 const int PF_NMARKER = 23;
 
 string marker[PF_NMARKER]={
-	"\u2501 ","\u2503 ","\u254b ","\u2523 ","\u252b ","\u2533 ","\u253b ",
-	"\u2500 ","\u2502 ","\u253c ","\u251c ","\u2524 ","\u252c ","\u2534 ",
-	"\u2550 ","\u2551 ","\u256c ","\u2560 ","\u2563 ","\u2566 ","\u2569 ",
+	"\u2501","\u2503","\u254b","\u2523","\u252b","\u2533","\u253b",
+	"\u2500","\u2502","\u253c","\u251c","\u2524","\u252c","\u2534",
+	"\u2550","\u2551","\u256c","\u2560","\u2563","\u2566","\u2569",
 	"\uff1f","\uff01"
 };
 struct pfRePosCh {
 	short dx,dy; string ch;
 } plShape[4][10] = {
-	{{0,0,"\u2503 "},{-2,1,"\u2501 "},{-1,1,"\u2501 "},{0,1,"\u254b "},{1,1,"\u2501 "},{2,1,"\u2501 "},{0,2,"\u2503 "},{-1,3,"\u2501 "},{0,3,"\u253b "},{1,3,"\u2501 "}},
-	{{-3,-1,"\u2503 "},{-3,0,"\u2523 "},{-3,1,"\u2503 "},{-2,0,"\u2501 "},{-1,-2,"\u2503 "},{-1,-1,"\u2503 "},{-1,0,"\u254b "},{-1,1,"\u2503 "},{-1,2,"\u2503 "},{0,0,"\u2501 "}},
-	{{-1,-3,"\u2501 "},{0,-3,"\u2533 "},{1,-3,"\u2501 "},{0,-2,"\u2503 "},{-2,-1,"\u2501 "},{-1,-1,"\u2501 "},{0,-1,"\u254b "},{1,-1,"\u2501 "},{2,-1,"\u2501 "},{0,0,"\u2503 "}},
-	{{3,-1,"\u2503 "},{3,0,"\u252b "},{3,1,"\u2503 "},{2,0,"\u2501 "},{1,-2,"\u2503 "},{1,-1,"\u2503 "},{1,0,"\u254b "},{1,1,"\u2503 "},{1,2,"\u2503 "},{0,0,"\u2501 "}}
+	{{0,0,"\u2503"},{-2,1,"\u2501"},{-1,1,"\u2501"},{0,1,"\u254b"},{1,1,"\u2501"},{2,1,"\u2501"},{0,2,"\u2503"},{-1,3,"\u2501"},{0,3,"\u253b"},{1,3,"\u2501"}},
+	{{-3,-1,"\u2503"},{-3,0,"\u2523"},{-3,1,"\u2503"},{-2,0,"\u2501"},{-1,-2,"\u2503"},{-1,-1,"\u2503"},{-1,0,"\u254b"},{-1,1,"\u2503"},{-1,2,"\u2503"},{0,0,"\u2501"}},
+	{{-1,-3,"\u2501"},{0,-3,"\u2533"},{1,-3,"\u2501"},{0,-2,"\u2503"},{-2,-1,"\u2501"},{-1,-1,"\u2501"},{0,-1,"\u254b"},{1,-1,"\u2501"},{2,-1,"\u2501"},{0,0,"\u2503"}},
+	{{3,-1,"\u2503"},{3,0,"\u252b"},{3,1,"\u2503"},{2,0,"\u2501"},{1,-2,"\u2503"},{1,-1,"\u2503"},{1,0,"\u254b"},{1,1,"\u2503"},{1,2,"\u2503"},{0,0,"\u2501"}}
 };
-string MapEdge[256]={
+string mapEdge[256]={
 	"\u2500","\u2501","\u2502","\u2503","\u250c","\u250f",
 	"\u2550","\u2551","\u2554","\u2557","\u255a","\u255d",
 	"\u2510","\u2514","\u2518","\u2513","\u2517","\u251b"
@@ -38,6 +38,7 @@ string MapEdge[256]={
 const int P1_NNLUE = 5;
 
 int forceCP;
+int bdcOpt;
 
 bool _fl_ = 1;
 bool isFirst;
@@ -1216,15 +1217,15 @@ void processArg(int argc, char** argv) {
 		return;
 	bool pause=0;
 	for(int i=1; i<argc; i++) {
-		string a=argv[i];
-		if(a[0]!='-') {
-			clog<<"planefight: ignoring parameter "<<a<<endl;
+		string op=argv[i];
+		if(op[0]!='-') {
+			clog<<"planefight: ignoring parameter "<<op<<endl;
 			pause=1;
-		} else if(a[1]!='-') {
-			if(a=="-v") {
+		} else if(op[1]!='-') {
+			if(op=="-v") {
 				clog<<pfVerStr<<endl;
 				exit(0);
-			} else if(a=="-cp") {
+			} else if(op=="-cp") {
 				if(i==argc-1 || argv[i+1][0]=='-') {
 					clog<<"planefight: error: expected number after -cp option."<<endl;
 					exit(233);
@@ -1234,12 +1235,27 @@ void processArg(int argc, char** argv) {
 				clog<<"planefight: info: set code page "<<forceCP<<"."<<endl;
 				pause=1;
 				++i;
+			} else if(op=="-bdc") {
+				if(i==argc-1) {
+					clog<<"planefight: error: expected value after -cp option."<<endl;
+					exit(233);
+				}
+				string val = argv[i+1];
+				if(val=="full") {
+					bdcOpt = 0;
+				} else if(val=="pseudofull") {
+					bdcOpt = 1;
+				} else {
+					clog<<"planefight: error: unknown value "<<val<<" for option "<<op<<"."<<endl;
+					exit(233);
+				}
+				++i;
 			} else {
-				clog<<"planefight: unknown option "<<a<<endl;
+				clog<<"planefight: unknown option "<<op<<endl;
 				pause=1;
 			}
 		} else {
-			clog<<"planefight: unknown option "<<a<<endl;
+			clog<<"planefight: unknown option "<<op<<endl;
 			pause=1;
 		}
 	}
@@ -1269,9 +1285,31 @@ void convertCP()
 	}
 	for(int i=0;i<256;i++)
 	{
-		MultiByteToWideChar(65001, 0, MapEdge[i].c_str(), -1, _wbuf, 65536);
+		MultiByteToWideChar(65001, 0, mapEdge[i].c_str(), -1, _wbuf, 65536);
 		WideCharToMultiByte(forceCP, 0, _wbuf, -1, _buf2, 65536, NULL, NULL);
-		MapEdge[i]=_buf2;
+		mapEdge[i]=_buf2;
+	}
+}
+
+void pfCmptAddBdcSp() {
+	for(int i=0; i<21; i++) {
+		marker[i].append(" ");
+	}
+	for(int i=0; i<18; i++) {
+		mapEdge[i].append(" ");
+	}
+	for(int i=0; i<4; i++) {
+		for(int j=0; j<10; j++) {
+			plShape[i][j].ch.append(" ");
+		}
+	}
+}
+
+void pfCompatibility() {
+	if(forceCP)
+		convertCP();
+	if(bdcOpt & 1) {
+		pfCmptAddBdcSp();
 	}
 }
 
@@ -1295,7 +1333,7 @@ int main(int argc, char** argv) {
 		setDefaultColor_(hErr);
 		return 1;
 	}
-	if(forceCP) convertCP();
+	pfCompatibility();
 	p0GenBg();
 	setPage(0);
 	while(_fl_) {
