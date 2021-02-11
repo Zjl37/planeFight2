@@ -11,8 +11,8 @@
 
 using namespace std;
 
-#define pfVersion "2.3"
-#define pfVerStr "planefight 2.3"
+#define pfVersion "2.4"
+#define pfVerStr "planefight 2.4"
 
 const int PF_NMARKER = 23;
 
