@@ -38,7 +38,7 @@ string mapEdge[256]={
 const int P1_NNLUE = 5;
 
 int forceCP;
-int bdcOpt;
+int bdcOpt = 1;
 
 bool _fl_ = 1;
 bool isFirst;
