@@ -5,22 +5,23 @@ using namespace std;
 extern HANDLE hIn, hOut;
 extern SMALL_RECT winr;
 extern CONSOLE_CURSOR_INFO cci;
-extern CONSOLE_SCREEN_BUFFER_INFO csbi; 
+extern CONSOLE_SCREEN_BUFFER_INFO csbi;
+extern string mapEdge[256];
 
 short getX_(HANDLE hStdout) {
-	GetConsoleScreenBufferInfo(hStdout, &csbi); 
+	GetConsoleScreenBufferInfo(hStdout, &csbi);
 	return csbi.dwCursorPosition.X;
 }
 
 short getY_(HANDLE hStdout) {
-	GetConsoleScreenBufferInfo(hStdout, &csbi); 
+	GetConsoleScreenBufferInfo(hStdout, &csbi);
 	return csbi.dwCursorPosition.Y;
 }
 
 void gotoX_(short x, HANDLE hStdout) {
 	GetConsoleScreenBufferInfo(hStdout,&csbi);
 	csbi.dwCursorPosition.X = x;
-	SetConsoleCursorPosition(hStdout,csbi.dwCursorPosition);   
+	SetConsoleCursorPosition(hStdout,csbi.dwCursorPosition);
 }
 
 void gotoY_(short y, HANDLE hStdout) {
@@ -100,41 +101,41 @@ void box(short x, short y, short w, short h, short edge) {
 	// edge style: 0=single 1=bold 2=double
 	for(int i=x; i<x+w; i+=2)
 		if(edge==0) {
-			gotoXY(i,y-1), cout<<"\u2500 ";
-			gotoXY(i,y+h), cout<<"\u2500 ";
+			gotoXY(i,y-1), cout<<mapEdge[0];
+			gotoXY(i,y+h), cout<<mapEdge[0];
 		} else if(edge==1) {
-			gotoXY(i,y-1), cout<<"\u2501 ";
-			gotoXY(i,y+h), cout<<"\u2501 ";
+			gotoXY(i,y-1), cout<<mapEdge[1];
+			gotoXY(i,y+h), cout<<mapEdge[1];
 		} else if(edge==2) {
-			gotoXY(i,y-1), cout<<"\u2550 ";
-			gotoXY(i,y+h), cout<<"\u2550 ";
+			gotoXY(i,y-1), cout<<mapEdge[6];
+			gotoXY(i,y+h), cout<<mapEdge[6];
 		}
 	for(int j=y; j<y+h; j++)
 		if(edge==0) {
-			gotoXY(x-2,j), cout<<"\u2502 ";
-			gotoXY(x+w,j), cout<<"\u2502 ";
+			gotoXY(x-2,j), cout<<mapEdge[2];
+			gotoXY(x+w,j), cout<<mapEdge[2];
 		} else if(edge==1) {
-			gotoXY(x-2,j), cout<<"\u2503 ";
-			gotoXY(x+w,j), cout<<"\u2503 ";
+			gotoXY(x-2,j), cout<<mapEdge[3];
+			gotoXY(x+w,j), cout<<mapEdge[3];
 		} else if(edge==2) {
-			gotoXY(x-2,j), cout<<"\u2551 ";
-			gotoXY(x+w,j), cout<<"\u2551 ";
+			gotoXY(x-2,j), cout<<mapEdge[7];
+			gotoXY(x+w,j), cout<<mapEdge[7];
 		}
 	if(edge==0) {
-		gotoXY(x-2,y-1), cout<<"\u250c ";
-		gotoXY(x+w,y-1), cout<<"\u2510 ";
-		gotoXY(x-2,y+h), cout<<"\u2514 ";
-		gotoXY(x+w,y+h), cout<<"\u2518 ";
+		gotoXY(x-2,y-1), cout<<mapEdge[4];
+		gotoXY(x+w,y-1), cout<<mapEdge[12];
+		gotoXY(x-2,y+h), cout<<mapEdge[13];
+		gotoXY(x+w,y+h), cout<<mapEdge[14];
 	} else if(edge==1) {
-		gotoXY(x-2,y-1), cout<<"\u250f ";
-		gotoXY(x+w,y-1), cout<<"\u2513 ";
-		gotoXY(x-2,y+h), cout<<"\u2517 ";
-		gotoXY(x+w,y+h), cout<<"\u251b ";
+		gotoXY(x-2,y-1), cout<<mapEdge[5];
+		gotoXY(x+w,y-1), cout<<mapEdge[15];
+		gotoXY(x-2,y+h), cout<<mapEdge[16];
+		gotoXY(x+w,y+h), cout<<mapEdge[17];
 	} else if(edge==2) {
-		gotoXY(x-2,y-1), cout<<"\u2554 ";
-		gotoXY(x+w,y-1), cout<<"\u2557 ";
-		gotoXY(x-2,y+h), cout<<"\u255a ";
-		gotoXY(x+w,y+h), cout<<"\u255d ";
+		gotoXY(x-2,y-1), cout<<mapEdge[8];
+		gotoXY(x+w,y-1), cout<<mapEdge[9];
+		gotoXY(x-2,y+h), cout<<mapEdge[10];
+		gotoXY(x+w,y+h), cout<<mapEdge[11];
 	}
 }
 

@@ -1,0 +1,6 @@
+-Wextra
+-Wall
+-DUNICODE
+--target=x86_64-w64-mingw
+-fsjlj-exceptions
+-lwsock32

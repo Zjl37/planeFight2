@@ -16,13 +16,29 @@ using namespace std;
 
 const int PF_NMARKER = 23;
 
-const string marker[PF_NMARKER]={
-	"\u2501 ","\u2503 ","\u254b ","\u2523 ","\u252b ","\u2533 ","\u253b ",
-	"\u2500 ","\u2502 ","\u253c ","\u251c ","\u2524 ","\u252c ","\u2534 ",
-	"\u2550 ","\u2551 ","\u256c ","\u2560 ","\u2563 ","\u2566 ","\u2569 ",
+string marker[PF_NMARKER]={
+	"\u2501","\u2503","\u254b","\u2523","\u252b","\u2533","\u253b",
+	"\u2500","\u2502","\u253c","\u251c","\u2524","\u252c","\u2534",
+	"\u2550","\u2551","\u256c","\u2560","\u2563","\u2566","\u2569",
 	"\uff1f","\uff01"
 };
+struct pfRePosCh {
+	short dx,dy; string ch;
+} plShape[4][10] = {
+	{{0,0,"\u2503"},{-2,1,"\u2501"},{-1,1,"\u2501"},{0,1,"\u254b"},{1,1,"\u2501"},{2,1,"\u2501"},{0,2,"\u2503"},{-1,3,"\u2501"},{0,3,"\u253b"},{1,3,"\u2501"}},
+	{{-3,-1,"\u2503"},{-3,0,"\u2523"},{-3,1,"\u2503"},{-2,0,"\u2501"},{-1,-2,"\u2503"},{-1,-1,"\u2503"},{-1,0,"\u254b"},{-1,1,"\u2503"},{-1,2,"\u2503"},{0,0,"\u2501"}},
+	{{-1,-3,"\u2501"},{0,-3,"\u2533"},{1,-3,"\u2501"},{0,-2,"\u2503"},{-2,-1,"\u2501"},{-1,-1,"\u2501"},{0,-1,"\u254b"},{1,-1,"\u2501"},{2,-1,"\u2501"},{0,0,"\u2503"}},
+	{{3,-1,"\u2503"},{3,0,"\u252b"},{3,1,"\u2503"},{2,0,"\u2501"},{1,-2,"\u2503"},{1,-1,"\u2503"},{1,0,"\u254b"},{1,1,"\u2503"},{1,2,"\u2503"},{0,0,"\u2501"}}
+};
+string mapEdge[256]={
+	"\u2500","\u2501","\u2502","\u2503","\u250c","\u250f",
+	"\u2550","\u2551","\u2554","\u2557","\u255a","\u255d",
+	"\u2510","\u2514","\u2518","\u2513","\u2517","\u251b"
+};
 const int P1_NNLUE = 5;
+
+int forceCP;
+int bdcOpt = 1;
 
 bool _fl_ = 1;
 bool isFirst;
@@ -129,9 +145,8 @@ void conInit() {
 		original console screen get reserved after exit.
 		Redirect stdout to the new CSB.
 	*/
-
-	SetConsoleCP(65001);
-	SetConsoleOutputCP(65001);
+	SetConsoleCP(forceCP ? forceCP : 65001);
+	SetConsoleOutputCP(forceCP ? forceCP : 65001);
 
 	GetConsoleScreenBufferInfo(hOut, &csbi);
 	csbi.dwSize.X = max((short)80, csbi.dwSize.X);
@@ -1205,7 +1220,109 @@ void process() {
 	}
 }
 
+void processArg(int argc, char** argv) {
+	if(argc<2)
+		return;
+	bool pause=0;
+	for(int i=1; i<argc; i++) {
+		string op=argv[i];
+		if(op[0]!='-') {
+			clog<<"planefight: ignoring parameter "<<op<<endl;
+			pause=1;
+		} else if(op[1]!='-') {
+			if(op=="-v") {
+				clog<<pfVerStr<<endl;
+				exit(0);
+			} else if(op=="-cp") {
+				if(i==argc-1 || argv[i+1][0]=='-') {
+					clog<<"planefight: error: expected number after -cp option."<<endl;
+					exit(233);
+				}
+				stringstream _ss(argv[i+1]);
+				_ss>>forceCP;
+				clog<<"planefight: info: set code page "<<forceCP<<"."<<endl;
+				pause=1;
+				++i;
+			} else if(op=="-bdc") {
+				if(i==argc-1) {
+					clog<<"planefight: error: expected value after -cp option."<<endl;
+					exit(233);
+				}
+				string val = argv[i+1];
+				if(val=="full") {
+					bdcOpt = 0;
+				} else if(val=="pseudofull") {
+					bdcOpt = 1;
+				} else {
+					clog<<"planefight: error: unknown value "<<val<<" for option "<<op<<"."<<endl;
+					exit(233);
+				}
+				++i;
+			} else {
+				clog<<"planefight: unknown option "<<op<<endl;
+				pause=1;
+			}
+		} else {
+			clog<<"planefight: unknown option "<<op<<endl;
+			pause=1;
+		}
+	}
+	if(pause) {
+		clog<<"Press enter to continue...";
+		cin.get();
+	}
+}
+
+void convertCP()
+{
+	wchar_t _wbuf[65536];
+	char _buf2[65536];
+	for(int i=0; i<PF_NMARKER; i++) {
+		MultiByteToWideChar(65001, 0, marker[i].c_str(), -1, _wbuf, 65536);
+		WideCharToMultiByte(forceCP, 0, _wbuf, -1, _buf2, 65536, NULL, NULL);
+		marker[i]=_buf2;
+	}
+	for(int i=0;i<4;i++)
+	{
+		for(int j=0;j<10;j++)
+		{
+			MultiByteToWideChar(65001, 0, plShape[i][j].ch.c_str(), -1, _wbuf, 65536);
+			WideCharToMultiByte(forceCP, 0, _wbuf, -1, _buf2, 65536, NULL, NULL);
+			plShape[i][j].ch=_buf2;
+		}
+	}
+	for(int i=0;i<256;i++)
+	{
+		MultiByteToWideChar(65001, 0, mapEdge[i].c_str(), -1, _wbuf, 65536);
+		WideCharToMultiByte(forceCP, 0, _wbuf, -1, _buf2, 65536, NULL, NULL);
+		mapEdge[i]=_buf2;
+	}
+}
+
+void pfCmptAddBdcSp() {
+	for(int i=0; i<21; i++) {
+		marker[i].append(" ");
+	}
+	for(int i=0; i<18; i++) {
+		mapEdge[i].append(" ");
+	}
+	for(int i=0; i<4; i++) {
+		for(int j=0; j<10; j++) {
+			plShape[i][j].ch.append(" ");
+		}
+	}
+}
+
+void pfCompatibility() {
+	if(forceCP)
+		convertCP();
+	if(bdcOpt & 1) {
+		pfCmptAddBdcSp();
+	}
+}
+
 int main(int argc, char** argv) {
+	processArg(argc, argv);
 	srand(time(0));
 	conInit();
 	string langDir;
@@ -1224,6 +1341,7 @@ int main(int argc, char** argv) {
 		setDefaultColor_(hErr);
 		return 1;
 	}
+	pfCompatibility();
 	p0GenBg();
 	setPage(0);
 	while(_fl_) {
