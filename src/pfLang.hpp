@@ -11,7 +11,7 @@ typedef struct pfTextElem {
 	pfTextElem(string t): s(t) {}
 	pfTextElem(string t, int f): s(t), d(f) {}
 	int len() const {
-		return s.length()-d;
+		return s.length() - d;
 	}
 } pfTextElem;
 pfTextElem operator+(const pfTextElem &, const pfTextElem &);
