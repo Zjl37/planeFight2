@@ -42,6 +42,7 @@ int bdcOpt = 1;
 
 bool _fl_ = 1;
 bool isFirst;
+int prevPage;
 int page,tab[16],nue,turn;
 DWORD nEvents;
 HANDLE hIn,hOut,hOutOrg,hErr;
@@ -396,6 +397,7 @@ void uptCursorState() {
 }
 
 void setPage(int x) {
+	prevPage = page;
 	if(x==2) {
 		memset(tab,0,sizeof tab);
 		isFirst=rand()&1;
@@ -596,14 +598,6 @@ void p1Play2() {
 	refreshPage();
 }
 
-void p2Tab0() {
-	tab[0]=0;
-	refreshPage();
-}
-void p2Tab1() {
-	tab[0]=1;
-	refreshPage();
-}
 void p2Start() {
 	turn=1;
 	banner(text[36],winr.Bottom/3,white,pink);
@@ -917,9 +911,9 @@ void buildUiElem() {
 			ue[2].clickFunc=p2Giveup;
 		}
 		ue[3]=pfLabel(text[22],3,8+curGame.h,white,darkGreen,black,green,false);
-		ue[3].clickFunc=p2Tab0;
+		ue[3].clickFunc=[] { tab[0]=0; refreshPage(); };
 		ue[4]=pfLabel(text[23],ue[3].x+text[22].len()+2,8+curGame.h,white,darkGreen,black,green,false);
-		ue[4].clickFunc=p2Tab1;
+		ue[4].clickFunc=[] { tab[0]=1; refreshPage(); };
 		ue[5]=pfLabel(); // reserved for [Preferences] tab
 		if(tab[0]>=0 && tab[0]<=2)
 			ue[3+tab[0]].fgc=black, ue[3+tab[0]].bgc=green;
@@ -973,7 +967,7 @@ void buildUiElem() {
 			tmp<<curGame.h<<"*"<<curGame.w;
 			if(curGame.d>0)
 				ue[13]=pfLabel(text[90]+tmp.str(),4,16+curGame.h,black,yellow,black,darkYellow,false),
-				ue[13].clickFunc=[] { tab[15]=page; setPage(4); };
+				ue[13].clickFunc=[] { setPage(4); };
 			else
 				ue[13]=pfLabel(text[90]+tmp.str(),4,16+curGame.h,dfc,dbc,grey,black,false);
 			nue=13;
@@ -986,7 +980,7 @@ void buildUiElem() {
 		ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back
 		ue[2].clickFunc=[] {
 			bf1.resize(curGame.w,curGame.h), bf2.resize(curGame.w,curGame.h), bf3.resize(curGame.w,curGame.h);
-			setPage(tab[15]);
+			setPage(prevPage);
 		};
 		tmp.str("");
 		tmp<<curGame.h<<"*"<<curGame.w;
@@ -1068,7 +1062,7 @@ void buildUiElem() {
 		tmp.str("");
 		tmp<<curGame.h<<"*"<<curGame.w;
 		ue[11]=pfLabel(text[90]+tmp.str(),4,15,black,yellow,black,darkYellow,false),
-		ue[11].clickFunc=[] { tab[15]=page; setPage(4); };
+		ue[11].clickFunc=[] { setPage(4); };
 		nue=11;
 	} else if(page==42) {
 		ue[2]=pfLabel(text[11],0,1,black,yellow,black,darkYellow,false); // back
