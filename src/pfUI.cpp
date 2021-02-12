@@ -68,14 +68,16 @@ void banner(const pfTextElem &msg, short h, short fgc, short bgc) {
 	setDefaultColor();
 }
 
-void pfLabel::draw() {
+void pfLabel::draw(bool selected) {
 	if(!~x || !~y) return;
-	setColor(fgc, bgc);
+	SetConsoleTextAttribute(hOut, fgc | (bgc << 4));
 	if(w) {
 		gotoXY(x, y - 1), cout << setw(t.len()) << "";
 		gotoXY(x, y + 1), cout << setw(t.len()) << "";
 	}
+	SetConsoleTextAttribute(hOut, fgc | (bgc << 4) | (selected ? COMMON_LVB_REVERSE_VIDEO : 0));
 	gotoXY(x, y), cout << t.s;
+	SetConsoleTextAttribute(hOut, fgc | (bgc << 4));
 }
 
 void pfLabel::_click() {

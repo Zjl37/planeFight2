@@ -107,7 +107,9 @@ const vector<pfLfIdx> idx{
 	{ 89, "game_init", "button_switch" },
 	{ 90, "game", "msg_map_size" },
 	{ 91, "game", "wait_ready1" },
-	{ 92, "main", "exit0" }
+	{ 92, "main", "exit0" },
+	{ 93, "game", "shoot_msg" },
+	{ 94, "game_init", "place_msg" },
 };
 
 void pfLangRead(const char Lang[]) {

@@ -43,14 +43,18 @@ int bdcOpt = 1;
 
 bool _fl_ = 1;
 bool isFirst;
+int focus;
 int prevPage;
 int page, tab[16], nue, turn;
+int inCoordX, inCoordY, inCoordState;
+
 DWORD nEvents;
 HANDLE hIn, hOut, hOutOrg, hErr;
 SMALL_RECT winr = { 0, 0, 80, 30 };
 INPUT_RECORD rec;
 CONSOLE_CURSOR_INFO cci;
 CONSOLE_SCREEN_BUFFER_INFO csbi;
+
 pfLabel ue[128];
 pfTextElem playername, enemyname, errMsg;
 pfGameInfo curGame;
@@ -223,7 +227,7 @@ bool pfCheckMsg(const char *msg, const char *i) {
 }
 bool pfServerInit() {
 	setDefaultColor(), clear();
-	ue[0].draw();
+	ue[0].draw(0);
 	if(WSAStartup(MAKEWORD(2, 2), &wsaData)) {
 		showErrorMsg(text[52], 1);
 		return false;
@@ -404,6 +408,7 @@ void uptCursorState() {
 
 void setPage(int x) {
 	prevPage = page;
+	focus = 0;
 	if(x == 2) {
 		memset(tab, 0, sizeof tab);
 		isFirst = rand() & 1;
@@ -446,7 +451,7 @@ void setPage(int x) {
 	refreshPage();
 }
 
-void printcoord(short ax, short ay) {
+void BlinkCoord(short ax, short ay) {
 	stringstream tmp1("");
 	if(isMyTurn())
 		tmp1 << ">>>>  ";
@@ -548,11 +553,16 @@ void drawBF(bool showBf2) {
 }
 
 void drawUiElem() {
+	for(int i = 1; i <= nue; i++) {
+		ue[i].draw(focus == i);
+	}
+}
+
+void drawUi() {
 	setDefaultColor(), clear();
 	if(page == 0 || page == 1)
 		bg.draw(false);
-	for(int i = 1; i <= nue; i++)
-		ue[i].draw();
+	drawUiElem();
 	if(page & 0x80000000) {
 		banner(errMsg, winr.Bottom / 3, white, red);
 		return;
@@ -708,6 +718,20 @@ void p2Giveup() {
 	setPage(1);
 }
 
+void P2PlacePlane(short x, short y) {
+	setDefaultColor();
+	clearR(0, 7 + curGame.h, winr.Right, 7 + curGame.h);
+	if(bf1.placeplane(x, y, tab[1], curGame.cw)) {
+		++p2npl;
+		if(p2npl == curGame.n)
+			refreshPage(); // so that the play button will appear
+	} else {
+		setColor(red, black);
+		gotoXY(2, 7 + curGame.h), cout << text[curGame.cw ? 27 : 28].s;
+	}
+	drawBF(false);
+}
+
 void p10Surrender() {
 	p10srd = 1;
 	if(curGame.d <= 0) {
@@ -716,6 +740,62 @@ void p10Surrender() {
 		pfExchangeMap();
 	}
 	setPage(19);
+}
+
+void PrintInCoord() {
+	int stx = page == 10 ? bf2.x : bf1.x;
+	int sty = page == 10 ? bf2.y + bf2.h + 2 : bf1.y + bf1.h + 2;
+	setColor(white, black);
+	gotoXY(stx, sty);
+	if(inCoordState >= 1) {
+		cout << "> " << inCoordX;
+	}
+	if(inCoordState == 2) {
+		cout << ", " << inCoordY;
+		if(page == 10) {
+			gotoXY(stx, sty + 1);
+			cout << text[93].s << endl;
+		} else {
+			cout << " < " << text[94].s << endl;
+		}
+	}
+	cout << setw(winr.Right - getX()) << setfill(' ') << " " << endl;
+}
+
+void CoordInput(int digit) {
+	if(inCoordState == 0) {
+		if(digit >= curGame.w)
+			return;
+		inCoordState = 1;
+		inCoordX = digit;
+	} else if(inCoordState == 1) {
+		if(inCoordX * 10 + digit >= curGame.w) {
+			inCoordY = digit;
+			inCoordState = 2;
+		} else {
+			inCoordX = inCoordX * 10 + digit;
+		}
+	} else if(inCoordState == 2 && inCoordY * 10 + digit < curGame.h) {
+		inCoordY = inCoordY * 10 + digit;
+	}
+	PrintInCoord();
+}
+
+void CoordBackspace() {
+	if(inCoordState == 2) {
+		if(inCoordY > 9) {
+			inCoordY /= 10;
+		} else {
+			--inCoordState;
+		}
+	} else if(inCoordState == 1) {
+		if(inCoordX > 9) {
+			inCoordX /= 10;
+		} else {
+			--inCoordState;
+		}
+	}
+	PrintInCoord();
 }
 
 short attackL(int x, int y, vector<short> &pl, vector<short> &mk) {
@@ -781,7 +861,7 @@ void showAttackMsg(short res) {
 	refreshPage();
 }
 
-void attack(short x, short y) {
+void Attack(short x, short y) {
 	short res;
 	if(curGame.d > 0)
 		res = attackL(x, y, bf2.pl, bf3.mk);
@@ -789,7 +869,7 @@ void attack(short x, short y) {
 		res = attackR(x, y);
 	if(res < 0 || res > 2) return;
 	drawBF(false);
-	printcoord(x, y);
+	BlinkCoord(x, y);
 	showAttackMsg(res);
 	if(res == 2) {
 		++p10des2;
@@ -842,7 +922,7 @@ void p10EnemyTurn() {
 			return;
 		}
 	}
-	printcoord(ax, ay);
+	BlinkCoord(ax, ay);
 	bf1.draw(false);
 	showAttackMsg(res);
 	if(res == 2) {
@@ -1113,7 +1193,7 @@ void refreshPage() {
 	uptCursorState();
 	if(winr.Right < 70 || winr.Bottom < 28) return;
 	buildUiElem();
-	drawUiElem();
+	drawUi();
 }
 
 void pop_back_utf8(string &s) {
@@ -1148,17 +1228,7 @@ void processMouseClick() {
 			drawPark();
 		}
 		if(mx >= bf1.x && mx < bf1.x + bf1.w * 2 && my >= bf1.y && my < bf1.y + bf1.h && p2npl < curGame.n && !p2isP1Ready) {
-			setDefaultColor();
-			clearR(0, 7 + curGame.h, winr.Right, 7 + curGame.h);
-			if(bf1.placeplane((mx - bf1.x) >> 1, my - bf1.y, tab[1], curGame.cw)) {
-				++p2npl;
-				if(p2npl == curGame.n)
-					refreshPage(); // so that the play button will appear
-			} else {
-				setColor(red, black);
-				gotoXY(2, 7 + curGame.h), cout << text[curGame.cw ? 27 : 28].s;
-			}
-			drawBF(false);
+			P2PlacePlane((mx - bf1.x) >> 1, my - bf1.y);
 		}
 	} else if(page == 4) {
 		int nx = (mx - bf1.x) / 2, ny = my - bf1.y;
@@ -1171,7 +1241,7 @@ void processMouseClick() {
 	} else if(page == 10) {
 		if(mx >= bf2.x && mx < bf2.x + bf2.w * 2 && my >= bf2.y && my < bf2.y + bf2.h) {
 			if(tab[0] == 0 && isMyTurn() && bf3.mk[(mx - bf2.x) / 2 + (my - bf2.y) * bf3.w] == black) {
-				attack((mx - bf2.x) / 2, my - bf2.y);
+				Attack((mx - bf2.x) / 2, my - bf2.y);
 			} else if(tab[0] == 1) {
 				bf3.ch[(mx - bf2.x) / 2 + (my - bf2.y) * bf3.w] = marker[tab[1]];
 				drawBF(false);
@@ -1205,7 +1275,22 @@ void process() {
 			}
 		}
 	} else if(isKeyEvent && rec.Event.KeyEvent.bKeyDown) {
-		if(page == 0) {
+		if(vkCode == VK_TAB) {
+			if(rec.Event.KeyEvent.dwControlKeyState & SHIFT_PRESSED) {
+				--focus;
+				if(focus < 0)
+					focus = nue;
+			} else {
+				++focus;
+				if(focus > nue)
+					focus = 0;
+			}
+			drawUiElem();
+		} else if(vkCode == VK_SPACE) {
+			if(ue[focus].clickFunc) {
+				ue[focus]._click();
+			}
+		} else if(page == 0) {
 			bool uptName = 0;
 			if(vkCode == VK_RETURN) {
 				ue[3]._click();
@@ -1226,6 +1311,34 @@ void process() {
 				gotoXY(2, 8);
 				cout << text[6].s << playername.s;
 				playername.d = playername.s.length() - (getX() - (2 + text[6].len()) + (getY() - 8) * winr.Right);
+			}
+		} else if(page == 2) {
+			wchar_t ch = rec.Event.KeyEvent.uChar.UnicodeChar;
+			if(tab[0] == 0) {
+				if(vkCode == VK_RETURN) {
+					if(inCoordState == 2) {
+						inCoordState = 0;
+						P2PlacePlane(inCoordX, inCoordY);
+					}
+				} else if(vkCode == VK_BACK) {
+					CoordBackspace();
+				} else if(ch >= L'0' && ch <= L'9') {
+					CoordInput(ch - '0');
+				}
+			}
+		} else if(page == 10) {
+			wchar_t ch = rec.Event.KeyEvent.uChar.UnicodeChar;
+			if(tab[0] == 0) {
+				if(vkCode == VK_RETURN) {
+					if(inCoordState == 2) {
+						inCoordState = 0;
+						Attack(inCoordX, inCoordY);
+					}
+				} else if(vkCode == VK_BACK) {
+					CoordBackspace();
+				} else if(ch >= L'0' && ch <= L'9') {
+					CoordInput(ch - '0');
+				}
 			}
 		} else if(page == 51) {
 			if(vkCode == VK_RETURN) {
