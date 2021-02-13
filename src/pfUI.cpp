@@ -6,7 +6,7 @@ extern HANDLE hIn, hOut;
 extern SMALL_RECT winr;
 extern CONSOLE_CURSOR_INFO cci;
 extern CONSOLE_SCREEN_BUFFER_INFO csbi;
-extern string mapEdge[256];
+extern string mapEdge[];
 
 short getX_(HANDLE hStdout) {
 	GetConsoleScreenBufferInfo(hStdout, &csbi);
@@ -112,35 +112,35 @@ void box(short x, short y, short w, short h, short edge) {
 			gotoXY(i, y - 1), cout << mapEdge[1];
 			gotoXY(i, y + h), cout << mapEdge[1];
 		} else if(edge == 2) {
-			gotoXY(i, y - 1), cout << mapEdge[6];
-			gotoXY(i, y + h), cout << mapEdge[6];
+			gotoXY(i, y - 1), cout << mapEdge[2];
+			gotoXY(i, y + h), cout << mapEdge[2];
 		}
 	for(int j = y; j < y + h; j++)
 		if(edge == 0) {
-			gotoXY(x - 2, j), cout << mapEdge[2];
-			gotoXY(x + w, j), cout << mapEdge[2];
-		} else if(edge == 1) {
 			gotoXY(x - 2, j), cout << mapEdge[3];
 			gotoXY(x + w, j), cout << mapEdge[3];
+		} else if(edge == 1) {
+			gotoXY(x - 2, j), cout << mapEdge[4];
+			gotoXY(x + w, j), cout << mapEdge[4];
 		} else if(edge == 2) {
-			gotoXY(x - 2, j), cout << mapEdge[7];
-			gotoXY(x + w, j), cout << mapEdge[7];
+			gotoXY(x - 2, j), cout << mapEdge[5];
+			gotoXY(x + w, j), cout << mapEdge[5];
 		}
 	if(edge == 0) {
-		gotoXY(x - 2, y - 1), cout << mapEdge[4];
-		gotoXY(x + w, y - 1), cout << mapEdge[12];
-		gotoXY(x - 2, y + h), cout << mapEdge[13];
-		gotoXY(x + w, y + h), cout << mapEdge[14];
+		gotoXY(x - 2, y - 1), cout << mapEdge[6];
+		gotoXY(x + w, y - 1), cout << mapEdge[9];
+		gotoXY(x - 2, y + h), cout << mapEdge[12];
+		gotoXY(x + w, y + h), cout << mapEdge[15];
 	} else if(edge == 1) {
-		gotoXY(x - 2, y - 1), cout << mapEdge[5];
-		gotoXY(x + w, y - 1), cout << mapEdge[15];
-		gotoXY(x - 2, y + h), cout << mapEdge[16];
-		gotoXY(x + w, y + h), cout << mapEdge[17];
+		gotoXY(x - 2, y - 1), cout << mapEdge[7];
+		gotoXY(x + w, y - 1), cout << mapEdge[10];
+		gotoXY(x - 2, y + h), cout << mapEdge[13];
+		gotoXY(x + w, y + h), cout << mapEdge[16];
 	} else if(edge == 2) {
 		gotoXY(x - 2, y - 1), cout << mapEdge[8];
-		gotoXY(x + w, y - 1), cout << mapEdge[9];
-		gotoXY(x - 2, y + h), cout << mapEdge[10];
-		gotoXY(x + w, y + h), cout << mapEdge[11];
+		gotoXY(x + w, y - 1), cout << mapEdge[11];
+		gotoXY(x - 2, y + h), cout << mapEdge[14];
+		gotoXY(x + w, y + h), cout << mapEdge[17];
 	}
 }
 

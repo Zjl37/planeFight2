@@ -17,25 +17,27 @@ using namespace std;
 const int PF_NMARKER = 23;
 
 string marker[PF_NMARKER] = {
-	"\u2501", "\u2503", "\u254b", "\u2523", "\u252b", "\u2533", "\u253b",
-	"\u2500", "\u2502", "\u253c", "\u251c", "\u2524", "\u252c", "\u2534",
-	"\u2550", "\u2551", "\u256c", "\u2560", "\u2563", "\u2566", "\u2569",
-	"\uff1f", "\uff01"
+	"━", "┃", "╋", "┣", "┫", "┳", "┻",
+	"─", "│", "┼", "├", "┤", "┬", "┴",
+	"═", "║", "╬", "╠", "╣", "╦", "╩",
+	"？", "！"
 };
 struct pfRePosCh {
 	short dx, dy;
 	string ch;
 } plShape[4][10] = {
-	{ { 0, 0, "\u2503" }, { -2, 1, "\u2501" }, { -1, 1, "\u2501" }, { 0, 1, "\u254b" }, { 1, 1, "\u2501" }, { 2, 1, "\u2501" }, { 0, 2, "\u2503" }, { -1, 3, "\u2501" }, { 0, 3, "\u253b" }, { 1, 3, "\u2501" } },
-	{ { -3, -1, "\u2503" }, { -3, 0, "\u2523" }, { -3, 1, "\u2503" }, { -2, 0, "\u2501" }, { -1, -2, "\u2503" }, { -1, -1, "\u2503" }, { -1, 0, "\u254b" }, { -1, 1, "\u2503" }, { -1, 2, "\u2503" }, { 0, 0, "\u2501" } },
-	{ { -1, -3, "\u2501" }, { 0, -3, "\u2533" }, { 1, -3, "\u2501" }, { 0, -2, "\u2503" }, { -2, -1, "\u2501" }, { -1, -1, "\u2501" }, { 0, -1, "\u254b" }, { 1, -1, "\u2501" }, { 2, -1, "\u2501" }, { 0, 0, "\u2503" } },
-	{ { 3, -1, "\u2503" }, { 3, 0, "\u252b" }, { 3, 1, "\u2503" }, { 2, 0, "\u2501" }, { 1, -2, "\u2503" }, { 1, -1, "\u2503" }, { 1, 0, "\u254b" }, { 1, 1, "\u2503" }, { 1, 2, "\u2503" }, { 0, 0, "\u2501" } }
+	{ { 0, 0, "┃" }, { -2, 1, "━" }, { -1, 1, "━" }, { 0, 1, "╋" }, { 1, 1, "━" }, { 2, 1, "━" }, { 0, 2, "┃" }, { -1, 3, "━" }, { 0, 3, "┻" }, { 1, 3, "━" } },
+	{ { -3, -1, "┃" }, { -3, 0, "┣" }, { -3, 1, "┃" }, { -2, 0, "━" }, { -1, -2, "┃" }, { -1, -1, "┃" }, { -1, 0, "╋" }, { -1, 1, "┃" }, { -1, 2, "┃" }, { 0, 0, "━" } },
+	{ { -1, -3, "━" }, { 0, -3, "┳" }, { 1, -3, "━" }, { 0, -2, "┃" }, { -2, -1, "━" }, { -1, -1, "━" }, { 0, -1, "╋" }, { 1, -1, "━" }, { 2, -1, "━" }, { 0, 0, "┃" } },
+	{ { 3, -1, "┃" }, { 3, 0, "┫" }, { 3, 1, "┃" }, { 2, 0, "━" }, { 1, -2, "┃" }, { 1, -1, "┃" }, { 1, 0, "╋" }, { 1, 1, "┃" }, { 1, 2, "┃" }, { 0, 0, "━" } }
 };
-string mapEdge[256] = {
-	"\u2500", "\u2501", "\u2502", "\u2503", "\u250c", "\u250f",
-	"\u2550", "\u2551", "\u2554", "\u2557", "\u255a", "\u255d",
-	"\u2510", "\u2514", "\u2518", "\u2513", "\u2517", "\u251b"
+// clang-format off
+string mapEdge[18] = {
+	"─", "━", "═", "│", "┃", "║", 
+	"┌", "┏", "╔", "┐", "┓", "╗", 
+	"└", "┗", "╚", "┘", "┛", "╝",
 };
+// clang-format on
 const int P1_NNLUE = 5;
 
 int forceCP;
@@ -505,25 +507,26 @@ void drawPark() {
 		setColor(black, aqua);
 	else
 		setColor(black, white);
-	clearR(4, 10 + curGame.h, 17, 16 + curGame.h);
+	int widthBias = bdcOpt == 2 ? -1 : 0;
+	clearR(4, 10 + curGame.h, 17 + widthBias, 16 + curGame.h);
 	drawPlane(10, 12 + curGame.h, 0, false);
 	if(tab[1] == 1)
 		setColor(black, aqua);
 	else
 		setColor(black, white);
-	clearR(20, 10 + curGame.h, 33, 16 + curGame.h);
+	clearR(20, 10 + curGame.h, 33 + widthBias, 16 + curGame.h);
 	drawPlane(28, 13 + curGame.h, 1, false);
 	if(tab[1] == 2)
 		setColor(black, aqua);
 	else
 		setColor(black, white);
-	clearR(36, 10 + curGame.h, 49, 16 + curGame.h);
+	clearR(36, 10 + curGame.h, 49 + widthBias, 16 + curGame.h);
 	drawPlane(42, 14 + curGame.h, 2, false);
 	if(tab[1] == 3)
 		setColor(black, aqua);
 	else
 		setColor(black, white);
-	clearR(52, 10 + curGame.h, 65, 16 + curGame.h);
+	clearR(52, 10 + curGame.h, 65 + widthBias, 16 + curGame.h);
 	drawPlane(56, 13 + curGame.h, 3, false);
 }
 
@@ -536,8 +539,8 @@ void drawBF(bool showBf2) {
 	for(int i = 0; i < curGame.w; i++) {
 		int j = i;
 		while(j && j % 10 == 0) j /= 10;
-		gotoXY(bf1.x + i * 2, bf1.y - 2), cout << setw(2) << j % 10;
-		gotoXY(bf2.x + i * 2, bf2.y - 2), cout << setw(2) << j % 10;
+		gotoXY(bf1.x + i * 2 - 1, bf1.y - 2), cout << setw(2) << j % 10;
+		gotoXY(bf2.x + i * 2 - 1, bf2.y - 2), cout << setw(2) << j % 10;
 	}
 	for(int i = 0; i < curGame.h; i++) {
 		gotoXY(bf1.x - 4, bf1.y + i), cout << i;
@@ -1394,6 +1397,8 @@ void processArg(int argc, char **argv) {
 					bdcOpt = 0;
 				} else if(val == "pseudofull") {
 					bdcOpt = 1;
+				} else if(val == "half") {
+					bdcOpt = 2;
 				} else {
 					clog << "planefight: error: unknown value " << val << " for option " << op << "." << endl;
 					exit(233);
@@ -1450,10 +1455,30 @@ void pfCmptAddBdcSp() {
 	}
 }
 
+void pfCmptBdcHalf() {
+	pfRePosCh _plShape[4][10] = {
+		{ { 0, 0, "┃ " }, { -2, 1, "━━" }, { -1, 1, "━━" }, { 0, 1, "╋━" }, { 1, 1, "━━" }, { 2, 1, "━ " }, { 0, 2, "┃ " }, { -1, 3, "━━" }, { 0, 3, "┻━" }, { 1, 3, "━" } },
+		{ { -3, -1, "┃ " }, { -3, 0, "┣━" }, { -3, 1, "┃ " }, { -2, 0, "━━" }, { -1, -2, "┃ " }, { -1, -1, "┃ " }, { -1, 0, "╋━" }, { -1, 1, "┃ " }, { -1, 2, "┃ " }, { 0, 0, "━ " } },
+		{ { -1, -3, "━━" }, { 0, -3, "┳━" }, { 1, -3, "━ " }, { 0, -2, "┃ " }, { -2, -1, "━━" }, { -1, -1, "━━" }, { 0, -1, "╋━" }, { 1, -1, "━━" }, { 2, -1, "━ " }, { 0, 0, "┃ " } },
+		{ { 3, -1, "┃ " }, { 3, 0, "┫ " }, { 3, 1, "┃ " }, { 2, 0, "━━" }, { 1, -2, "┃ " }, { 1, -1, "┃ " }, { 1, 0, "╋━" }, { 1, 1, "┃ " }, { 1, 2, "┃ " }, { 0, 0, "━━" } }
+	};
+	copy(&_plShape[0][0], &_plShape[0][0] + 40, &plShape[0][0]);
+	// clang-format off
+	string _mapEdge[18] = {
+		"──", "━━", "══", "│ ", "┃" , "║ ", 
+		"┌─", "┏━", "╔═", "┐ ", "┓ ", "╗ ", 
+		"└─", "┗━", "╚═", "┘ ", "┛ ", "╝ ",
+	};
+	// clang-format on
+	copy(_mapEdge, _mapEdge + 18, mapEdge);
+}
+
 void pfCompatibility() {
 	if(forceCP)
 		convertCP();
-	if(bdcOpt & 1) {
+	if(bdcOpt & 2) {
+		pfCmptBdcHalf();
+	} else if(bdcOpt & 1) {
 		pfCmptAddBdcSp();
 	}
 }
