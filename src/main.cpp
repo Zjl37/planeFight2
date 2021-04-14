@@ -19,8 +19,8 @@ using namespace std;
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
 #endif
 
-#define pfVersion "2.3"
-#define pfVerStr "planefight 2.3"
+#define pfVersion "2.3 win7 compatible special version"
+#define pfVerStr "planefight 2.3 win7 compatible special version"
 
 const int PF_NMARKER = 23;
 
