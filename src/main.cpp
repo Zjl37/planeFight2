@@ -11,6 +11,14 @@
 
 using namespace std;
 
+#ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
+#define ENABLE_VIRTUAL_TERMINAL_INPUT 0x0200
+#endif
+
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#endif
+
 #define pfVersion "2.3"
 #define pfVerStr "planefight 2.3"
 
@@ -134,8 +142,30 @@ void conInit() {
 		original console screen get reserved after exit.
 		Redirect stdout to the new CSB.
 	*/
-	SetConsoleCP(forceCP ? forceCP : 65001);
-	SetConsoleOutputCP(forceCP ? forceCP : 65001);
+	DWORD mode;
+	GetConsoleMode(hIn,&mode);
+	mode |= ENABLE_PROCESSED_INPUT;
+	mode |= ENABLE_MOUSE_INPUT;
+	mode |= ENABLE_QUICK_EDIT_MODE;
+	mode -= ENABLE_QUICK_EDIT_MODE;
+	mode |= ENABLE_WINDOW_INPUT;
+	SetConsoleMode(hIn, mode);
+
+	// detect legacy console
+	GetConsoleMode(hOut, &mode);
+	mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	if(!SetConsoleMode(hOut, mode)) {
+		cout << "[WARNING] You are using legacy console, planeFight will be running in compatibility mode." << endl;
+		cout << "    If you're using Windows version lower than 10, we recommend you upgrade to the latest version of Windows 10 to get the best experience, otherwise, check if legacy console is enabled." << endl;
+		cout << "Press enter to continue...";
+		cin.get();
+
+		forceCP = GetConsoleOutputCP();
+		bdcOpt = 0;
+	} else {
+		SetConsoleCP(forceCP ? forceCP : 65001);
+		SetConsoleOutputCP(forceCP ? forceCP : 65001);
+	}
 
 	GetConsoleScreenBufferInfo(hOut, &csbi);
 	csbi.dwSize.X = max((short)80, csbi.dwSize.X);
@@ -147,15 +177,6 @@ void conInit() {
 		SetConsoleWindowInfo(hOut, true, &csbi.srWindow);
 	}
 	winr=csbi.srWindow;
-
-	DWORD mode;
-	GetConsoleMode(hIn,&mode);
-	mode |= ENABLE_PROCESSED_INPUT;
-	mode |= ENABLE_MOUSE_INPUT;
-	mode |= ENABLE_QUICK_EDIT_MODE;
-	mode -= ENABLE_QUICK_EDIT_MODE;
-	mode |= ENABLE_WINDOW_INPUT;
-	SetConsoleMode(hIn,mode);
 }
 
 int pfCheckVer(const string &s) {
@@ -1317,6 +1338,8 @@ int main(int argc, char** argv) {
 	processArg(argc, argv);
 	srand(time(0));
 	conInit();
+	pfCompatibility();
+
 	string langDir;
 	{
 		char buf[65536];
@@ -1333,7 +1356,6 @@ int main(int argc, char** argv) {
 		setDefaultColor_(hErr);
 		return 1;
 	}
-	pfCompatibility();
 	p0GenBg();
 	setPage(0);
 	while(_fl_) {
