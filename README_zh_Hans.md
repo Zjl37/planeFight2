@@ -1,56 +1,16 @@
-****![planeFight introduction image](https://i.loli.net/2020/08/29/GsaIE34g5zuV7BX.png)
+![planeFight introduction image](https://i.loli.net/2020/08/29/GsaIE34g5zuV7BX.png)
 
 [English](README.md) | 简体中文
 
-## 游戏介绍
-
-这是一个益智的双人回合制纸上小游戏，目标是判断出对方所有的“飞机”的摆放位置并将其击毁。
-
-### 基本规则
-
-一局普通的游戏规则如下：
-
-每个人的“战场”是一个 10x10 的地图，对对方不可见，上面要放 3 架飞机。飞机是指以下的 4x5 像素图案，可以朝任意四个方向：
-
-![what is a plane image](https://i.loli.net/2020/08/29/WdzxaIkBpTghqSn.png)
-
-如上图，用红叉标出的格子叫做**飞机头**。飞机不能重叠，也不能摆放在边界外。下图显示一种合法的摆放：
-
-![valid bf example](https://i.loli.net/2020/08/29/YMQgi6EomTcNJdx.png)
-
-当双方都准备完成时游戏开始。每回合一位玩家报一个坐标，表示攻击对方战场的这个位置。对方必须且只能回复“空”“中”“击毁”中的一种，分别表示该坐标所对应位置 _没有飞机_ / _有飞机但不是头_ / _是飞机头_。双方交替进行攻击。
-
-一架飞机的头如果被打中，则称这架飞机被击毁。率先击毁对方三架飞机的玩家获胜。显然，玩家得记录下对方战场的信息来做出准确的判断。
-
-### 更多规则
-
-- 贪吃蛇模式
-
-	当此选项启用时，飞机可以跨越边界放置，溢出的部分就显示在地图另一边。像这样：
-
-	![valid bf cw example](https://i.loli.net/2020/08/29/RSfxZ1MNETDyFva.png)
-
-- 飞机数量
-
-	一般在 10x10 战场上用 2~5.
-
-- 地图大小
-
-- 完全摧毁
-
-	当此选项未启用时，攻击已击毁的飞机，返回的是“中”，否则返回的是“空”。
-
-### 游戏起源
-
-这个游戏是 _浙江省温州市实验中学_ 的学生发明的，被（同学们）誉为“实验中学三大文化”之一。
-
-虽然我不是实验中学的学生，但是我很幸运能在高中见证到其文化传播过程。于是我尽我所能，写了个 C++ 控制台游戏放到了 Github 上。
+**关于游戏规则的介绍，请前往 [Wiki 页面](https://github.com/Zjl37/planeFight2/wiki/%E6%B8%B8%E6%88%8F%E4%BB%8B%E7%BB%8D)查看。**
 
 ## PlaneFight 控制台程序
 
-PlaneFight 基于 Windows 控制台，用 C++ 语言编写，是对上面介绍的游戏的实现。其交互方式简单，支持鼠标点击操作（用到了**read console input**）。可以“人机对战”，也可以“远程联机”。实现通信功能的时候用到了**Winsock**.
+PlaneFight 是用 C++ 编写控制台游戏的综合实践。这也是我的 github 入门项目。
 
-这也是我的 github 入门项目。
+目前，planeFight 基于 Windows 控制台。高度依赖 **Win32 API** 来实现鼠标交互等功能，通过 **Winsock** 实现了联机游戏。
+
+未来我们打算通过 VT sequence 等技术让它变得跨平台，但这任重道远。
 
 ## 开始游戏
 
@@ -60,15 +20,13 @@ PlaneFight 基于 Windows 控制台，用 C++ 语言编写，是对上面介绍�
 
 	g++ src/main.cpp src/pfUI.cpp src/pfLang.cpp src/pfAI.cpp -DUNICODE -o planeFight.exe -static -lwsock32
 
-### 注意
-
 为确保最佳游戏体验， 
+
+- 建议在最新版本的 Windows 10 上运行。本程序将不会支持[旧版控制台](https://go.microsoft.com/fwlink/?LinkId=871150)。
 
 - 一定要在 Windows 默认的控制台窗口（conhost）里运行，不要在 IDE 或编辑器的集成控制台中运行，不然程序收不到鼠标事件。
 
 - 建议在控制台中使用 [制表符](https://unicode-table.com/cn/blocks/box-drawing/)与汉字同宽 的等宽字体。对于简体中文用户来说，你的控制台字体一般就是新宋体，所以无需注意这点。
-
-- 建议在最新版本的 Windows 10 上运行。本程序目前只支持[新版控制台](https://go.microsoft.com/fwlink/?LinkId=507549)，在[旧版控制台](https://go.microsoft.com/fwlink/?LinkId=871150)中会乱码。
 
 ## 贡献
 
@@ -77,7 +35,3 @@ PlaneFight 基于 Windows 控制台，用 C++ 语言编写，是对上面介绍�
 - 翻译游戏和所有文档。
 
 - 写个 AI 服务器？
-
-## 计划
-
-参阅 [plan](plan.md).
