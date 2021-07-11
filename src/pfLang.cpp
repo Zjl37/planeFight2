@@ -170,7 +170,8 @@ bool pfLangDetect(const string &langDir) {
 			gotoXY(0, 4);
 			cout << buf1;
 			lfi.langName.s = buf1;
-			lfi.langName.d = lfi.langName.s.length() - (getY() - 4) * winr.Right - getX();
+			auto pos = getXY();
+			lfi.langName.d = lfi.langName.s.length() - (pos.second - 4) * winr.Right - pos.first;
 			lf.push_back(lfi);
 		}
 		ret = FindNextFileA(h, &ffd);
@@ -219,7 +220,8 @@ void pfLangInit(int winw) {
 		}
 		gotoXY(0, 4);
 		cout << text[i].s;
-		text[i].d = text[i].s.length() - (getY() - 4) * winw - getX();
+		auto pos = getXY();
+		text[i].d = text[i].s.length() - (pos.second - 4) * winw - pos.first;
 	}
 	SetConsoleTitleA(text[1].s.c_str());
 }

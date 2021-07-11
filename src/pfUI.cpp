@@ -2,57 +2,85 @@
 #include "pfLang.hpp"
 using namespace std;
 
-extern HANDLE hIn, hOut;
 extern SMALL_RECT winr;
-extern CONSOLE_CURSOR_INFO cci;
-extern CONSOLE_SCREEN_BUFFER_INFO csbi;
 extern string mapEdge[256];
 
-short getX_(HANDLE hStdout) {
-	GetConsoleScreenBufferInfo(hStdout, &csbi);
-	return csbi.dwCursorPosition.X;
+#define ESC "\x1b"
+
+/* IMPORTANT NOTE:
+ * WinAPI coord starts from 0, while VT coord starts from 1! Due to historical
+ * reasons, all interfaces defined below takes coords as starting from 0!
+ */
+
+// VT code: DECXCPR
+// query: ESC [ 6 n
+// answer: ESC [ <r> ; <c> R
+pair<int, int> getXY() {
+	cout << ESC "[6n";
+	char ch = 0;
+	int y, x;
+	cin >> ch >> ch >> y >> ch >> x >> ch;
+	return { x - 1, y - 1 };
 }
 
-short getY_(HANDLE hStdout) {
-	GetConsoleScreenBufferInfo(hStdout, &csbi);
-	return csbi.dwCursorPosition.Y;
+// NOTE: To get both X and Y coord at the same time, better call getXY instead of
+// calling getX then getY
+
+int getX() {
+	return getXY().first;
+}
+int getY() {
+	return getXY().second;
 }
 
-void gotoX_(short x, HANDLE hStdout) {
-	GetConsoleScreenBufferInfo(hStdout, &csbi);
-	csbi.dwCursorPosition.X = x;
-	SetConsoleCursorPosition(hStdout, csbi.dwCursorPosition);
+// VT code: CHA
+// seq: ESC [ <n> G
+void gotoX(int x) {
+	cout << ESC "[" << x+1 << "G";
 }
 
-void gotoY_(short y, HANDLE hStdout) {
-	GetConsoleScreenBufferInfo(hStdout, &csbi);
-	csbi.dwCursorPosition.Y = y;
-	SetConsoleCursorPosition(hStdout, csbi.dwCursorPosition);
+// VT code: VPA
+// seq: ESC [ <n> d
+void gotoY(int y) {
+	cout << ESC "[" << y+1 << "d";
 }
 
-void gotoXY_(short x, short y, HANDLE hStdout) {
-	GetConsoleScreenBufferInfo(hStdout, &csbi);
-	csbi.dwCursorPosition.X = x;
-	csbi.dwCursorPosition.Y = y;
-	SetConsoleCursorPosition(hStdout, csbi.dwCursorPosition);
+// VT code: CUP
+// seq: ESC [ <y> ; <x> H
+void gotoXY(int x, int y) {
+	cout << ESC "[" << y+1 << ";" << x+1 << "H";
 }
 
-void setColor_(short fgc, short bgc, HANDLE hStdout) {
-	SetConsoleTextAttribute(hStdout, fgc + (bgc << 4));
+// TODO: fully test these colors;
+const int winapiFgcToVt[17] = { 30, 34, 32, 36, 31, 35, 33, 37, 90, 94, 92, 96, 91, 95, 93, 97, 39 };
+const int winapiBgcToVt[17] = { 40, 44, 42, 46, 41, 45, 43, 47, 100, 104, 102, 106, 101, 105, 103, 107, 49 };
+
+/// VT code: SGR
+void setColor(int fgc, int bgc) {
+	cout << ESC "[" << winapiFgcToVt[fgc] << ";" << winapiBgcToVt[bgc] << "m";
+}
+
+void setDefaultColor() {
+	cout << ESC "[39;49m";
 }
 
 void clear() {
 	setDefaultColor();
-	GetConsoleScreenBufferInfo(hOut, &csbi);
-	int cnt = csbi.dwSize.X * csbi.dwSize.Y;
-	DWORD _cnt;
-	FillConsoleOutputCharacter(hOut, ' ', cnt, { 0, 0 }, &_cnt);
-	FillConsoleOutputAttribute(hOut, csbi.wAttributes, cnt, { 0, 0 }, &_cnt);
+	cout << ESC "[2J";
 }
 
-void showCursor_(bool f, HANDLE hStdout) {
-	cci.dwSize = 1, cci.bVisible = f;
-	SetConsoleCursorInfo(hStdout, &cci);
+void clearR(short l, short t, short r, short b) {
+	for(int j = t; j <= b; j++) {
+		gotoXY(l, j);
+		for(int i = l; i <= r; i++) cout << ' ';
+	}
+}
+
+// VT code: DECTCEM
+// seq for show: ESC [ ? 25 h
+// seq for hide: ESC [ ? 25 l
+void showCursor_(bool f) {
+	cout << (f ? ESC "[?25h" : ESC "[?25l");
 }
 
 void banner(const pfTextElem &msg, short h, short fgc, short bgc) {
@@ -139,14 +167,5 @@ void box(short x, short y, short w, short h, short edge) {
 		gotoXY(x + w, y - 1), cout << mapEdge[9];
 		gotoXY(x - 2, y + h), cout << mapEdge[10];
 		gotoXY(x + w, y + h), cout << mapEdge[11];
-	}
-}
-
-void clearR(short l, short t, short r, short b) {
-	for(int j = t; j <= b; j++) {
-		for(int i = l; i <= r; i++) {
-			gotoXY(i, j);
-			putchar(' ');
-		}
 	}
 }

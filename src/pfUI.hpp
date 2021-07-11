@@ -5,51 +5,53 @@
 #include <windows.h>
 #include "pfLang.hpp"
 using namespace std;
-short getX_(HANDLE);
-short getY_(HANDLE);
-void gotoX_(short, HANDLE);
-void gotoY_(short, HANDLE);
-void gotoXY_(short, short, HANDLE);
+pair<int, int> getXY();
+int getX();
+int getY();
+void gotoX(int);
+void gotoY(int);
+void gotoXY(int, int);
 
 #ifndef _ConsoleColor_
 #define _ConsoleColor_
-#define black (short)0
-#define darkBlue (short)1
-#define darkGreen (short)2
-#define darkAqua (short)3
-#define darkRed (short)4
-#define purple (short)5
-#define darkYellow (short)6
-#define lightGrey (short)7
-#define grey (short)8
-#define blue (short)9
-#define green (short)10
-#define aqua (short)11
-#define red (short)12
-#define pink (short)13
-#define yellow (short)14
-#define white (short)15
+#define black 0
+#define darkBlue 1
+#define darkGreen 2
+#define darkAqua 3
+#define darkCyan 3
+#define darkRed 4
+#define purple 5
+#define magenta 5
+#define darkYellow 6
+#define lightGrey 7
+#define grey 8
+#define blue 9
+#define green 10
+#define aqua 11
+#define cyan 11
+#define red 12
+#define pink 13
+#define brightMagenta 13
+#define yellow 14
+#define white 15
+// #define dfc lightGrey
+// #define dbc black
+#define dfc 16
+#define dbc 16
 #endif // _ConsoleColor_
 
-#define dfc lightGrey
-#define dbc black
-#define setDefaultColor_(h) setColor_(dfc, dbc, h)
-#define setDefaultColor() setColor(dfc, dbc)
+// #define setDefaultColor_(h) setColor_(dfc, dbc, h)
+// #define setDefaultColor() setColor(dfc, dbc)
 
-void setColor_(short fgc, short bgc, HANDLE hStdout);
+void setDefaultColor();
+void setColor(int fgc, int bgc);
 void clear();
-void showCursor_(bool f, HANDLE hStdout);
+void showCursor_(bool f);
 
 extern HANDLE hIn, hOut;
 
-#define getX() getX_(hOut)
-#define getY() getY_(hOut)
-#define gotoX(x) gotoX_(x, hOut)
-#define gotoY(y) gotoY_(y, hOut)
-#define gotoXY(x, y) gotoXY_(x, y, hOut)
-#define setColor(fgc, bgc) setColor_(fgc, bgc, hOut)
-#define showCursor() showCursor_(true, hOut)
-#define hideCursor() showCursor_(false, hOut)
+#define showCursor() showCursor_(true)
+#define hideCursor() showCursor_(false)
 
 void banner(const pfTextElem &, short, short, short);
 

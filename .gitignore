@@ -1,4 +1,7 @@
 
 *.exe
+*.log
+*.o
 .vscode/
 lang/test.txt
+tmp/

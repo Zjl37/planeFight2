@@ -1,5 +1,4 @@
-#include <io.h>
-#include <fcntl.h>
+#include <cstdio>
 #include <ctime>
 #include <vector>
 #include <sstream>
@@ -10,6 +9,14 @@
 #include "pfAI.hpp"
 
 using namespace std;
+
+#ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
+#define ENABLE_VIRTUAL_TERMINAL_INPUT 0x0200
+#endif
+
+#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
+#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
+#endif
 
 #define pfVersion "2.4"
 #define pfVerStr "planefight 2.4"
@@ -46,7 +53,7 @@ bool isFirst;
 int prevPage;
 int page, tab[16], nue, turn;
 DWORD nEvents;
-HANDLE hIn, hOut, hOutOrg, hErr;
+HANDLE hIn, hOut, hErr;
 SMALL_RECT winr = { 0, 0, 80, 30 };
 INPUT_RECORD rec;
 CONSOLE_CURSOR_INFO cci;
@@ -124,31 +131,34 @@ string sIP;
 
 void setPage(int);
 
-void conSetMode() {
+void conInit() {
+	hIn = GetStdHandle(STD_INPUT_HANDLE);
+	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
+	hErr = GetStdHandle(STD_ERROR_HANDLE);
+	
+	SetConsoleCP(forceCP ? forceCP : 65001);
+	SetConsoleOutputCP(forceCP ? forceCP : 65001);
+
 	DWORD mode;
+	// detect legacy console
+	GetConsoleMode(hOut, &mode);
+	mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+	if(!SetConsoleMode(hOut, mode)) {
+		cout << "[ERROR] You are using legacy console, planeFight won't be able to run." << endl;
+		cout << "    We recommend that you upgrade to the latest version of Windows 10, or if you're already using one, check if legacy console is enabled." << endl;
+		exit(1);
+	}
+
 	GetConsoleMode(hIn, &mode);
 	mode |= ENABLE_PROCESSED_INPUT;
 	mode |= ENABLE_MOUSE_INPUT;
-	mode |= ENABLE_QUICK_EDIT_MODE;
-	mode -= ENABLE_QUICK_EDIT_MODE;
+	mode &= ~ENABLE_QUICK_EDIT_MODE;
 	mode |= ENABLE_WINDOW_INPUT;
+	mode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
+	mode &= ~ENABLE_LINE_INPUT;
+	mode &= ~ENABLE_ECHO_INPUT;
 	SetConsoleMode(hIn, mode);
-}
 
-void conInit() {
-	hIn = GetStdHandle(STD_INPUT_HANDLE);
-	hOutOrg = GetStdHandle(STD_OUTPUT_HANDLE);
-	hErr = GetStdHandle(STD_ERROR_HANDLE);
-	hOut = CreateConsoleScreenBuffer(GENERIC_WRITE | GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, NULL, CONSOLE_TEXTMODE_BUFFER, NULL);
-	SetStdHandle(STD_OUTPUT_HANDLE, hOut);
-	SetConsoleActiveScreenBuffer(hOut);
-	fclose(stdout);
-	*stdout = *_fdopen(_open_osfhandle((intptr_t)hOut, _O_APPEND), "w");
-	/*
-		Create a new CSB for this program so that the
-		original console screen get reserved after exit.
-		Redirect stdout to the new CSB.
-	*/
 	SetConsoleCP(forceCP ? forceCP : 65001);
 	SetConsoleOutputCP(forceCP ? forceCP : 65001);
 
@@ -162,8 +172,6 @@ void conInit() {
 		SetConsoleWindowInfo(hOut, true, &csbi.srWindow);
 	}
 	winr = csbi.srWindow;
-
-	conSetMode();
 }
 
 int pfCheckVer(const string &s) {
@@ -1014,7 +1022,8 @@ void buildUiElem() {
 		ue[3] = pfLabel(text[19], (winr.Right - text[19].len()) / 2, 10, black, yellow, black, darkYellow, false);
 		ue[3].clickFunc = [] {
 			system("explorer https://github.com/Zjl37/planeFight2");
-			conSetMode();
+			// TODO: recover console mode
+			// conSetMode();
 			refreshPage();
 		};
 		ue[4] = pfLabel(text[12] + pfTextElem(pfVersion) + text[13], 1, 2, dfc, dbc, 0, 0, false);
@@ -1225,7 +1234,8 @@ void process() {
 			if(uptName) {
 				gotoXY(2, 8);
 				cout << text[6].s << playername.s;
-				playername.d = playername.s.length() - (getX() - (2 + text[6].len()) + (getY() - 8) * winr.Right);
+				auto pos = getXY();
+				playername.d = playername.s.length() - (pos.first - (2 + text[6].len()) + (pos.second - 8) * winr.Right);
 			}
 		} else if(page == 51) {
 			if(vkCode == VK_RETURN) {
@@ -1346,6 +1356,8 @@ void pfCompatibility() {
 }
 
 int main(int argc, char **argv) {
+	freopen("planefignt.log", "w", stderr);
+
 	processArg(argc, argv);
 	srand(time(0));
 	conInit();
@@ -1359,10 +1371,10 @@ int main(int argc, char **argv) {
 		langDir.pop_back();
 	langDir.append("lang\\");
 	if(!pfLangDetect(langDir)) {
-		cerr << pfVerStr << endl;
-		setColor_(red, black, hErr);
-		cerr << "Language file not found! Make sure folder \"lang\" is in the same directory as the executeable is. Or go to https://github.com/Zjl37/planeFight2 and re-download the game." << endl;
-		setDefaultColor_(hErr);
+		cout << pfVerStr << endl;
+		setColor(red, black);
+		cout << "Language file not found! Make sure folder \"lang\" is in the same directory as the executeable is. Or go to https://github.com/Zjl37/planeFight2 and re-download the game." << endl;
+		setDefaultColor();
 		return 1;
 	}
 	pfCompatibility();
