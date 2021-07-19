@@ -7,6 +7,7 @@
 #include "pfUI.hpp"
 #include "pfLang.hpp"
 #include "pfAI.hpp"
+#include "vtsFilter.hpp"
 
 using namespace std;
 
@@ -45,10 +46,8 @@ string mapEdge[256] = {
 };
 const int P1_NNLUE = 5;
 
-int forceCP;
 int bdcOpt = 1;
 
-bool _fl_ = 1;
 bool isFirst;
 int prevPage;
 int page, tab[16], nue, turn;
@@ -129,16 +128,15 @@ WSADATA wsaData;
 char buf[65536], sendbuf[65536] = "pf", tmpbuf[65536];
 string sIP;
 
+VtsInputFilter vtIn;
+
 void setPage(int);
 
-void conInit() {
+void ConInit() {
 	hIn = GetStdHandle(STD_INPUT_HANDLE);
 	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	hErr = GetStdHandle(STD_ERROR_HANDLE);
 	
-	SetConsoleCP(forceCP ? forceCP : 65001);
-	SetConsoleOutputCP(forceCP ? forceCP : 65001);
-
 	DWORD mode;
 	// detect legacy console
 	GetConsoleMode(hOut, &mode);
@@ -159,8 +157,10 @@ void conInit() {
 	mode &= ~ENABLE_ECHO_INPUT;
 	SetConsoleMode(hIn, mode);
 
-	SetConsoleCP(forceCP ? forceCP : 65001);
-	SetConsoleOutputCP(forceCP ? forceCP : 65001);
+	SetConsoleCP(65001);
+	SetConsoleOutputCP(65001);
+
+	UseAltScrBuf();
 
 	GetConsoleScreenBufferInfo(hOut, &csbi);
 	csbi.dwSize.X = max((short)80, csbi.dwSize.X);
@@ -412,7 +412,10 @@ void uptCursorState() {
 
 void setPage(int x) {
 	prevPage = page;
-	if(x == 2) {
+	vtIn.fTextInputMode = 0;
+	if(x == 0) {
+		vtIn.fTextInputMode = 1;
+	} else if(x == 2) {
 		memset(tab, 0, sizeof tab);
 		isFirst = rand() & 1;
 		if(curGame.d == 2) {
@@ -446,6 +449,7 @@ void setPage(int x) {
 		curGame.d = -2;
 		if(!pfServerInit()) return;
 	} else if(x == 51) {
+		vtIn.fTextInputMode = 1;
 		curGame.d = -1;
 		sIP = "";
 		if(!pfClientInit()) return;
@@ -868,6 +872,10 @@ void p10EnemyTurn() {
 	}
 }
 
+void pfExit() {
+	vtIn.fWork = 0;
+}
+
 void buildUiElem() {
 	stringstream tmp("");
 	tmp << left << setw(winr.Right + text[0].d) << text[0].s; // inner title
@@ -886,7 +894,7 @@ void buildUiElem() {
 		ue[3].clickFunc = p0InputOK;
 		ue[4] = pfLabel(text[6] + playername, 2, 8, dfc, dbc, 0, 0, false);
 		ue[5] = pfLabel(text[92], ue[3].right() + 2, 10, white, red, white, darkRed, false);
-		ue[5].clickFunc = [] { _fl_ = 0; };
+		ue[5].clickFunc = [] { pfExit(); };
 
 		ue[P1_NNLUE + 1] = pfLabel(lf[0].langName, 2, 12, dfc, dbc, grey, black, false);
 		ue[P1_NNLUE + 1].clickFunc = [] {
@@ -917,7 +925,7 @@ void buildUiElem() {
 		nue = 4;
 
 		ue[5] = pfLabel(text[16], 12, 15, white, red, white, darkRed, true);
-		ue[5].clickFunc = [] { _fl_ = 0; };
+		ue[5].clickFunc = [] { pfExit(); };
 		if(ue[5].right() + 2 + text[17].len() < winr.Right)
 			ue[6] = pfLabel(text[17], ue[5].right() + 2, 15, black, white, black, lightGrey, true);
 		else
@@ -1125,21 +1133,7 @@ void refreshPage() {
 	drawUiElem();
 }
 
-void pop_back_utf8(string &s) {
-	if(s.empty()) return;
-	while((s[s.length() - 1] & 192) == 128)
-		s.pop_back();
-	s.pop_back();
-}
-
-#define isMouseEvent (rec.EventType == MOUSE_EVENT)
-#define isKeyEvent (rec.EventType == KEY_EVENT)
-#define vkCode rec.Event.KeyEvent.wVirtualKeyCode
-#define isLmbPressed (rec.Event.MouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED)
-#define mx rec.Event.MouseEvent.dwMousePosition.X
-#define my rec.Event.MouseEvent.dwMousePosition.Y
-
-void processMouseClick() {
+void ProcessMouseClick(int mx, int my) {
 	for(int i = nue; i >= 1; i--)
 		if(ue[i].click(mx, my)) {
 			return;
@@ -1192,15 +1186,14 @@ void processMouseClick() {
 	}
 }
 
-void process() {
-	if(curGame.d > 0 && page == 10 && !isMyTurn()) {
-		p10EnemyTurn();
-		return;
-	}
-	if(isMouseEvent) {
-		if(isLmbPressed) {
-			processMouseClick();
-		} else if(page == 2) {
+void MouseHandler(int stat, int mx, int my, bool fDown) {
+	// clog<<"[INFO] in "<<__PRETTY_FUNCTION__<<" stat: "<<stat<<" mx: "<<mx<<" my: "<<my<<endl;
+#define IsLmbDown() ((stat & 0x3) == 0 && fDown)
+#define IsRelease() ((stat & 0x3) == 3)
+	if(IsLmbDown()) {
+		ProcessMouseClick(mx, my);
+	} else if(IsRelease()) {
+		if(page == 2) {
 			if(mx >= bf1.x && mx < bf1.x + bf1.w * 2 && my >= bf1.y && my < bf1.y + bf1.h && tab[0] == 0 && p2npl < curGame.n && bf1.ch[(mx - bf1.x) / 2 + (my - bf1.y) * bf1.w].empty() && !p2isP1Ready) {
 				drawBF(false);
 				setColor(grey, black);
@@ -1213,48 +1206,42 @@ void process() {
 				gotoXY(bf2.x + ((mx - bf2.x) | 1) - 1, my), cout << text[40].s;
 			}
 		}
-	} else if(isKeyEvent && rec.Event.KeyEvent.bKeyDown) {
-		if(page == 0) {
-			bool uptName = 0;
-			if(vkCode == VK_RETURN) {
-				ue[3]._click();
-			} else if(vkCode == VK_BACK) {
-				pop_back_utf8(playername.s);
-				uptName = 1;
-				gotoXY(2, 8);
-				cout << setw(csbi.srWindow.Right) << "";
-			} else if(vkCode == VK_ESCAPE) {
-				ue[5]._click();
-			} else if(vkCode == 0 || vkCode >= 32) {
-				memset(buf, 0, 5);
-				WideCharToMultiByte(65001, 0, &rec.Event.KeyEvent.uChar.UnicodeChar, 1, buf, 4, NULL, NULL);
-				playername.s += buf;
-				uptName = 1;
-			}
-			if(uptName) {
-				gotoXY(2, 8);
-				cout << text[6].s << playername.s;
-				auto pos = getXY();
-				playername.d = playername.s.length() - (pos.first - (2 + text[6].len()) + (pos.second - 8) * winr.Right);
-			}
-		} else if(page == 51) {
-			if(vkCode == VK_RETURN) {
-				if(pfClientConnect())
-					setPage(2);
-			} else if(vkCode == VK_BACK) {
-				if(sIP.length()) {
-					sIP.pop_back();
-					gotoX(getX() - 1), cout << " ";
-					gotoX(getX() - 1);
-				}
-			} else if(vkCode == 0 || vkCode >= 32) {
-				WideCharToMultiByte(65001, 0, &rec.Event.KeyEvent.uChar.UnicodeChar, 1, buf, 4, NULL, NULL);
-				if(buf[0] == '.' || (buf[0] >= '0' && buf[0] <= '9')) {
-					sIP += buf[0];
-					cout << buf[0];
-				}
-			}
+	}
+}
+
+void KeyHandler(string s) {
+	if(page == 0) {
+		if(s == "\n") {
+			playername.s = vtIn.ReadLine();
+			gotoXY(2, 8);
+			cout << text[6].s << playername.s;
+			auto pos = getXY();
+			playername.d = playername.s.length() - (pos.first - (2 + text[6].len()) + (pos.second - 8) * winr.Right);
+
+			ue[3]._click();
+		} else if(s == "\x7f") {
+			gotoXY(2, 8);
+			ClearLineRight();
+			cout << text[6].s << vtIn.PeekLine();
 		}
+	} else if(page == 51) {
+		if(s == "\n") {
+			sIP = vtIn.ReadLine();
+			if(pfClientConnect())
+				setPage(2);
+		} else if(s == "\x7f") {
+			gotoXY(5, 7);
+			ClearLineRight();
+			cout << vtIn.PeekLine();
+		}
+	}
+}
+
+// TODO: fix this
+void process() {
+	if(curGame.d > 0 && page == 10 && !isMyTurn()) {
+		p10EnemyTurn();
+		return;
 	}
 }
 
@@ -1265,25 +1252,15 @@ void processArg(int argc, char **argv) {
 	for(int i = 1; i < argc; i++) {
 		string op = argv[i];
 		if(op[0] != '-') {
-			clog << "planefight: ignoring parameter " << op << endl;
+			cout << "planefight: ignoring parameter " << op << endl;
 			pause = 1;
 		} else if(op[1] != '-') {
 			if(op == "-v") {
-				clog << pfVerStr << endl;
+				cout << pfVerStr << endl;
 				exit(0);
-			} else if(op == "-cp") {
-				if(i == argc - 1 || argv[i + 1][0] == '-') {
-					clog << "planefight: error: expected number after -cp option." << endl;
-					exit(233);
-				}
-				stringstream _ss(argv[i + 1]);
-				_ss >> forceCP;
-				clog << "planefight: info: set code page " << forceCP << "." << endl;
-				pause = 1;
-				++i;
 			} else if(op == "-bdc") {
 				if(i == argc - 1) {
-					clog << "planefight: error: expected value after -cp option." << endl;
+					cout << "planefight: error: expected value after -cp option." << endl;
 					exit(233);
 				}
 				string val = argv[i + 1];
@@ -1292,44 +1269,22 @@ void processArg(int argc, char **argv) {
 				} else if(val == "pseudofull") {
 					bdcOpt = 1;
 				} else {
-					clog << "planefight: error: unknown value " << val << " for option " << op << "." << endl;
+					cout << "planefight: error: unknown value " << val << " for option " << op << "." << endl;
 					exit(233);
 				}
 				++i;
 			} else {
-				clog << "planefight: unknown option " << op << endl;
+				cout << "planefight: unknown option " << op << endl;
 				pause = 1;
 			}
 		} else {
-			clog << "planefight: unknown option " << op << endl;
+			cout << "planefight: unknown option " << op << endl;
 			pause = 1;
 		}
 	}
 	if(pause) {
-		clog << "Press enter to continue...";
+		cout << "Press enter to continue...";
 		cin.get();
-	}
-}
-
-void convertCP() {
-	wchar_t _wbuf[65536];
-	char _buf2[65536];
-	for(int i = 0; i < PF_NMARKER; i++) {
-		MultiByteToWideChar(65001, 0, marker[i].c_str(), -1, _wbuf, 65536);
-		WideCharToMultiByte(forceCP, 0, _wbuf, -1, _buf2, 65536, NULL, NULL);
-		marker[i] = _buf2;
-	}
-	for(int i = 0; i < 4; i++) {
-		for(int j = 0; j < 10; j++) {
-			MultiByteToWideChar(65001, 0, plShape[i][j].ch.c_str(), -1, _wbuf, 65536);
-			WideCharToMultiByte(forceCP, 0, _wbuf, -1, _buf2, 65536, NULL, NULL);
-			plShape[i][j].ch = _buf2;
-		}
-	}
-	for(int i = 0; i < 256; i++) {
-		MultiByteToWideChar(65001, 0, mapEdge[i].c_str(), -1, _wbuf, 65536);
-		WideCharToMultiByte(forceCP, 0, _wbuf, -1, _buf2, 65536, NULL, NULL);
-		mapEdge[i] = _buf2;
 	}
 }
 
@@ -1348,19 +1303,17 @@ void pfCmptAddBdcSp() {
 }
 
 void pfCompatibility() {
-	if(forceCP)
-		convertCP();
 	if(bdcOpt & 1) {
 		pfCmptAddBdcSp();
 	}
 }
 
 int main(int argc, char **argv) {
-	freopen("planefignt.log", "w", stderr);
+	freopen("planefight.log", "w", stderr);
 
 	processArg(argc, argv);
 	srand(time(0));
-	conInit();
+	ConInit();
 	string langDir;
 	{
 		char buf[65536];
@@ -1380,54 +1333,59 @@ int main(int argc, char **argv) {
 	pfCompatibility();
 	p0GenBg();
 	setPage(0);
-	while(_fl_) {
-		DWORD tmp;
-		GetConsoleScreenBufferInfo(hOut, &csbi);
-		if(winr.Right != csbi.srWindow.Right || winr.Bottom != csbi.srWindow.Bottom) {
-			winr = csbi.srWindow;
-			if(page == 0 || page == 1) p0GenBg();
-			uptCursorState();
-			refreshPage();
-		}
-		GetNumberOfConsoleInputEvents(hIn, &nEvents);
-		while(nEvents--) {
-			WINBOOL ret = ReadConsoleInput(hIn, &rec, 1, &tmp);
-			if(winr.Right < 70 || winr.Bottom < 28) {
-				clear();
-				banner(text[35], winr.Bottom / 2 - 1, white, red);
-			} else if(ret) {
-				process();
-			} else {
-				banner(text[3], 1, white, red);
-				break;
-			}
-		}
-		if(curGame.d <= 0 && (page == 2 || (page == 10 && !isMyTurn()))) {
-			// aware of client socket event
-			FD_SET fds;
-			FD_ZERO(&fds);
-			FD_SET(sockClient, &fds);
-			timeval tv = { 0, 100000 };
-			select(0, &fds, NULL, NULL, &tv);
-			if(FD_ISSET(sockClient, &fds)) {
-				if(page == 2)
-					p2Recv();
-				else if(page == 10)
-					p10EnemyTurn();
-			}
-		} else if(page == 42) {
-			// aware of server socket event
-			FD_SET fds;
-			FD_ZERO(&fds);
-			FD_SET(sockServer, &fds);
-			timeval tv = { 0, 100000 };
-			select(0, &fds, NULL, NULL, &tv);
-			if(FD_ISSET(sockServer, &fds) && pfServerAccept())
-				setPage(2);
-		} else {
-			// if not aware of any socket event, let PeekConsoleInput stuck the loop.
-			PeekConsoleInput(hIn, &rec, 1, &tmp);
-		}
-	}
+	VtEnableMouseTrackingAny();
+	vtIn.mouseHandler = MouseHandler;
+	vtIn.keyHandler = KeyHandler;
+	vtIn.Work();
+	// while(_fl_) {
+	// 	DWORD tmp;
+	// 	GetConsoleScreenBufferInfo(hOut, &csbi);
+	// 	if(winr.Right != csbi.srWindow.Right || winr.Bottom != csbi.srWindow.Bottom) {
+	// 		winr = csbi.srWindow;
+	// 		if(page == 0 || page == 1) p0GenBg();
+	// 		uptCursorState();
+	// 		refreshPage();
+	// 	}
+	// 	GetNumberOfConsoleInputEvents(hIn, &nEvents);
+	// 	while(nEvents--) {
+	// 		WINBOOL ret = ReadConsoleInput(hIn, &rec, 1, &tmp);
+	// 		if(winr.Right < 70 || winr.Bottom < 28) {
+	// 			clear();
+	// 			banner(text[35], winr.Bottom / 2 - 1, white, red);
+	// 		} else if(ret) {
+	// 			process();
+	// 		} else {
+	// 			banner(text[3], 1, white, red);
+	// 			break;
+	// 		}
+	// 	}
+	// 	if(curGame.d <= 0 && (page == 2 || (page == 10 && !isMyTurn()))) {
+	// 		// aware of client socket event
+	// 		FD_SET fds;
+	// 		FD_ZERO(&fds);
+	// 		FD_SET(sockClient, &fds);
+	// 		timeval tv = { 0, 100000 };
+	// 		select(0, &fds, NULL, NULL, &tv);
+	// 		if(FD_ISSET(sockClient, &fds)) {
+	// 			if(page == 2)
+	// 				p2Recv();
+	// 			else if(page == 10)
+	// 				p10EnemyTurn();
+	// 		}
+	// 	} else if(page == 42) {
+	// 		// aware of server socket event
+	// 		FD_SET fds;
+	// 		FD_ZERO(&fds);
+	// 		FD_SET(sockServer, &fds);
+	// 		timeval tv = { 0, 100000 };
+	// 		select(0, &fds, NULL, NULL, &tv);
+	// 		if(FD_ISSET(sockServer, &fds) && pfServerAccept())
+	// 			setPage(2);
+	// 	} else {
+	// 		// if not aware of any socket event, let PeekConsoleInput stuck the loop.
+	// 		PeekConsoleInput(hIn, &rec, 1, &tmp);
+	// 	}
+	// }
+	UseMainScrBuf();
 	return 0;
 }

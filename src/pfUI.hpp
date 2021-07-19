@@ -8,6 +8,7 @@ using namespace std;
 pair<int, int> getXY();
 int getX();
 int getY();
+void CurLeft1();
 void gotoX(int);
 void gotoY(int);
 void gotoXY(int, int);
@@ -40,13 +41,13 @@ void gotoXY(int, int);
 #define dbc 16
 #endif // _ConsoleColor_
 
-// #define setDefaultColor_(h) setColor_(dfc, dbc, h)
-// #define setDefaultColor() setColor(dfc, dbc)
-
 void setDefaultColor();
 void setColor(int fgc, int bgc);
 void clear();
+void ClearLineRight();
 void showCursor_(bool f);
+void UseAltScrBuf();
+void UseMainScrBuf();
 
 extern HANDLE hIn, hOut;
 

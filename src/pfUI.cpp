@@ -33,6 +33,11 @@ int getY() {
 	return getXY().second;
 }
 
+// VT code: CUB
+void CurLeft1() {
+	cout << ESC "D";
+}
+
 // VT code: CHA
 // seq: ESC [ <n> G
 void gotoX(int x) {
@@ -69,6 +74,10 @@ void clear() {
 	cout << ESC "[2J";
 }
 
+void ClearLineRight() {
+	cout << ESC "[0K";
+}
+
 void clearR(short l, short t, short r, short b) {
 	for(int j = t; j <= b; j++) {
 		gotoXY(l, j);
@@ -81,6 +90,14 @@ void clearR(short l, short t, short r, short b) {
 // seq for hide: ESC [ ? 25 l
 void showCursor_(bool f) {
 	cout << (f ? ESC "[?25h" : ESC "[?25l");
+}
+
+void UseAltScrBuf() {
+	cout << ESC "[?1049h";
+}
+
+void UseMainScrBuf() {
+	cout << ESC "[?1049l";
 }
 
 void banner(const pfTextElem &msg, short h, short fgc, short bgc) {
