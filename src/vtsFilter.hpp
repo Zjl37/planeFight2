@@ -1,5 +1,6 @@
 #pragma once
 #include <deque>
+#include <future>
 #include <iostream>
 #include <sstream>
 #include <functional>
@@ -13,23 +14,27 @@
 
 class VtsInputFilter {
 	std::deque<char> buf;
+	std::future<void> futMouseHandler;
 #ifdef WIN32
 	HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
 #endif
 
 	std::string _readNextCodept();
 	void _readEscSeq();
+	void _CallMouseHandler(int, int, int, bool);
+	void _CallKeyHander(const std::string &);
 
 	public:
 	bool fWork;
 	bool fTextInputMode;
 	std::function<void(int, int, int, bool)> mouseHandler;
-	std::function<void(std::string)> keyHandler;
+	std::function<void(const std::string &)> keyHandler;
 
 	VtsInputFilter() = default;
 	void Work();
 	std::string ReadLine();
 	std::string PeekLine();
+	void WaitForHandlerThreads();
 };
 
 
@@ -49,3 +54,4 @@ class VtsInputFilter {
 #define SET_PIXEL_POSITION_MOUSE 1016
 
 void VtEnableMouseTrackingAny();
+void VtDisableMouseTracking();

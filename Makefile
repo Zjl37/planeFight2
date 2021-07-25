@@ -1,5 +1,5 @@
 obj = tmp/main.o tmp/pfUI.o tmp/pfLang.o tmp/pfAI.o tmp/vtsFilter.o
-flags = -Wall -DUNICODE
+flags = -Wall -DUNICODE -g
 
 planeFight.exe: $(obj)
 	g++ $(obj) -o $@ $(flags) -lwsock32

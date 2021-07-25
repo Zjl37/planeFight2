@@ -1,9 +1,11 @@
 #include "pfUI.hpp"
 #include "pfLang.hpp"
+#include <mutex>
 using namespace std;
 
 extern SMALL_RECT winr;
 extern string mapEdge[256];
+extern mutex mtxCout;
 
 #define ESC "\x1b"
 
@@ -81,7 +83,8 @@ void ClearLineRight() {
 void clearR(short l, short t, short r, short b) {
 	for(int j = t; j <= b; j++) {
 		gotoXY(l, j);
-		for(int i = l; i <= r; i++) cout << ' ';
+		cout<<string(r-l+1, ' ');
+		// for(int i = l; i <= r; i++) cout << ' ';
 	}
 }
 
@@ -124,12 +127,14 @@ void pfLabel::draw() {
 }
 
 void pfLabel::_click() {
+	mtxCout.lock();
 	setColor(fgc2, bgc2);
 	if(w) {
 		gotoXY(x, y - 1), cout << setw(t.len()) << "";
 		gotoXY(x, y + 1), cout << setw(t.len()) << "";
 	}
 	gotoXY(x, y), cout << t.s;
+	mtxCout.unlock();
 	Sleep(100);
 	clickFunc();
 }
