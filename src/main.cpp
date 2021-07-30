@@ -13,14 +13,6 @@
 
 using namespace std;
 
-#ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
-#define ENABLE_VIRTUAL_TERMINAL_INPUT 0x0200
-#endif
-
-#ifndef ENABLE_VIRTUAL_TERMINAL_PROCESSING
-#define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
-#endif
-
 #define pfVersion "2.4"
 #define pfVerStr "planefight 2.4"
 
@@ -32,15 +24,7 @@ string marker[PF_NMARKER] = {
 	"\u2550", "\u2551", "\u256c", "\u2560", "\u2563", "\u2566", "\u2569",
 	"\uff1f", "\uff01"
 };
-struct pfRePosCh {
-	short dx, dy;
-	string ch;
-} plShape[4][10] = {
-	{ { 0, 0, "\u2503" }, { -2, 1, "\u2501" }, { -1, 1, "\u2501" }, { 0, 1, "\u254b" }, { 1, 1, "\u2501" }, { 2, 1, "\u2501" }, { 0, 2, "\u2503" }, { -1, 3, "\u2501" }, { 0, 3, "\u253b" }, { 1, 3, "\u2501" } },
-	{ { -3, -1, "\u2503" }, { -3, 0, "\u2523" }, { -3, 1, "\u2503" }, { -2, 0, "\u2501" }, { -1, -2, "\u2503" }, { -1, -1, "\u2503" }, { -1, 0, "\u254b" }, { -1, 1, "\u2503" }, { -1, 2, "\u2503" }, { 0, 0, "\u2501" } },
-	{ { -1, -3, "\u2501" }, { 0, -3, "\u2533" }, { 1, -3, "\u2501" }, { 0, -2, "\u2503" }, { -2, -1, "\u2501" }, { -1, -1, "\u2501" }, { 0, -1, "\u254b" }, { 1, -1, "\u2501" }, { 2, -1, "\u2501" }, { 0, 0, "\u2503" } },
-	{ { 3, -1, "\u2503" }, { 3, 0, "\u252b" }, { 3, 1, "\u2503" }, { 2, 0, "\u2501" }, { 1, -2, "\u2503" }, { 1, -1, "\u2503" }, { 1, 0, "\u254b" }, { 1, 1, "\u2503" }, { 1, 2, "\u2503" }, { 0, 0, "\u2501" } }
-};
+
 string mapEdge[256] = {
 	"\u2500", "\u2501", "\u2502", "\u2503", "\u250c", "\u250f",
 	"\u2550", "\u2551", "\u2554", "\u2557", "\u255a", "\u255d",
@@ -53,86 +37,8 @@ int bdcOpt = 1;
 bool isFirst;
 int prevPage;
 int page, tab[16], nue, turn;
-DWORD orgConInMode, orgConOutMode;
-HANDLE hIn, hOut, hErr;
-SMALL_RECT winr = { 0, 0, 80, 30 };
-INPUT_RECORD rec;
-CONSOLE_CURSOR_INFO cci;
-CONSOLE_SCREEN_BUFFER_INFO csbi;
 pfLabel ue[128];
-pfTextElem playername, enemyname, errMsg;
-pfGameInfo curGame;
-
-void pfBF::resize(short nw, short nh) {
-	w = nw, h = nh;
-	ch.clear(), ch.resize(w * h);
-	pl.clear(), pl.resize(w * h);
-	mk.clear(), mk.resize(w * h);
-}
-void pfBF::clear() {
-	resize(w, h);
-}
-void pfBF::draw(bool forceClear) {
-	int _lastFgc = dfc, _lastBgc = dbc;
-	// NOTE: the performance of colored output is not as fast as non-colored ones.
-	// ref (on Windows): https://github.com/microsoft/terminal/issues/10362
-	// avoid frequently changing color to get better perf.
-	for(short i = 0; i < h; i++) {
-		if(forceClear) gotoY(y + i);
-		for(short j = 0; j < w; j++) {
-			if(forceClear) {
-				gotoX(x + j * 2);
-				if(_lastFgc != hcc[mk[i * w + j]] || _lastBgc != mk[i * w + j]) {
-					_lastFgc = hcc[mk[i * w + j]], _lastBgc = mk[i * w + j];
-					setColor(hcc[mk[i * w + j]], mk[i * w + j]);
-				}
-				if(ch[i * w + j].empty())
-					cout << "  ";
-				else
-					cout << ch[i * w + j];
-			} else if(!ch[i * w + j].empty()) {
-				gotoXY(x + j * 2, y + i);
-				if(_lastFgc != hcc[mk[i * w + j]] || _lastBgc != mk[i * w + j]) {
-					_lastFgc = hcc[mk[i * w + j]], _lastBgc = mk[i * w + j];
-					setColor(hcc[mk[i * w + j]], mk[i * w + j]);
-				}
-				cout << ch[i * w + j];
-			}
-		}
-	}
-}
-void pfBF::basic_placeplane(short x, short y, short d, bool cw) {
-	for(int i = 0; i < 10; i++) {
-		short tx = x + plShape[d][i].dx, ty = y + plShape[d][i].dy;
-		if(cw) {
-			if(tx < 0) tx += w;
-			if(tx >= w) tx -= w;
-			if(ty < 0) ty += h;
-			if(ty >= h) ty -= h;
-		}
-		ch[ty * w + tx] = plShape[d][i].ch;
-		pl[ty * w + tx] = d | 4;
-	}
-	pl[y * w + x] |= 8;
-}
-bool pfBF::placeplane(short x, short y, short d, bool cw) {
-	if(!cw)
-		for(int i = 0; i < 10; i++)
-			if(x + plShape[d][i].dx >= w || x + plShape[d][i].dx < 0 || y + plShape[d][i].dy >= h || y + plShape[d][i].dy < 0) return false;
-	for(int i = 0; i < 10; i++) {
-		short tx = x + plShape[d][i].dx, ty = y + plShape[d][i].dy;
-		if(cw) {
-			if(tx < 0) tx += w;
-			if(tx >= w) tx -= w;
-			if(ty < 0) ty += h;
-			if(ty >= h) ty -= h;
-		}
-		if(pl[ty * w + tx]) return false;
-	}
-	basic_placeplane(x, y, d, cw);
-	return true;
-}
-pfBF bg, bf1, bf2, bf3;
+pfTextElem errMsg;
 
 int p2npl, p2isP1Ready, p2isP2Ready;
 int p10des1, p10des2, p10srd;
@@ -148,57 +54,6 @@ mutex mtxCout;
 VtsInputFilter vtIn;
 
 void setPage(int);
-
-void ConInit() {
-	hIn = GetStdHandle(STD_INPUT_HANDLE);
-	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	hErr = GetStdHandle(STD_ERROR_HANDLE);
-	
-	DWORD mode;
-	// detect legacy console
-	GetConsoleMode(hOut, &mode);
-	orgConInMode = mode;
-	mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-	if(!SetConsoleMode(hOut, mode)) {
-		cout << "[ERROR] You are using legacy console, planeFight won't be able to run." << endl;
-		cout << "    We recommend that you upgrade to the latest version of Windows 10, or if you're already using one, check if legacy console is enabled." << endl;
-		exit(1);
-	}
-
-	GetConsoleMode(hIn, &mode);
-	orgConInMode = mode;
-	mode |= ENABLE_PROCESSED_INPUT;
-	mode |= ENABLE_MOUSE_INPUT;
-	mode &= ~ENABLE_QUICK_EDIT_MODE;
-	mode |= ENABLE_WINDOW_INPUT;
-	mode |= ENABLE_VIRTUAL_TERMINAL_INPUT;
-	mode &= ~ENABLE_LINE_INPUT;
-	mode &= ~ENABLE_ECHO_INPUT;
-	SetConsoleMode(hIn, mode);
-
-	SetConsoleCP(65001);
-	SetConsoleOutputCP(65001);
-
-	UseAltScrBuf();
-
-	GetConsoleScreenBufferInfo(hOut, &csbi);
-	csbi.dwSize.X = max((short)80, csbi.dwSize.X);
-	csbi.dwSize.Y = max((short)30, csbi.dwSize.Y);
-	if(csbi.srWindow.Right < 80 || csbi.srWindow.Bottom < 30) {
-		SetConsoleScreenBufferSize(hOut, csbi.dwSize);
-		csbi.srWindow.Right = csbi.dwSize.X - 1;
-		csbi.srWindow.Bottom = csbi.dwSize.Y - 1;
-		SetConsoleWindowInfo(hOut, true, &csbi.srWindow);
-	}
-	winr = csbi.srWindow;
-}
-
-void ConReset() {
-	UseMainScrBuf();
-	VtDisableMouseTracking();
-	SetConsoleMode(hOut, orgConOutMode);
-	SetConsoleMode(hIn, orgConInMode);
-}
 
 int pfCheckVer(const string &s) {
 	stringstream curVer(pfVerStr), iVer(s);
@@ -297,6 +152,8 @@ bool pfServerAccept() {
 		return false;
 	enemyname = pfTextElem(string(buf + 14), *(int *)(buf + 10));
 	setPage(2);
+	closesocket(sockServer);
+	if(tSockClient.joinable()) tSockClient.join();
 	tSockClient = thread(pfSockHandler);
 	return true;
 }
@@ -331,6 +188,7 @@ bool pfServerInit() {
 		showErrorMsg(text[60], 1);
 		return false;
 	}
+	if(tSockServer.joinable()) tSockServer.join();
 	tSockServer = thread(pfServerAccept);
 	return true;
 }
@@ -474,107 +332,6 @@ void setPage(int x) {
 	refreshPage();
 }
 
-void BlinkCoord(short ax, short ay) {
-	stringstream tmp1("");
-	if(isMyTurn())
-		tmp1 << ">>>>  ";
-	else
-		tmp1 << "<<<<  ";
-	tmp1 << "(" << ax << "," << ay << ")";
-	if(isMyTurn())
-		tmp1 << "  >>>>";
-	else
-		tmp1 << "  <<<<";
-	string tmp2 = tmp1.str();
-	setColor(lightGrey, black);
-	gotoXY((winr.Right - tmp2.length()) / 2, 9);
-	cout << tmp2;
-	Sleep(rand() % 250);
-	setColor(black, black);
-	gotoXY((winr.Right - tmp2.length()) / 2, 9);
-	cout << tmp2;
-	Sleep(rand() % 250);
-	setColor(grey, black);
-	gotoXY((winr.Right - tmp2.length()) / 2, 9);
-	cout << tmp2;
-	Sleep(rand() % 250);
-	setColor(white, black);
-	gotoXY((winr.Right - tmp2.length()) / 2, 9);
-	cout << tmp2;
-	Sleep(500 + rand() % 250);
-}
-
-void drawPlane(short x, short y, short d, bool r) {
-	// direction: 0=up 1=right 2=down 3=left
-	if(r && !curGame.cw)
-		for(int i = 0; i < 10; i++)
-			if(x + plShape[d][i].dx * 2 >= bf1.x + bf1.w * 2 || x + plShape[d][i].dx * 2 < bf1.x || y + plShape[d][i].dy >= bf1.y + bf1.h || y + plShape[d][i].dy < bf1.y)
-				return;
-	for(int i = 0; i < 10; i++) {
-		int tx = x + plShape[d][i].dx * 2, ty = y + plShape[d][i].dy;
-		if(r) {
-			if(tx < bf1.x) tx += bf1.w * 2;
-			if(tx >= bf1.x + bf1.w * 2) tx -= bf1.w * 2;
-			if(ty < bf1.y) ty += bf1.h * 2;
-			if(ty >= bf1.y + bf1.h) ty -= bf1.h;
-		}
-		gotoXY(tx, ty);
-		cout << plShape[d][i].ch;
-	}
-}
-
-void drawPark() {
-	if(tab[1] == 0)
-		setColor(black, aqua);
-	else
-		setColor(black, white);
-	clearR(4, 10 + curGame.h, 17, 16 + curGame.h);
-	drawPlane(10, 12 + curGame.h, 0, false);
-	if(tab[1] == 1)
-		setColor(black, aqua);
-	else
-		setColor(black, white);
-	clearR(20, 10 + curGame.h, 33, 16 + curGame.h);
-	drawPlane(28, 13 + curGame.h, 1, false);
-	if(tab[1] == 2)
-		setColor(black, aqua);
-	else
-		setColor(black, white);
-	clearR(36, 10 + curGame.h, 49, 16 + curGame.h);
-	drawPlane(42, 14 + curGame.h, 2, false);
-	if(tab[1] == 3)
-		setColor(black, aqua);
-	else
-		setColor(black, white);
-	clearR(52, 10 + curGame.h, 65, 16 + curGame.h);
-	drawPlane(56, 13 + curGame.h, 3, false);
-}
-
-void drawBF(bool showBf2) {
-	bf1.x = 4, bf1.y = bf2.y = bf3.y = 5;
-	bf2.x = bf3.x = winr.Right - 4 - bf2.w * 2;
-	setDefaultColor();
-	box(bf1.x, bf1.y, bf1.w * 2, bf1.h, 2);
-	box(bf2.x, bf2.y, bf2.w * 2, bf2.h, 2);
-	for(int i = 0; i < curGame.w; i++) {
-		int j = i;
-		while(j && j % 10 == 0) j /= 10;
-		gotoXY(bf1.x + i * 2, bf1.y - 2), cout << setw(2) << j % 10;
-		gotoXY(bf2.x + i * 2, bf2.y - 2), cout << setw(2) << j % 10;
-	}
-	for(int i = 0; i < curGame.h; i++) {
-		gotoXY(bf1.x - 4, bf1.y + i), cout << i;
-		gotoXY(bf2.x - 4, bf2.y + i), cout << i;
-	}
-	gotoXY(bf1.x, 2), cout << playername.s << endl;
-	gotoXY(bf2.x, 2), cout << enemyname.s << endl;
-	bf1.draw(true);
-	if(showBf2)
-		bf2.draw(true);
-	else
-		bf3.draw(true);
-}
-
 void drawUiElem() {
 	lock_guard<mutex> _lg(mtxCout);
 	setDefaultColor(), clear();
@@ -583,7 +340,7 @@ void drawUiElem() {
 	for(int i = 1; i <= nue; i++)
 		ue[i].draw();
 	if(page & 0x80000000) {
-		banner(errMsg, winr.Bottom / 3, white, red);
+		banner(errMsg, scrH / 3, white, red);
 		return;
 	}
 	if(page == 0) {
@@ -591,16 +348,16 @@ void drawUiElem() {
 	} else if(page == 2) {
 		drawBF(false);
 		if(tab[0] == 0)
-			drawPark();
+			drawPark(tab[1]);
 	} else if(page == 4) {
 		bf1.x = 4, bf1.y = 5;
 		box(bf1.x, bf1.y, curGame.w * 2, curGame.h, 2);
 	} else if(page == 10) {
 		drawBF(false);
-		gotoXY(winr.Right - 10, 1), cout << "#" << turn;
+		gotoXY(scrW - 10, 1), cout << "#" << turn;
 	} else if(page == 19) {
 		drawBF(true);
-		gotoXY(winr.Right - 10, 1), cout << "#" << turn;
+		gotoXY(scrW - 10, 1), cout << "#" << turn;
 	} else if(page == 51) {
 		gotoXY(5, 7), cout << sIP;
 	}
@@ -620,7 +377,7 @@ bool bfInit(pfBF &bf) {
 }
 
 void p0GenBg() {
-	bg.resize(winr.Right / 2, winr.Bottom);
+	bg.resize(scrW / 2, scrH);
 	for(int i = 0; i < (int)bg.w * bg.h / 25; i++)
 		bg.placeplane(rand() % bg.w, rand() % bg.h, rand() & 3, curGame.cw);
 }
@@ -649,7 +406,7 @@ void p1Play2() {
 
 void p2Start() {
 	turn = 1;
-	banner(text[36], winr.Bottom / 3, white, pink);
+	banner(text[36], scrH / 3, white, pink);
 	Sleep(1000);
 	setPage(10);
 }
@@ -706,6 +463,8 @@ void p2AddPl(short x) {
 void p2Giveup() {
 	strcpy(sendbuf + 6, "giveup");
 	send(sockClient, sendbuf, 12, 0);
+	closesocket(sockClient);
+	if(tSockClient.joinable()) tSockClient.join();
 	setPage(1);
 }
 
@@ -715,6 +474,8 @@ void p10Surrender() {
 		strcpy(sendbuf + 6, "isurrender");
 		send(sockClient, sendbuf, 16, 0);
 		pfExchangeMap();
+	} else {
+		setPage(19);
 	}
 }
 
@@ -772,37 +533,12 @@ void showAttackMsg(short res) {
 	else if(res == 2)
 		setColor(white, darkRed);
 	if(res >= 0 && res <= 2)
-		gotoXY((winr.Right - text[41 + res].len()) / 2, 7), cout << text[41 + res].s;
+		gotoXY((scrW - text[41 + res].len()) / 2, 7), cout << text[41 + res].s;
 	Sleep(1000);
 }
 
-void attack(short x, short y) {
-	short res;
-	if(curGame.d > 0)
-		res = attackL(x, y, bf2.pl, bf3.mk);
-	else
-		res = attackR(x, y);
-	if(res < 0 || res > 2) return;
-	{
-		lock_guard<mutex> _lg(mtxCout);
-		drawBF(false);
-		BlinkCoord(x, y);
-		showAttackMsg(res);
-	}
-	refreshPage();
-
-	if(res == 2) {
-		++p10des2;
-		if(p10des2 == curGame.n) {
-			if(curGame.d <= 0) pfExchangeMap();
-			return;
-		}
-	}
-	++turn;
-}
-
 void p10EnemyTurn() {
-	// assert curGame.d > 0
+	// assume curGame.d > 0
 	short res, ax, ay;
 	short ret = pfAIdecide(curGame, bf1.mk, ax, ay);
 	if(!ret) {
@@ -813,7 +549,7 @@ void p10EnemyTurn() {
 	res = attackL(ax, ay, bf1.pl, bf1.mk);
 	{
 		lock_guard<mutex> _lg(mtxCout);
-		BlinkCoord(ax, ay);
+		BlinkCoord(ax, ay, 0);
 		bf1.draw(false);
 		showAttackMsg(res);
 	}
@@ -828,10 +564,39 @@ void p10EnemyTurn() {
 	++turn;
 }
 
+void attack(short x, short y) {
+	short res;
+	if(curGame.d > 0)
+		res = attackL(x, y, bf2.pl, bf3.mk);
+	else
+		res = attackR(x, y);
+	if(res < 0 || res > 2) return;
+	{
+		lock_guard<mutex> _lg(mtxCout);
+		drawBF(false);
+		BlinkCoord(x, y, 1);
+		showAttackMsg(res);
+	}
+	refreshPage();
+
+	if(res == 2) {
+		++p10des2;
+		if(p10des2 == curGame.n) {
+			if(curGame.d <= 0) pfExchangeMap();
+			else setPage(19);
+			return;
+		}
+	}
+	if(curGame.d > 0) {
+		p10EnemyTurn();
+	}
+	++turn;
+}
+
 void pfSockHandler() {
 	while(1) {
 		int ret = recv(sockClient, buf, 65536, 0);
-		if(ret <= 0) {
+		if(ret < 0) {
 			showErrorMsg(text[86], 1);
 			break;
 		}
@@ -860,7 +625,7 @@ void pfSockHandler() {
 			}
 			{
 				lock_guard<mutex> _lg(mtxCout);
-				BlinkCoord(ax, ay);
+				BlinkCoord(ax, ay, 0);
 				bf1.draw(false);
 				showAttackMsg(res);
 			}
@@ -898,6 +663,9 @@ void pfSockHandler() {
 		}
 		tmpbuf[2] = 0;
 		if(strcmp(tmpbuf, "mp") == 0) {
+			if(ret > 10) {
+				std::clog << "[!] in " << __PRETTY_FUNCTION__ << ", received `mp` msg of length: " << ret << " which is larget than 10.\n";
+			}
 			bf2.pl[p10exchgMapLn++] = *(short *)(buf + 8);
 			if(p10exchgMapLn < bf2.pl.size()) {
 				strcpy(sendbuf + 6, "mp");
@@ -930,7 +698,7 @@ void pfExit() {
 
 void buildUiElem() {
 	stringstream tmp("");
-	tmp << left << setw(winr.Right + text[0].d) << text[0].s; // inner title
+	tmp << left << setw(scrW + text[0].d) << text[0].s; // inner title
 	ue[1] = pfLabel(pfTextElem(tmp.str(), text[0].d), 0, 0, white, blue, 0, 0, false);
 	if(page & 0x80000000) {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
@@ -940,7 +708,7 @@ void buildUiElem() {
 	}
 	if(page == 0) {
 		tmp.str("");
-		tmp << setw((winr.Right - text[2].len()) / 2) << "" << left << setw(winr.Right + text[2].d - (winr.Right - text[2].len()) / 2) << text[2].s;
+		tmp << setw((scrW - text[2].len()) / 2) << "" << left << setw(scrW + text[2].d - (scrW - text[2].len()) / 2) << text[2].s;
 		ue[2] = pfLabel(pfTextElem(tmp.str(), text[2].d), 0, 5, white, pink, 0, 0, true);
 		ue[3] = pfLabel(text[7], 2, 10, black, yellow, black, darkYellow, false);
 		ue[3].clickFunc = p0InputOK;
@@ -953,7 +721,7 @@ void buildUiElem() {
 			pfLangRead(lf[0].dir.c_str()), refreshPage();
 		};
 		for(int i = 1; i < (int)lf.size(); i++) {
-			if(ue[P1_NNLUE + i].right() + 2 + lf[i].langName.len() > winr.Right) {
+			if(ue[P1_NNLUE + i].right() + 2 + lf[i].langName.len() > scrW) {
 				ue[P1_NNLUE + 1 + i] = pfLabel(lf[i].langName, 2, ue[P1_NNLUE + i].y + 1, dfc, dbc, grey, black, false);
 			} else {
 				ue[P1_NNLUE + 1 + i] = pfLabel(lf[i].langName, ue[P1_NNLUE + i].right() + 2, ue[P1_NNLUE + i].y, dfc, dbc, grey, black, false);
@@ -963,22 +731,22 @@ void buildUiElem() {
 		nue = P1_NNLUE + lf.size();
 	} else if(page == 1) {
 		tmp.str("");
-		tmp << setw(winr.Right - 1 + text[8].d) << text[8].s;
+		tmp << setw(scrW - 1 + text[8].d) << text[8].s;
 		ue[2] = pfLabel(pfTextElem(tmp.str(), text[8].d), 3, 3, black, white, black, lightGrey, true);
 		ue[2].clickFunc = [] { enemyname = text[37], curGame.d = 2, setPage(2); };
 		tmp.str("");
-		tmp << setw(winr.Right - 1 + text[9].d) << text[9].s;
+		tmp << setw(scrW - 1 + text[9].d) << text[9].s;
 		ue[3] = pfLabel(pfTextElem(tmp.str(), text[9].d), 6, 7, black, white, black, lightGrey, true);
 		ue[3].clickFunc = p1Play2;
 		tmp.str("");
-		tmp << setw(winr.Right - 1 + text[10].d) << text[10].s;
+		tmp << setw(scrW - 1 + text[10].d) << text[10].s;
 		ue[4] = pfLabel(pfTextElem(tmp.str(), text[10].d), 9, 11, black, white, black, lightGrey, true);
 		ue[4].clickFunc = [] { setPage(5); };
 		nue = 4;
 
 		ue[5] = pfLabel(text[16], 12, 15, white, red, white, darkRed, true);
 		ue[5].clickFunc = [] { pfExit(); };
-		if(ue[5].right() + 2 + text[17].len() < winr.Right)
+		if(ue[5].right() + 2 + text[17].len() < scrW)
 			ue[6] = pfLabel(text[17], ue[5].right() + 2, 15, black, white, black, lightGrey, true);
 		else
 			ue[6] = pfLabel(text[17], ue[5].x, 19, black, white, black, lightGrey, true);
@@ -1007,7 +775,7 @@ void buildUiElem() {
 		if(tab[0] >= 0 && tab[0] <= 2)
 			ue[3 + tab[0]].fgc = black, ue[3 + tab[0]].bgc = green;
 		if(p2npl == curGame.n)
-			ue[6] = pfLabel(text[curGame.d > 0 ? 25 : 77], (winr.Right - text[curGame.d > 0 ? 25 : 77].len()) / 2, 10, black, yellow, black, darkYellow, true);
+			ue[6] = pfLabel(text[curGame.d > 0 ? 25 : 77], (scrW - text[curGame.d > 0 ? 25 : 77].len()) / 2, 10, black, yellow, black, darkYellow, true);
 		else
 			ue[6] = pfLabel();
 		ue[6].clickFunc = p2Ready;
@@ -1063,9 +831,9 @@ void buildUiElem() {
 			nue = 13;
 		}
 		if(p2isP2Ready)
-			ue[++nue] = pfLabel(text[91].s, (winr.Right - text[91].len()) / 2, winr.Bottom * 2 / 3, yellow, dbc, darkYellow, dbc, false);
+			ue[++nue] = pfLabel(text[91].s, (scrW - text[91].len()) / 2, scrH * 2 / 3, yellow, dbc, darkYellow, dbc, false);
 		else if(p2isP1Ready)
-			ue[++nue] = pfLabel(text[82].s, (winr.Right - text[82].len()) / 2, winr.Bottom * 2 / 3, yellow, dbc, darkYellow, dbc, false);
+			ue[++nue] = pfLabel(text[82].s, (scrW - text[82].len()) / 2, scrH * 2 / 3, yellow, dbc, darkYellow, dbc, false);
 	} else if(page == 4) {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
 		ue[2].clickFunc = [] {
@@ -1079,7 +847,7 @@ void buildUiElem() {
 	} else if(page == 5) {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
 		ue[2].clickFunc = [] { setPage(1); };
-		ue[3] = pfLabel(text[19], (winr.Right - text[19].len()) / 2, 10, black, yellow, black, darkYellow, false);
+		ue[3] = pfLabel(text[19], (scrW - text[19].len()) / 2, 10, black, yellow, black, darkYellow, false);
 		ue[3].clickFunc = [] {
 			system("explorer https://github.com/Zjl37/planeFight2");
 			// TODO: recover console mode
@@ -1112,23 +880,23 @@ void buildUiElem() {
 			nue = 5;
 	} else if(page == 19) {
 		if(p10srd == 2)
-			ue[2] = pfLabel(text[47], (winr.Right - text[47].len()) / 2, 4, white, darkGreen, grey, darkGreen, true);
+			ue[2] = pfLabel(text[47], (scrW - text[47].len()) / 2, 4, white, darkGreen, grey, darkGreen, true);
 		else if(p10srd == 1)
-			ue[2] = pfLabel(text[46], (winr.Right - text[46].len()) / 2, 4, white, darkRed, grey, darkRed, true);
+			ue[2] = pfLabel(text[46], (scrW - text[46].len()) / 2, 4, white, darkRed, grey, darkRed, true);
 		else if(p10des1 == curGame.n)
-			ue[2] = pfLabel(text[45], (winr.Right - text[45].len()) / 2, 4, white, red, grey, red, true);
+			ue[2] = pfLabel(text[45], (scrW - text[45].len()) / 2, 4, white, red, grey, red, true);
 		else if(p10des2 == curGame.n)
-			ue[2] = pfLabel(text[44], (winr.Right - text[44].len()) / 2, 4, black, green, black, darkGreen, true);
+			ue[2] = pfLabel(text[44], (scrW - text[44].len()) / 2, 4, black, green, black, darkGreen, true);
 		else
 			ue[2] = pfLabel();
-		ue[3] = pfLabel(text[48], (winr.Right - text[48].len()) / 2, winr.Bottom * 2 / 3, black, yellow, black, darkYellow, true);
+		ue[3] = pfLabel(text[48], (scrW - text[48].len()) / 2, scrH * 2 / 3, black, yellow, black, darkYellow, true);
 		ue[3].clickFunc = [] { setPage(1); };
 		nue = 3;
 	} else if(page == 41) {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
 		ue[2].clickFunc = [] { setPage(1); };
 		ue[3] = pfLabel(text[23], 4, 5, dfc, dbc, 0, 0, false);
-		ue[4] = pfLabel(text[25], (winr.Right - text[25].len()) / 2, winr.Bottom * 2 / 3, black, yellow, black, darkYellow, true);
+		ue[4] = pfLabel(text[25], (scrW - text[25].len()) / 2, scrH * 2 / 3, black, yellow, black, darkYellow, true);
 		ue[4].clickFunc = [] { setPage(42); };
 		ue[5] = pfLabel((curGame.cw ? text[30] : text[29]) + text[31], 4, 7, dfc, dbc, grey, black, false);
 		ue[5].clickFunc = [] {
@@ -1184,7 +952,7 @@ void buildUiElem() {
 
 void refreshPage() {
 	uptCursorState();
-	if(winr.Right < 70 || winr.Bottom < 28) return;
+	if(scrW < 70 || scrH < 28) return;
 	buildUiElem();
 	drawUiElem();
 }
@@ -1205,7 +973,7 @@ void ProcessMouseClick(int mx, int my) {
 			else if(mx >= 52 && mx <= 65)
 				tab[1] = 3;
 			lock_guard<mutex> _lg(mtxCout);
-			drawPark();
+			drawPark(tab[1]);
 		}
 		if(mx >= bf1.x && mx < bf1.x + bf1.w * 2 && my >= bf1.y && my < bf1.y + bf1.h && p2npl < curGame.n && !p2isP1Ready) {
 			if(bf1.placeplane((mx - bf1.x) >> 1, my - bf1.y, tab[1], curGame.cw)) {
@@ -1219,12 +987,12 @@ void ProcessMouseClick(int mx, int my) {
 			}
 			lock_guard<mutex> _lg(mtxCout);
 			setDefaultColor();
-			clearR(0, 7 + curGame.h, winr.Right, 7 + curGame.h);
+			clearR(0, 7 + curGame.h, scrW, 7 + curGame.h);
 			drawBF(false);
 		}
 	} else if(page == 4) {
 		int nx = (mx - bf1.x) / 2, ny = my - bf1.y;
-		if(nx >= 5 && nx <= winr.Right && ny >= 5)
+		if(nx >= 5 && nx <= scrW && ny >= 5)
 			if(nx != curGame.w || ny != curGame.h) {
 				curGame.w = nx;
 				curGame.h = ny;
@@ -1234,9 +1002,6 @@ void ProcessMouseClick(int mx, int my) {
 		if(mx >= bf2.x && mx < bf2.x + bf2.w * 2 && my >= bf2.y && my < bf2.y + bf2.h) {
 			if(tab[0] == 0 && isMyTurn() && bf3.mk[(mx - bf2.x) / 2 + (my - bf2.y) * bf3.w] == black) {
 				attack((mx - bf2.x) / 2, my - bf2.y);
-				if(curGame.d > 0) {
-					p10EnemyTurn();
-				}
 			} else if(tab[0] == 1) {
 				bf3.ch[(mx - bf2.x) / 2 + (my - bf2.y) * bf3.w] = marker[tab[1]];
 				lock_guard<mutex> _lg(mtxCout);
@@ -1261,7 +1026,7 @@ void MouseHandler(int stat, int mx, int my, bool fDown) {
 			if(mx >= bf1.x && mx < bf1.x + bf1.w * 2 && my >= bf1.y && my < bf1.y + bf1.h && tab[0] == 0 && p2npl < curGame.n && bf1.ch[(mx - bf1.x) / 2 + (my - bf1.y) * bf1.w].empty() && !p2isP1Ready) {
 				if(mtxCout.try_lock()) {
 					drawBF(false);
-					setColor(grey, black);
+					setColor(grey, dbc);
 					drawPlane(bf1.x + ((mx - bf1.x) & (short)-2), my, tab[1], true);
 					mtxCout.unlock();
 				}
@@ -1270,7 +1035,7 @@ void MouseHandler(int stat, int mx, int my, bool fDown) {
 			if(mx >= bf2.x && mx < bf2.x + bf2.w * 2 && my >= bf2.y && my < bf2.y + bf2.h && bf3.mk[(mx - bf2.x) / 2 + (my - bf2.y) * bf2.w] == 0) {
 				if(mtxCout.try_lock()) {
 					bf3.draw(true);
-					setColor(grey, black);
+					setColor(grey, dbc);
 					gotoXY(bf2.x + ((mx - bf2.x) | 1) - 1, my), cout << text[40].s;
 					mtxCout.unlock();
 				}
@@ -1279,32 +1044,39 @@ void MouseHandler(int stat, int mx, int my, bool fDown) {
 	}
 }
 
-void KeyHandler(string s) {
-	if(page == 0) {
-		if(s == "\n") {
-			playername.s = vtIn.ReadLine();
-			gotoXY(2, 8);
-			cout << text[6].s << playername.s;
-			auto pos = getXY();
-			playername.d = playername.s.length() - (pos.first - (2 + text[6].len()) + (pos.second - 8) * winr.Right);
-
-			ue[3]._click();
-		} else if(s == "\x7f") {
-			gotoXY(2, 8);
-			ClearLineRight();
-			cout << text[6].s << vtIn.PeekLine();
+void KeyHandler(const string &s, const vector<int> &v) {
+	if(s.empty() && v.size()) {
+		if(v[0] == 15) {
+			refreshPage();
 		}
-	} else if(page == 51) {
-		if(s == "\n") {
-			sIP = vtIn.ReadLine();
-			if(pfClientConnect()) {
-				setPage(2);
-				tSockClient = thread(pfSockHandler);
+	} else {
+		if(page == 0) {
+			if(s == "\n") {
+				playername.s = vtIn.ReadLine();
+				gotoXY(2, 8);
+				cout << text[6].s << playername.s;
+				auto pos = getXY();
+				playername.d = playername.s.length() - (pos.first - (2 + text[6].len()) + (pos.second - 8) * scrW);
+
+				ue[3]._click();
+			} else if(s == "\x7f") {
+				gotoXY(2, 8);
+				ClearLineRight();
+				cout << text[6].s << vtIn.PeekLine();
 			}
-		} else if(s == "\x7f") {
-			gotoXY(5, 7);
-			ClearLineRight();
-			cout << vtIn.PeekLine();
+		} else if(page == 51) {
+			if(s == "\n") {
+				sIP = vtIn.ReadLine();
+				if(pfClientConnect()) {
+					setPage(2);
+					if(tSockClient.joinable()) tSockClient.join();
+					tSockClient = thread(pfSockHandler);
+				}
+			} else if(s == "\x7f") {
+				gotoXY(5, 7);
+				ClearLineRight();
+				cout << vtIn.PeekLine();
+			}
 		}
 	}
 }

@@ -2,6 +2,7 @@
 #include <deque>
 #include <future>
 #include <iostream>
+#include <vector>
 #include <sstream>
 #include <functional>
 #include <iomanip>
@@ -15,6 +16,8 @@
 class VtsInputFilter {
 	std::deque<char> buf;
 	std::future<void> futMouseHandler;
+	std::future<void> futKeyHandler;
+	std::promise<std::pair<int, int>> curPosPromise;
 #ifdef WIN32
 	HANDLE hIn = GetStdHandle(STD_INPUT_HANDLE);
 #endif
@@ -22,19 +25,20 @@ class VtsInputFilter {
 	std::string _readNextCodept();
 	void _readEscSeq();
 	void _CallMouseHandler(int, int, int, bool);
-	void _CallKeyHander(const std::string &);
+	void _CallKeyHander(const std::string &, const std::vector<int> &);
 
 	public:
 	bool fWork;
 	bool fTextInputMode;
 	std::function<void(int, int, int, bool)> mouseHandler;
-	std::function<void(const std::string &)> keyHandler;
+	std::function<void(const std::string &, const std::vector<int> &)> keyHandler;
 
 	VtsInputFilter() = default;
 	void Work();
 	std::string ReadLine();
 	std::string PeekLine();
 	void WaitForHandlerThreads();
+	std::pair<int, int> GetLastCurPos();
 };
 
 

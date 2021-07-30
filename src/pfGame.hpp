@@ -4,7 +4,13 @@
 #include "pfUI.hpp"
 using namespace std;
 
-const short hcc[16] = { 7, 15, 15, 15, 15, 15, 15, 0, 15, 15, 0, 0, 15, 0, 0, 0 }; // High contrast color
+// High contrast color
+const short hcc[17] = { 7, 15, 15, 15, 15, 15, 15, 0, 15, 15, 0, 0, 15, 0, 0, 0, 16 };
+
+struct pfRePosCh {
+	short dx, dy;
+	string ch;
+};
 
 struct pfGameInfo {
 	short w, h, n, d;
@@ -23,3 +29,8 @@ struct pfBF {
 	void basic_placeplane(short, short, short, bool);
 	bool placeplane(short, short, short, bool);
 };
+
+extern pfGameInfo curGame;
+extern pfBF bg, bf1, bf2, bf3;
+extern pfTextElem playername, enemyname;
+extern pfRePosCh plShape[4][10];

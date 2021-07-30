@@ -51,17 +51,17 @@ void VtsInputFilter::Work() {
 		} else if(fTextInputMode) {
 			if(s == "\x7f") { // Backspace
 				pop_back_utf8(buf);
-				_CallKeyHander(s);
+				_CallKeyHander(s, {});
 			} else if(s == "\r" || s == "\n") {
 				buf.emplace_back('\n');
-				_CallKeyHander("\n");
+				_CallKeyHander("\n", {});
 			} else {
 				for(char ch: s)
 					buf.emplace_back(ch);
 				std::cout << s;
 			}
 		} else {
-			if(s <= "\x7f") _CallKeyHander(s == "\r" ? "\n" : s);
+			if(s <= "\x7f") _CallKeyHander(s == "\r" ? "\n" : s, {});
 		}
 	}
 }
@@ -82,17 +82,36 @@ void VtsInputFilter::_readEscSeq() {
 	while(!isEscSeqTermChar(t)) {
 		s += t = _readNextCodept();
 	}
-	// std::clog << "[INFO] in " << __PRETTY_FUNCTION__ << " read: `";
-	// for(char ch: s) print_detail(ch);
-	// std::clog << "`" << std::endl;
 	
+	char ch;
 	if(s[0] == '[') { // CSI goes here
 		if(s[1] == '<') {
 			int state, x, y;
-			char ch;
 			std::stringstream(s) >> ch >> ch >> state >> ch >> x >> ch >> y >> ch;
 			_CallMouseHandler(state, x - 1, y - 1, ch == 'M');
+		} else if(s.back() == 'R') {
+			int x, y;
+			std::stringstream(s) >> ch >> y >> ch >> x >> ch;
+			curPosPromise.set_value({ x - 1, y - 1 });
+		} else if(s.back() == '~') {
+			std::vector<int> v;
+			std::stringstream ss(s);
+			ss >> ch;
+			while(ch != '~') {
+				int nv;
+				ss >> nv >> ch;
+				v.push_back(nv);
+			}
+			_CallKeyHander("", v);
+		} else {
+			std::clog << "[INFO] vtIn read unhandled Escape Sequence: `";
+			for(char ch: s) print_detail(ch);
+			std::clog << "`" << std::endl;
 		}
+	} else {
+		std::clog << "[INFO] vtIn read unhandled Escape Sequence: `";
+		for(char ch: s) print_detail(ch);
+		std::clog << "`" << std::endl;
 	}
 }
 
@@ -100,16 +119,21 @@ void VtsInputFilter::_CallMouseHandler(int st, int x, int y, bool b) {
 	if(mouseHandler) {
 		if(futMouseHandler.valid()) {
 			using namespace std::chrono;
-			if(futMouseHandler.wait_for(milliseconds(1)) != std::future_status::ready)
+			if(futMouseHandler.wait_for(seconds(0)) != std::future_status::ready)
 				return;
 		}
 		futMouseHandler = std::async(mouseHandler, st, x, y, b);
 	}
 }
 
-void VtsInputFilter::_CallKeyHander(const std::string &s) {
+void VtsInputFilter::_CallKeyHander(const std::string &s, const std::vector<int> &v) {
 	if(keyHandler) {
-		std::thread(keyHandler, s).detach();
+		if(futKeyHandler.valid()) {
+			using namespace std::chrono;
+			if(futKeyHandler.wait_for(seconds(0)) != std::future_status::ready)
+				return;
+		}
+		futKeyHandler = std::async(keyHandler, s, v);
 	}
 }
 
@@ -134,6 +158,17 @@ std::string VtsInputFilter::PeekLine() {
 void VtsInputFilter::WaitForHandlerThreads() {
 	if(futMouseHandler.valid())
 		futMouseHandler.get();
+	if(futKeyHandler.valid())
+		futKeyHandler.get();
+}
+
+std::pair<int, int> VtsInputFilter::GetLastCurPos() {
+	auto fut = curPosPromise.get_future();
+	if(fut.wait_for(std::chrono::seconds(2)) == std::future_status::timeout) {
+		return {-1, -1};
+	}
+	curPosPromise = std::promise<std::pair<int, int>>();
+	return fut.get();
 }
 
 void VtEnableMouseTrackingAny() {

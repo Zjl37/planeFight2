@@ -1,15 +1,14 @@
 #pragma once
 #include <string>
 #include <vector>
-using namespace std;
 
 typedef struct pfTextElem {
-	string s;
+	std::string s;
 	int d;
 	pfTextElem(): s("") {}
 	pfTextElem(const char *t): s(t) {}
-	pfTextElem(string t): s(t) {}
-	pfTextElem(string t, int f): s(t), d(f) {}
+	pfTextElem(std::string t): s(t) {}
+	pfTextElem(std::string t, int f): s(t), d(f) {}
 	int len() const {
 		return s.length() - d;
 	}
@@ -17,15 +16,15 @@ typedef struct pfTextElem {
 pfTextElem operator+(const pfTextElem &, const pfTextElem &);
 
 typedef struct pfLangFile {
-	string dir;
+	std::string dir;
 	pfTextElem langName;
 	short lidlb;
-	vector<short> lidrb;
+	std::vector<short> lidrb;
 } pfLangFile;
 
 extern pfTextElem text[];
-extern vector<pfLangFile> lf;
+extern std::vector<pfLangFile> lf;
 
 void pfLangRead(const char[]);
-bool pfLangDetect(const string &langDir);
+bool pfLangDetect(const std::string &langDir);
 void pfLangInit(int);

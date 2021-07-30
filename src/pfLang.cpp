@@ -10,7 +10,6 @@ const int ntext = 256;
 pfTextElem text[ntext];
 
 void clear();
-extern SMALL_RECT winr;
 
 char buf1[65536];
 struct pfLfIdx {
@@ -125,7 +124,7 @@ void pfLangRead(const char Lang[]) {
 	text[37] = "AI";
 
 	clear();
-	pfLangInit(winr.Right);
+	pfLangInit(scrW);
 }
 
 pfLangFile lfi;
@@ -160,7 +159,7 @@ bool pfLangDetect(const string &langDir) {
 			cout << buf1;
 			lfi.langName.s = buf1;
 			auto pos = getXY();
-			lfi.langName.d = lfi.langName.s.length() - (pos.second - 4) * winr.Right - pos.first;
+			lfi.langName.d = lfi.langName.s.length() - (pos.second - 4) * scrW - pos.first;
 			lf.push_back(lfi);
 		}
 		ret = FindNextFileA(h, &ffd);

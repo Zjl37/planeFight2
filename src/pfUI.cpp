@@ -1,117 +1,24 @@
+#include "pfGame.hpp"
 #include "pfUI.hpp"
+#include "pfConsole.hpp"
 #include "pfLang.hpp"
+#include "vtsFilter.hpp"
 #include <mutex>
 using namespace std;
 
-extern SMALL_RECT winr;
-extern string mapEdge[256];
-extern mutex mtxCout;
+extern std::string mapEdge[256];
 
-#define ESC "\x1b"
-
-/* IMPORTANT NOTE:
- * WinAPI coord starts from 0, while VT coord starts from 1! Due to historical
- * reasons, all interfaces defined below takes coords as starting from 0!
- */
-
-// VT code: DECXCPR
-// query: ESC [ 6 n
-// answer: ESC [ <r> ; <c> R
-pair<int, int> getXY() {
-	cout << ESC "[6n";
-	char ch = 0;
-	int y, x;
-	cin >> ch >> ch >> y >> ch >> x >> ch;
-	return { x - 1, y - 1 };
-}
-
-// NOTE: To get both X and Y coord at the same time, better call getXY instead of
-// calling getX then getY
-
-int getX() {
-	return getXY().first;
-}
-int getY() {
-	return getXY().second;
-}
-
-// VT code: CUB
-void CurLeft1() {
-	cout << ESC "D";
-}
-
-// VT code: CHA
-// seq: ESC [ <n> G
-void gotoX(int x) {
-	cout << ESC "[" << x+1 << "G";
-}
-
-// VT code: VPA
-// seq: ESC [ <n> d
-void gotoY(int y) {
-	cout << ESC "[" << y+1 << "d";
-}
-
-// VT code: CUP
-// seq: ESC [ <y> ; <x> H
-void gotoXY(int x, int y) {
-	cout << ESC "[" << y+1 << ";" << x+1 << "H";
-}
-
-// TODO: fully test these colors;
-const int winapiFgcToVt[17] = { 30, 34, 32, 36, 31, 35, 33, 37, 90, 94, 92, 96, 91, 95, 93, 97, 39 };
-const int winapiBgcToVt[17] = { 40, 44, 42, 46, 41, 45, 43, 47, 100, 104, 102, 106, 101, 105, 103, 107, 49 };
-
-/// VT code: SGR
-void setColor(int fgc, int bgc) {
-	cout << ESC "[" << winapiFgcToVt[fgc] << ";" << winapiBgcToVt[bgc] << "m";
-}
-
-void setDefaultColor() {
-	cout << ESC "[39;49m";
-}
-
-void clear() {
-	setDefaultColor();
-	cout << ESC "[2J";
-}
-
-void ClearLineRight() {
-	cout << ESC "[0K";
-}
-
-void clearR(short l, short t, short r, short b) {
-	for(int j = t; j <= b; j++) {
-		gotoXY(l, j);
-		cout<<string(r-l+1, ' ');
-		// for(int i = l; i <= r; i++) cout << ' ';
-	}
-}
-
-// VT code: DECTCEM
-// seq for show: ESC [ ? 25 h
-// seq for hide: ESC [ ? 25 l
-void showCursor_(bool f) {
-	cout << (f ? ESC "[?25h" : ESC "[?25l");
-}
-
-void UseAltScrBuf() {
-	cout << ESC "[?1049h";
-}
-
-void UseMainScrBuf() {
-	cout << ESC "[?1049l";
-}
+int scrW, scrH;
 
 void banner(const pfTextElem &msg, short h, short fgc, short bgc) {
 	setColor(fgc, bgc);
 	gotoXY(0, h);
-	cout << setw(winr.Right) << " ";
+	cout << setw(scrW) << " ";
 	gotoXY(0, h + 1);
-	cout << setw(winr.Right) << " ";
+	cout << setw(scrW) << " ";
 	gotoXY(0, h + 2);
-	cout << setw(winr.Right) << " ";
-	gotoXY((winr.Right - msg.len()) / 2, h + 1);
+	cout << setw(scrW) << " ";
+	gotoXY((scrW - msg.len()) / 2, h + 1);
 	cout << msg.s;
 	setDefaultColor();
 }
@@ -190,4 +97,105 @@ void box(short x, short y, short w, short h, short edge) {
 		gotoXY(x - 2, y + h), cout << mapEdge[10];
 		gotoXY(x + w, y + h), cout << mapEdge[11];
 	}
+}
+
+void BlinkCoord(short ax, short ay, bool signDir) {
+	stringstream tmp1("");
+	if(signDir)
+		tmp1 << ">>>>  ";
+	else
+		tmp1 << "<<<<  ";
+	tmp1 << "(" << ax << "," << ay << ")";
+	if(signDir)
+		tmp1 << "  >>>>";
+	else
+		tmp1 << "  <<<<";
+	string tmp2 = tmp1.str();
+	setColor(lightGrey, dbc);
+	gotoXY((scrW - tmp2.length()) / 2, 9);
+	cout << tmp2;
+	Sleep(rand() % 250);
+	setColor(black, dbc);
+	gotoXY((scrW - tmp2.length()) / 2, 9);
+	cout << tmp2;
+	Sleep(rand() % 250);
+	setColor(grey, dbc);
+	gotoXY((scrW - tmp2.length()) / 2, 9);
+	cout << tmp2;
+	Sleep(rand() % 250);
+	setColor(white, dbc);
+	gotoXY((scrW - tmp2.length()) / 2, 9);
+	cout << tmp2;
+	Sleep(500 + rand() % 250);
+}
+
+void drawPlane(short x, short y, short d, bool r) {
+	// direction: 0=up 1=right 2=down 3=left
+	if(r && !curGame.cw)
+		for(int i = 0; i < 10; i++)
+			if(x + plShape[d][i].dx * 2 >= bf1.x + bf1.w * 2 || x + plShape[d][i].dx * 2 < bf1.x || y + plShape[d][i].dy >= bf1.y + bf1.h || y + plShape[d][i].dy < bf1.y)
+				return;
+	for(int i = 0; i < 10; i++) {
+		int tx = x + plShape[d][i].dx * 2, ty = y + plShape[d][i].dy;
+		if(r) {
+			if(tx < bf1.x) tx += bf1.w * 2;
+			if(tx >= bf1.x + bf1.w * 2) tx -= bf1.w * 2;
+			if(ty < bf1.y) ty += bf1.h * 2;
+			if(ty >= bf1.y + bf1.h) ty -= bf1.h;
+		}
+		gotoXY(tx, ty);
+		cout << plShape[d][i].ch;
+	}
+}
+
+void drawPark(int selDir) {
+	if(selDir == 0)
+		setColor(black, aqua);
+	else
+		setColor(black, white);
+	clearR(4, 10 + curGame.h, 17, 16 + curGame.h);
+	drawPlane(10, 12 + curGame.h, 0, false);
+	if(selDir == 1)
+		setColor(black, aqua);
+	else
+		setColor(black, white);
+	clearR(20, 10 + curGame.h, 33, 16 + curGame.h);
+	drawPlane(28, 13 + curGame.h, 1, false);
+	if(selDir == 2)
+		setColor(black, aqua);
+	else
+		setColor(black, white);
+	clearR(36, 10 + curGame.h, 49, 16 + curGame.h);
+	drawPlane(42, 14 + curGame.h, 2, false);
+	if(selDir == 3)
+		setColor(black, aqua);
+	else
+		setColor(black, white);
+	clearR(52, 10 + curGame.h, 65, 16 + curGame.h);
+	drawPlane(56, 13 + curGame.h, 3, false);
+}
+
+void drawBF(bool showBf2) {
+	bf1.x = 4, bf1.y = bf2.y = bf3.y = 5;
+	bf2.x = bf3.x = scrW - 4 - bf2.w * 2;
+	setDefaultColor();
+	box(bf1.x, bf1.y, bf1.w * 2, bf1.h, 2);
+	box(bf2.x, bf2.y, bf2.w * 2, bf2.h, 2);
+	for(int i = 0; i < curGame.w; i++) {
+		int j = i;
+		while(j && j % 10 == 0) j /= 10;
+		gotoXY(bf1.x + i * 2, bf1.y - 2), cout << setw(2) << j % 10;
+		gotoXY(bf2.x + i * 2, bf2.y - 2), cout << setw(2) << j % 10;
+	}
+	for(int i = 0; i < curGame.h; i++) {
+		gotoXY(bf1.x - 4, bf1.y + i), cout << i;
+		gotoXY(bf2.x - 4, bf2.y + i), cout << i;
+	}
+	gotoXY(bf1.x, 2), cout << playername.s << endl;
+	gotoXY(bf2.x, 2), cout << enemyname.s << endl;
+	bf1.draw(true);
+	if(showBf2)
+		bf2.draw(true);
+	else
+		bf3.draw(true);
 }
