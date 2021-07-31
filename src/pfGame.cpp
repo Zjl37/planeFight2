@@ -1,5 +1,7 @@
 #include "pfGame.hpp"
 
+extern std::mt19937 rng;
+
 pfGameInfo curGame;
 pfBF bg, bf1, bf2, bf3;
 pfTextElem playername, enemyname;

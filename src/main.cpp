@@ -2,6 +2,7 @@
 #include <ctime>
 #include <future>
 #include <vector>
+#include <random>
 #include <sstream>
 #include <mutex>
 #include <winsock2.h>
@@ -33,6 +34,8 @@ string mapEdge[256] = {
 const int P1_NNLUE = 5;
 
 int bdcOpt = 1;
+
+mt19937 rng(time(nullptr)); // random number generator by MT19937 algorithm
 
 bool isFirst;
 int prevPage;
@@ -133,7 +136,7 @@ bool pfServerAccept() {
 	} else if(ret == 1) {
 		gotoXY(0, getY() + 1), cout << text[65].s << buf;
 	}
-	hg = *(int *)(sendbuf + 2) = rand() << 15 | rand();
+	hg = *(int *)(sendbuf + 2) = rng();
 	strcpy(sendbuf + 6, "hello");
 	ret = send(sockClient, sendbuf, 11, 0);
 	// check ret
@@ -291,7 +294,7 @@ void setPage(int x) {
 		vtIn.fTextInputMode = 1;
 	} else if(x == 2) {
 		memset(tab, 0, sizeof tab);
-		isFirst = rand() & 1;
+		isFirst = rng() & 1;
 		if(curGame.d == 2) {
 			if(!curGame.n) {
 				curGame.n = 3;
@@ -367,7 +370,7 @@ bool bfInit(pfBF &bf) {
 	int i = 0, ttry = 0;
 	bf.clear();
 	while(i < curGame.n && ttry < 10000) {
-		if(bf.placeplane(rand() % bf.w, rand() % bf.h, rand() & 3, curGame.cw))
+		if(bf.placeplane(rng() % bf.w, rng() % bf.h, rng() & 3, curGame.cw))
 			++i;
 		++ttry;
 	}
@@ -379,7 +382,7 @@ bool bfInit(pfBF &bf) {
 void p0GenBg() {
 	bg.resize(scrW / 2, scrH);
 	for(int i = 0; i < (int)bg.w * bg.h / 25; i++)
-		bg.placeplane(rand() % bg.w, rand() % bg.h, rand() & 3, curGame.cw);
+		bg.placeplane(rng() % bg.w, rng() % bg.h, rng() & 3, curGame.cw);
 }
 
 void p0InputOK() {
@@ -1081,44 +1084,45 @@ void KeyHandler(const string &s, const vector<int> &v) {
 	}
 }
 
+// parse command line arguments
 void processArg(int argc, char **argv) {
-	if(argc < 2)
+	if(argc < 2) // no arguments
 		return;
 	bool pause = 0;
 	for(int i = 1; i < argc; i++) {
 		string op = argv[i];
-		if(op[0] != '-') {
+		if(op[0] != '-') { // invalid parameter
 			cout << "planefight: ignoring parameter " << op << endl;
 			pause = 1;
-		} else if(op[1] != '-') {
-			if(op == "-v") {
-				cout << pfVerStr << endl;
-				exit(0);
-			} else if(op == "-bdc") {
+		} else if(op[1] != '-') { // short parameter
+			if(op == "-v") { // version
+				cout << pfVerStr << endl; // output version
+				exit(0); // exit
+			} else if(op == "-bdc") { // set code page
 				if(i == argc - 1) {
 					cout << "planefight: error: expected value after -cp option." << endl;
 					exit(233);
 				}
 				string val = argv[i + 1];
-				if(val == "full") {
+				if(val == "full") { // -bdc full
 					bdcOpt = 0;
-				} else if(val == "pseudofull") {
+				} else if(val == "pseudofull") { // -bdc pseudofull
 					bdcOpt = 1;
-				} else {
+				} else { // others
 					cout << "planefight: error: unknown value " << val << " for option " << op << "." << endl;
 					exit(233);
 				}
 				++i;
-			} else {
+			} else { // others
 				cout << "planefight: unknown option " << op << endl;
 				pause = 1;
 			}
-		} else {
+		} else { // long parameter, unexpected
 			cout << "planefight: unknown option " << op << endl;
 			pause = 1;
 		}
 	}
-	if(pause) {
+	if(pause) { // pause
 		cout << "Press enter to continue...";
 		cin.get();
 	}
@@ -1152,9 +1156,9 @@ void PfAtExit() {
 int main(int argc, char **argv) {
 	freopen("planefight.log", "w", stderr);
 
-	processArg(argc, argv);
-	srand(time(0));
-	ConInit();
+	processArg(argc, argv); // parse command line arguments
+	// srand(time(0)); // deprecated
+	ConInit(); // initialising console
 	atexit(PfAtExit);
 	string langDir;
 	{

@@ -2,6 +2,8 @@
 #include "pfAI.hpp"
 #include "pfUI.hpp"
 
+extern std::mt19937 rng;
+
 pfBF vbf;
 
 bool pfAIinit(const pfGameInfo &g, const vector<short> &mk) {
@@ -14,7 +16,7 @@ bool pfAIinit(const pfGameInfo &g, const vector<short> &mk) {
 				bool ret = 0;
 				char r = 0;
 				do {
-					short d = rand() & 3;
+					short d = rng() & 3;
 					ret = vbf.placeplane(j, i, d, g.cw);
 					if(!ret) r |= 1 << d;
 				} while(!ret && r != 15);
@@ -23,11 +25,11 @@ bool pfAIinit(const pfGameInfo &g, const vector<short> &mk) {
 			}
 	int wcl23 = 0;
 	while(k < g.n) {
-		short x = rand() % g.w, y = rand() % g.h;
+		short x = rng() % g.w, y = rng() % g.h;
 		while(vbf.pl[x + y * g.w] || mk[x + y * g.w]) {
-			x = rand() % g.w, y = rand() % g.h;
+			x = rng() % g.w, y = rng() % g.h;
 		}
-		if(vbf.placeplane(x, y, rand() & 3, g.cw))
+		if(vbf.placeplane(x, y, rng() & 3, g.cw))
 			++k;
 		++wcl23;
 		if(wcl23 > 64)
@@ -67,7 +69,7 @@ bool pfAIdecide(const pfGameInfo &g, const vector<short> &mk, short &tgx, short 
 			if(vbf.pl[j + i * g.w] & 8 && mk[j + i * g.w] != darkRed)
 				pos.push_back((COORD){ j, i });
 	if(!pos.size()) return false;
-	int i = rand() % pos.size();
+	int i = rng() % pos.size();
 	tgx = pos[i].X, tgy = pos[i].Y;
 	return true;
 }

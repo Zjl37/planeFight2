@@ -2,6 +2,7 @@
 #ifdef WIN32
 #	include <windows.h>
 #endif
+#include <random>
 #include <string>
 #include <mutex>
 #include <iostream>

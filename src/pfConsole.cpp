@@ -1,6 +1,7 @@
 #include "pfConsole.hpp"
 #include "vtsFilter.hpp"
 
+extern std::mt19937 rng;
 extern VtsInputFilter vtIn;
 extern int scrW, scrH;
 
@@ -104,7 +105,7 @@ void UseMainScrBuf() {
 
 HANDLE hIn, hOut;
 CONSOLE_SCREEN_BUFFER_INFO csbi;
-DWORD orgConInMode, orgConOutMode;
+DWORD orgConInMode, orgConOutMode; // original console mode
 
 #ifndef ENABLE_VIRTUAL_TERMINAL_INPUT
 #define ENABLE_VIRTUAL_TERMINAL_INPUT 0x0200
@@ -114,17 +115,17 @@ DWORD orgConInMode, orgConOutMode;
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
 #endif
 
+// initialise the console
 void ConInit() {
 	hIn = GetStdHandle(STD_INPUT_HANDLE);
-	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-
+	hOut = GetStdHandle(STD_OUTPUT_HANDLE); // get standard handles
 	DWORD mode;
 	// detect legacy console
 	GetConsoleMode(hOut, &mode);
 	orgConOutMode = mode;
-	mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-	if(!SetConsoleMode(hOut, mode)) {
-		std::cout << "[ERROR] You are using legacy console, planeFight won't be able to run." << std::endl;
+	mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING; // enable virtual terminal
+	if(!SetConsoleMode(hOut, mode)) { // is legacy console
+		std::cout << "planefight: error: You are using legacy console, planeFight won't be able to run." << std::endl;
 		std::cout << "    We recommend that you upgrade to the latest version of Windows 10, or if you're already using one, check if legacy console is enabled." << std::endl;
 		exit(1);
 	}
@@ -140,10 +141,10 @@ void ConInit() {
 	mode &= ~ENABLE_ECHO_INPUT;
 	SetConsoleMode(hIn, mode);
 
-	SetConsoleCP(65001);
+	SetConsoleCP(65001); // change to utf-8
 	SetConsoleOutputCP(65001);
 
-	UseAltScrBuf();
+	UseAltScrBuf(); 
 
 	GetConsoleScreenBufferInfo(hOut, &csbi);
 	csbi.dwSize.X = std::max((short)80, csbi.dwSize.X);
