@@ -135,7 +135,7 @@ bool pfServerAccept() {
 	} else if(ret == 1) {
 		gotoXY(0, getY() + 1), cout << text[65].s << buf;
 	}
-	hg = *(int *)(sendbuf + 2) = rand() << 15 | rand();
+	hg = *(int *)(sendbuf + 2) = rng();
 	strcpy(sendbuf + 6, "hello");
 	ret = send(sockClient, sendbuf, 11, 0);
 	// check ret
@@ -293,7 +293,7 @@ void setPage(int x) {
 		vtIn.fTextInputMode = 1;
 	} else if(x == 2) {
 		memset(tab, 0, sizeof tab);
-		isFirst = rand() & 1;
+		isFirst = rng() & 1;
 		if(curGame.d == 2) {
 			if(!curGame.n) {
 				curGame.n = 3;
@@ -369,7 +369,7 @@ bool bfInit(pfBF &bf) {
 	int i = 0, ttry = 0;
 	bf.clear();
 	while(i < curGame.n && ttry < 10000) {
-		if(bf.placeplane(rand() % bf.w, rand() % bf.h, rand() & 3, curGame.cw))
+		if(bf.placeplane(rng() % bf.w, rng() % bf.h, rng() & 3, curGame.cw))
 			++i;
 		++ttry;
 	}
@@ -381,7 +381,7 @@ bool bfInit(pfBF &bf) {
 void p0GenBg() {
 	bg.resize(scrW / 2, scrH);
 	for(int i = 0; i < (int)bg.w * bg.h / 25; i++)
-		bg.placeplane(rand() % bg.w, rand() % bg.h, rand() & 3, curGame.cw);
+		bg.placeplane(rng() % bg.w, rng() % bg.h, rng() & 3, curGame.cw);
 }
 
 void p0InputOK() {

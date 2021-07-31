@@ -114,19 +114,19 @@ void BlinkCoord(short ax, short ay, bool signDir) {
 	setColor(lightGrey, dbc);
 	gotoXY((scrW - tmp2.length()) / 2, 9);
 	cout << tmp2;
-	Sleep(rand() % 250);
+	Sleep(rng() % 250);
 	setColor(black, dbc);
 	gotoXY((scrW - tmp2.length()) / 2, 9);
 	cout << tmp2;
-	Sleep(rand() % 250);
+	Sleep(rng() % 250);
 	setColor(grey, dbc);
 	gotoXY((scrW - tmp2.length()) / 2, 9);
 	cout << tmp2;
-	Sleep(rand() % 250);
+	Sleep(rng() % 250);
 	setColor(white, dbc);
 	gotoXY((scrW - tmp2.length()) / 2, 9);
 	cout << tmp2;
-	Sleep(500 + rand() % 250);
+	Sleep(500 + rng() % 250);
 }
 
 void drawPlane(short x, short y, short d, bool r) {
