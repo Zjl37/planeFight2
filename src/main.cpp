@@ -34,6 +34,8 @@ const int P1_NNLUE = 5;
 
 int bdcOpt = 1;
 
+mt19937 rng; // random number generator by MT19937 algorithm
+
 bool isFirst;
 int prevPage;
 int page, tab[16], nue, turn;
@@ -1081,44 +1083,45 @@ void KeyHandler(const string &s, const vector<int> &v) {
 	}
 }
 
+// parse command line arguments
 void processArg(int argc, char **argv) {
-	if(argc < 2)
+	if(argc < 2) // no arguments
 		return;
 	bool pause = 0;
 	for(int i = 1; i < argc; i++) {
 		string op = argv[i];
-		if(op[0] != '-') {
+		if(op[0] != '-') { // invalid parameter
 			cout << "planefight: ignoring parameter " << op << endl;
 			pause = 1;
-		} else if(op[1] != '-') {
-			if(op == "-v") {
-				cout << pfVerStr << endl;
-				exit(0);
-			} else if(op == "-bdc") {
+		} else if(op[1] != '-') { // short parameter
+			if(op == "-v") { // version
+				cout << pfVerStr << endl; // output version
+				exit(0); // exit
+			} else if(op == "-bdc") { // set code page
 				if(i == argc - 1) {
 					cout << "planefight: error: expected value after -cp option." << endl;
 					exit(233);
 				}
 				string val = argv[i + 1];
-				if(val == "full") {
+				if(val == "full") { // -bdc full
 					bdcOpt = 0;
-				} else if(val == "pseudofull") {
+				} else if(val == "pseudofull") { // -bdc pseudofull
 					bdcOpt = 1;
-				} else {
+				} else { // others
 					cout << "planefight: error: unknown value " << val << " for option " << op << "." << endl;
 					exit(233);
 				}
 				++i;
-			} else {
+			} else { // others
 				cout << "planefight: unknown option " << op << endl;
 				pause = 1;
 			}
-		} else {
+		} else { // long parameter, unexpected
 			cout << "planefight: unknown option " << op << endl;
 			pause = 1;
 		}
 	}
-	if(pause) {
+	if(pause) { // pause
 		cout << "Press enter to continue...";
 		cin.get();
 	}
@@ -1152,9 +1155,10 @@ void PfAtExit() {
 int main(int argc, char **argv) {
 	freopen("planefight.log", "w", stderr);
 
-	processArg(argc, argv);
-	srand(time(0));
-	ConInit();
+	processArg(argc, argv); // parse command line arguments
+	// srand(time(0)); // deprecated
+	rng = mt19937(time(nullptr)); // initialising rng
+	ConInit(); // initialising console
 	atexit(PfAtExit);
 	string langDir;
 	{
