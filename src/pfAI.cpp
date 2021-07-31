@@ -2,6 +2,8 @@
 #include "pfAI.hpp"
 #include "pfUI.hpp"
 
+extern std::mt19937 rng;
+
 pfBF vbf;
 
 bool pfAIinit(const pfGameInfo &g, const vector<short> &mk) {

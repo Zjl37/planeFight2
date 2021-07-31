@@ -1,6 +1,7 @@
 #include "pfConsole.hpp"
 #include "vtsFilter.hpp"
 
+extern std::mt19937 rng;
 extern VtsInputFilter vtIn;
 extern int scrW, scrH;
 

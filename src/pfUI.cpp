@@ -7,6 +7,7 @@
 using namespace std;
 
 extern std::string mapEdge[256];
+extern std::mt19937 rng;
 
 int scrW, scrH;
 
