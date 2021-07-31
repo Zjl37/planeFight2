@@ -2,6 +2,7 @@
 #include <ctime>
 #include <future>
 #include <vector>
+#include <random>
 #include <sstream>
 #include <mutex>
 #include <winsock2.h>
@@ -1154,7 +1155,7 @@ void PfAtExit() {
 
 int main(int argc, char **argv) {
 	freopen("planefight.log", "w", stderr);
-	
+
 	processArg(argc, argv); // parse command line arguments
 	// srand(time(0)); // deprecated
 	ConInit(); // initialising console
