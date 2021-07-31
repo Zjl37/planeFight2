@@ -34,7 +34,7 @@ const int P1_NNLUE = 5;
 
 int bdcOpt = 1;
 
-mt19937 rng; // random number generator by MT19937 algorithm
+mt19937 rng(time(nullptr)); // random number generator by MT19937 algorithm
 
 bool isFirst;
 int prevPage;
@@ -1154,10 +1154,9 @@ void PfAtExit() {
 
 int main(int argc, char **argv) {
 	freopen("planefight.log", "w", stderr);
-
+	
 	processArg(argc, argv); // parse command line arguments
 	// srand(time(0)); // deprecated
-	rng = mt19937(time(nullptr)); // initialising rng
 	ConInit(); // initialising console
 	atexit(PfAtExit);
 	string langDir;
