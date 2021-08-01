@@ -1,4 +1,4 @@
-Page number is stored in 32-bit int variable `::page`.
+Page number is stored in `enum class PfPage`.
 
 For each page the state of lower-level elements or other information is stored in one of the index of int array `::tab[]`.
 

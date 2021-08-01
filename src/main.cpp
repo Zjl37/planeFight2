@@ -4,6 +4,7 @@
 #include <vector>
 #include <random>
 #include <sstream>
+#include <stack>
 #include <mutex>
 #include <winsock2.h>
 #include "pfGame.hpp"
@@ -14,8 +15,8 @@
 
 using namespace std;
 
-#define pfVersion "2.4"
-#define pfVerStr "planefight 2.4"
+#define pfVersion "2.6"
+#define pfVerStr "planefight 2.6"
 
 const int PF_NMARKER = 23;
 
@@ -37,9 +38,23 @@ int bdcOpt = 1;
 
 mt19937 rng(time(nullptr)); // random number generator by MT19937 algorithm
 
+enum class PfPage {
+	welcome = 0,
+	main = 1,
+	prepare = 2,
+	adjust_map = 4,
+	about = 5,
+	game = 10,
+	gameover = 19,
+	gamerule_setting_server = 41,
+	server_init = 42,
+	client_init = 51,
+	error,
+};
+
 bool isFirst;
-int prevPage;
-int page, tab[16], nue, turn;
+stack<PfPage> stPage;
+int tab[16], nue, turn;
 pfLabel ue[128];
 pfTextElem errMsg;
 
@@ -56,7 +71,8 @@ mutex mtxCout;
 
 VtsInputFilter vtIn;
 
-void setPage(int);
+bool _SetPage(PfPage);
+void refreshPage();
 
 int pfCheckVer(const string &s) {
 	stringstream curVer(pfVerStr), iVer(s);
@@ -71,9 +87,19 @@ int pfCheckVer(const string &s) {
 	return 0;
 }
 
-void showErrorMsg(const pfTextElem &t, int rpage) {
+void showErrorMsg(const pfTextElem &t, PfPage rpage) {
 	errMsg = t;
-	setPage(rpage ^ 0x80000000);
+	while(stPage.size() > 1) stPage.pop();
+	stPage.push(rpage);
+	_SetPage(PfPage::error);
+	stPage.push(PfPage::error);
+	refreshPage();
+}
+void showErrorMsg(const pfTextElem &t) {
+	errMsg = t;
+	_SetPage(PfPage::error);
+	stPage.push(PfPage::error);
+	refreshPage();
 }
 
 bool getIP() {
@@ -89,18 +115,42 @@ SOCKET sockServer, sockClient;
 SOCKADDR_IN addrServer, addrClient;
 int hg;
 
+void SetPage(PfPage x) {
+	if(_SetPage(x)) {
+		if(stPage.size()) stPage.pop();
+		stPage.push(x);
+	}
+	refreshPage();
+}
+
+void NextPage(PfPage x) {
+	if(_SetPage(x))
+		stPage.push(x);
+	refreshPage();
+}
+
+void PrevPage() {
+	if(stPage.size()) {
+		stPage.pop();
+		_SetPage(stPage.top());
+	} else {
+		NextPage(PfPage::main);
+	}
+	refreshPage();
+}
+
 // Todo: examine this.
 bool pfCheckMsg(const char *msg, const char *i) {
 	if(msg[0] != 'p' || msg[1] != 'f') {
 		closesocket(sockClient);
 		WSACleanup();
-		showErrorMsg(text[71], 1);
+		showErrorMsg(text[71], PfPage::main);
 		return false;
 	}
 	if(*(int *)(msg + 2) != hg) {
 		closesocket(sockClient);
 		WSACleanup();
-		showErrorMsg(text[71], 1);
+		showErrorMsg(text[71], PfPage::main);
 		return false;
 	}
 	if(!i) return true;
@@ -110,7 +160,7 @@ bool pfCheckMsg(const char *msg, const char *i) {
 	if(strcmp(tmpbuf, i)) {
 		closesocket(sockClient);
 		WSACleanup();
-		showErrorMsg(text[71], 1);
+		showErrorMsg(text[71], PfPage::main);
 		return false;
 	}
 	return true;
@@ -131,7 +181,7 @@ bool pfServerAccept() {
 		send(sockClient, sendbuf, 11, 0);
 		closesocket(sockServer);
 		WSACleanup();
-		showErrorMsg(text[64] + (string)buf, 1);
+		showErrorMsg(text[64] + (string)buf, PfPage::main);
 		return false;
 	} else if(ret == 1) {
 		gotoXY(0, getY() + 1), cout << text[65].s << buf;
@@ -154,7 +204,7 @@ bool pfServerAccept() {
 	if(!pfCheckMsg(buf, "name"))
 		return false;
 	enemyname = pfTextElem(string(buf + 14), *(int *)(buf + 10));
-	setPage(2);
+	NextPage(PfPage::prepare);
 	closesocket(sockServer);
 	if(tSockClient.joinable()) tSockClient.join();
 	tSockClient = thread(pfSockHandler);
@@ -163,7 +213,7 @@ bool pfServerAccept() {
 bool pfServerInit() {
 	setDefaultColor(), clear();
 	if(WSAStartup(MAKEWORD(2, 2), &wsaData)) {
-		showErrorMsg(text[52], 1);
+		showErrorMsg(text[52], PfPage::main);
 		return false;
 	}
 	sIP = "";
@@ -171,7 +221,7 @@ bool pfServerInit() {
 	sockServer = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(sockServer == INVALID_SOCKET) {
 		WSACleanup();
-		showErrorMsg(text[56], 1);
+		showErrorMsg(text[56], PfPage::main);
 		return false;
 	}
 	addrServer.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
@@ -181,14 +231,14 @@ bool pfServerInit() {
 	if(ret == SOCKET_ERROR) {
 		closesocket(sockServer);
 		WSACleanup();
-		showErrorMsg(text[58], 1);
+		showErrorMsg(text[58], PfPage::main);
 		return false;
 	}
 	ret = listen(sockServer, 1);
 	if(ret == SOCKET_ERROR) {
 		closesocket(sockServer);
 		WSACleanup();
-		showErrorMsg(text[60], 1);
+		showErrorMsg(text[60], PfPage::main);
 		return false;
 	}
 	if(tSockServer.joinable()) tSockServer.join();
@@ -197,14 +247,14 @@ bool pfServerInit() {
 }
 bool pfClientInit() {
 	if(WSAStartup(MAKEWORD(2, 2), &wsaData)) {
-		showErrorMsg(text[52], 1);
+		showErrorMsg(text[52], PfPage::main);
 		return false;
 	}
 	gotoXY(0, 3), cout << text[53].s;
 	sockClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(sockServer == INVALID_SOCKET) {
 		WSACleanup();
-		showErrorMsg(text[66], 1);
+		showErrorMsg(text[66], PfPage::main);
 		return false;
 	}
 	gotoXY(0, getY() + 1), cout << text[67].s;
@@ -219,7 +269,7 @@ bool pfClientConnect() {
 	if(ret == SOCKET_ERROR) {
 		closesocket(sockClient);
 		WSACleanup();
-		showErrorMsg(text[68], 1);
+		showErrorMsg(text[68], PfPage::main);
 		return false;
 	}
 	gotoXY(0, getY() + 1), cout << text[69].s;
@@ -230,17 +280,17 @@ bool pfClientConnect() {
 	if(strcmp(buf + 6, "!ver") == 0) {
 		closesocket(sockClient);
 		WSACleanup();
-		showErrorMsg(text[70], 1);
+		showErrorMsg(text[70], PfPage::main);
 		return false;
 	} else if(buf[0] != 'p' || buf[1] != 'f') {
 		closesocket(sockClient);
 		WSACleanup();
-		showErrorMsg(text[71], 1);
+		showErrorMsg(text[71], PfPage::main);
 		return false;
 	} else if(strcmp(buf + 6, "hello")) {
 		closesocket(sockClient);
 		WSACleanup();
-		showErrorMsg(text[71], 1);
+		showErrorMsg(text[71], PfPage::main);
 		return false;
 	}
 	hg = *(int *)(sendbuf + 2) = *(int *)(buf + 2);
@@ -268,7 +318,7 @@ void pfExchangeMap() {
 	*(short *)(sendbuf + 8) = bf1.pl[0];
 	int ret = send(sockClient, sendbuf, 10, 0);
 	if(ret <= 0) {
-		showErrorMsg(text[85], 1);
+		showErrorMsg(text[85]);
 		return;
 	}
 }
@@ -277,22 +327,21 @@ bool isMyTurn() {
 	return (turn & 1) ^ 1 ^ isFirst;
 }
 
-void refreshPage();
-
 void uptCursorState() {
 	lock_guard<mutex> _lg(mtxCout);
-	if(page == 0 || page == 51)
+	if(stPage.top() == PfPage::welcome || stPage.top() == PfPage::client_init)
 		showCursor();
 	else
 		hideCursor();
 }
 
-void setPage(int x) {
-	prevPage = page;
+bool _SetPage(PfPage x) {
 	vtIn.fTextInputMode = 0;
-	if(x == 0) {
+	switch(x) {
+	case PfPage::welcome:
 		vtIn.fTextInputMode = 1;
-	} else if(x == 2) {
+		break;
+	case PfPage::prepare:
 		memset(tab, 0, sizeof tab);
 		isFirst = rng() & 1;
 		if(curGame.d == 2) {
@@ -309,12 +358,15 @@ void setPage(int x) {
 			bf3.resize(curGame.w, curGame.h);
 		}
 		p2isP1Ready = p2isP2Ready = p2npl = 0;
-	} else if(x == 10) {
+		break;
+	case PfPage::game:
 		memset(tab, 0, sizeof tab);
 		p10des1 = p10des2 = p10srd = 0;
-	} else if(x == 19) {
+		break;
+	case PfPage::gameover:
 		bf2.mk = bf3.mk;
-	} else if(x == 41) {
+		break;
+	case PfPage::gamerule_setting_server:
 		if(!curGame.n) {
 			curGame.n = 3;
 			bf1.resize(10, 10), bf2.resize(10, 10), bf3.resize(10, 10);
@@ -322,61 +374,58 @@ void setPage(int x) {
 		} else {
 			bf1.clear(), bf2.clear(), bf3.clear();
 		}
-	} else if(x == 42) {
+		break;
+	case PfPage::server_init:
 		curGame.d = -2;
-		if(!pfServerInit()) return;
-	} else if(x == 51) {
+		if(!pfServerInit()) return false;
+		break;
+	case PfPage::client_init:
 		vtIn.fTextInputMode = 1;
 		curGame.d = -1;
 		sIP = "";
-		if(!pfClientInit()) return;
+		if(!pfClientInit()) return false;
+		break;
+	default: break;
 	}
-	page = x;
-	refreshPage();
+	return true;
 }
 
 void drawUiElem() {
 	lock_guard<mutex> _lg(mtxCout);
 	setDefaultColor(), clear();
-	if(page == 0 || page == 1)
+	if(stPage.top() <= PfPage(1))
 		bg.draw(false);
 	for(int i = 1; i <= nue; i++)
 		ue[i].draw();
-	if(page & 0x80000000) {
-		banner(errMsg, scrH / 3, white, red);
-		return;
-	}
-	if(page == 0) {
+	switch(stPage.top()) {
+	case PfPage::welcome:
 		gotoXY(ue[4].right(), ue[4].y);
-	} else if(page == 2) {
+		break;
+	case PfPage::prepare:
 		drawBF(false);
 		if(tab[0] == 0)
 			drawPark(tab[1]);
-	} else if(page == 4) {
+		break;
+	case PfPage::adjust_map:
 		bf1.x = 4, bf1.y = 5;
 		box(bf1.x, bf1.y, curGame.w * 2, curGame.h, 2);
-	} else if(page == 10) {
+		break;
+	case PfPage::game:
 		drawBF(false);
 		gotoXY(scrW - 10, 1), cout << "#" << turn;
-	} else if(page == 19) {
+		break;
+	case PfPage::gameover:
 		drawBF(true);
 		gotoXY(scrW - 10, 1), cout << "#" << turn;
-	} else if(page == 51) {
+		break;
+	case PfPage::client_init:
 		gotoXY(5, 7), cout << sIP;
+		break;
+	case PfPage::error:
+		banner(errMsg, scrH / 3, white, red);
+		return;
+	default: break;
 	}
-}
-
-bool bfInit(pfBF &bf) {
-	int i = 0, ttry = 0;
-	bf.clear();
-	while(i < curGame.n && ttry < 10000) {
-		if(bf.placeplane(rng() % bf.w, rng() % bf.h, rng() & 3, curGame.cw))
-			++i;
-		++ttry;
-	}
-	if(i < curGame.n)
-		return bf.clear(), false;
-	return true;
 }
 
 void p0GenBg() {
@@ -392,14 +441,14 @@ void p0InputOK() {
 		return;
 	}
 	setDefaultColor();
-	setPage(1);
+	NextPage(PfPage::main);
 }
 
 void p1Play21() {
-	setPage(41);
+	NextPage(PfPage::gamerule_setting_server);
 }
 void p1Play22() {
-	setPage(51);
+	NextPage(PfPage::client_init);
 }
 
 void p1Play2() {
@@ -411,12 +460,12 @@ void p2Start() {
 	turn = 1;
 	banner(text[36], scrH / 3, white, pink);
 	Sleep(1000);
-	setPage(10);
+	SetPage(PfPage::game);
 }
 void p2Ready() {
 	if(p2npl != curGame.n) return;
 	if(curGame.d > 0) {
-		bool tmp = bfInit(bf2);
+		bool tmp = bf2.AutoArrange();
 		if(tmp == false) {
 			refreshPage();
 			return;
@@ -428,8 +477,8 @@ void p2Ready() {
 			p2isP1Ready = 1;
 			strcpy(sendbuf + 6, "ready");
 			ret = send(sockClient, sendbuf, 12, 0);
-			if(ret <= 0) {
-				showErrorMsg(text[85], 1);
+			if(ret < 0) {
+				showErrorMsg(text[85], PfPage::main);
 				return;
 			}
 			if(!(curGame.d & 1) && p2isP2Ready) {
@@ -468,7 +517,7 @@ void p2Giveup() {
 	send(sockClient, sendbuf, 12, 0);
 	closesocket(sockClient);
 	if(tSockClient.joinable()) tSockClient.join();
-	setPage(1);
+	PrevPage();
 }
 
 void p10Surrender() {
@@ -478,7 +527,7 @@ void p10Surrender() {
 		send(sockClient, sendbuf, 16, 0);
 		pfExchangeMap();
 	} else {
-		setPage(19);
+		SetPage(PfPage::gameover);
 	}
 }
 
@@ -512,8 +561,8 @@ short attackR(short x, short y) {
 	strcpy(sendbuf + 6, "attack");
 	*(short *)(sendbuf + 12) = x, *(short *)(sendbuf + 14) = y;
 	int ret = send(sockClient, sendbuf, 16, 0);
-	if(ret <= 0) {
-		showErrorMsg(text[85], 1);
+	if(ret < 0) {
+		showErrorMsg(text[85], PfPage::main);
 		return -1;
 	}
 	short res = attackResFuture.get();
@@ -546,7 +595,7 @@ void p10EnemyTurn() {
 	short ret = pfAIdecide(curGame, bf1.mk, ax, ay);
 	if(!ret) {
 		p10srd = 2;
-		setPage(19);
+		SetPage(PfPage::gameover);
 		return;
 	}
 	res = attackL(ax, ay, bf1.pl, bf1.mk);
@@ -560,7 +609,7 @@ void p10EnemyTurn() {
 	if(res == 2) {
 		++p10des1;
 		if(p10des1 == curGame.n) {
-			setPage(19);
+			SetPage(PfPage::gameover);
 			return;
 		}
 	}
@@ -586,7 +635,7 @@ void attack(short x, short y) {
 		++p10des2;
 		if(p10des2 == curGame.n) {
 			if(curGame.d <= 0) pfExchangeMap();
-			else setPage(19);
+			else SetPage(PfPage::gameover);
 			return;
 		}
 	}
@@ -600,7 +649,7 @@ void pfSockHandler() {
 	while(1) {
 		int ret = recv(sockClient, buf, 65536, 0);
 		if(ret < 0) {
-			showErrorMsg(text[86], 1);
+			showErrorMsg(text[86], PfPage::main);
 			break;
 		}
 		if(!pfCheckMsg(buf, NULL)) continue;
@@ -613,7 +662,7 @@ void pfSockHandler() {
 		}
 		tmpbuf[6] = 0;
 		if(strcmp(tmpbuf, "giveup") == 0) {
-			showErrorMsg(text[80], 1);
+			showErrorMsg(text[80], PfPage::main);
 			break;
 		}
 		if(strcmp(tmpbuf, "attack") == 0) {
@@ -622,8 +671,8 @@ void pfSockHandler() {
 			strcpy(sendbuf + 6, "result");
 			*(short *)(sendbuf + 12) = res;
 			int ret = send(sockClient, sendbuf, 14, 0);
-			if(ret <= 0) {
-				showErrorMsg(text[85], 1);
+			if(ret < 0) {
+				showErrorMsg(text[85], PfPage::main);
 				break;
 			}
 			{
@@ -674,8 +723,8 @@ void pfSockHandler() {
 				strcpy(sendbuf + 6, "mp");
 				*(short *)(sendbuf + 8) = bf1.pl[p10exchgMapLn];
 				int ret = send(sockClient, sendbuf, 10, 0);
-				if(ret <= 0) {
-					showErrorMsg(text[85], 1);
+				if(ret < 0) {
+					showErrorMsg(text[85], PfPage::main);
 					break;
 				}
 			} else {
@@ -685,12 +734,12 @@ void pfSockHandler() {
 							bf2.basic_placeplane(j, i, bf2.pl[j + i * bf2.w] & 3, curGame.cw);
 						}
 				vtIn.WaitForHandlerThreads();
-				setPage(19);
+				SetPage(PfPage::gameover);
 				break;
 			}
 			continue;
 		}
-		showErrorMsg(text[71], 1);
+		showErrorMsg(text[71]);
 	}
 	closesocket(sockClient);
 }
@@ -703,13 +752,8 @@ void buildUiElem() {
 	stringstream tmp("");
 	tmp << left << setw(scrW + text[0].d) << text[0].s; // inner title
 	ue[1] = pfLabel(pfTextElem(tmp.str(), text[0].d), 0, 0, white, blue, 0, 0, false);
-	if(page & 0x80000000) {
-		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
-		ue[2].clickFunc = [] { setPage(page ^ 0x80000000); };
-		nue = 2;
-		return;
-	}
-	if(page == 0) {
+	switch(stPage.top()) {
+	case PfPage::welcome: {
 		tmp.str("");
 		tmp << setw((scrW - text[2].len()) / 2) << "" << left << setw(scrW + text[2].d - (scrW - text[2].len()) / 2) << text[2].s;
 		ue[2] = pfLabel(pfTextElem(tmp.str(), text[2].d), 0, 5, white, pink, 0, 0, true);
@@ -732,11 +776,13 @@ void buildUiElem() {
 			ue[P1_NNLUE + 1 + i].clickFunc = [i] { pfLangRead(lf[i].dir.c_str()), refreshPage(); };
 		}
 		nue = P1_NNLUE + lf.size();
-	} else if(page == 1) {
+		break;
+	}
+	case PfPage::main: {
 		tmp.str("");
 		tmp << setw(scrW - 1 + text[8].d) << text[8].s;
 		ue[2] = pfLabel(pfTextElem(tmp.str(), text[8].d), 3, 3, black, white, black, lightGrey, true);
-		ue[2].clickFunc = [] { enemyname = text[37], curGame.d = 2, setPage(2); };
+		ue[2].clickFunc = [] { enemyname = text[37], curGame.d = 2, NextPage(PfPage::prepare); };
 		tmp.str("");
 		tmp << setw(scrW - 1 + text[9].d) << text[9].s;
 		ue[3] = pfLabel(pfTextElem(tmp.str(), text[9].d), 6, 7, black, white, black, lightGrey, true);
@@ -744,7 +790,7 @@ void buildUiElem() {
 		tmp.str("");
 		tmp << setw(scrW - 1 + text[10].d) << text[10].s;
 		ue[4] = pfLabel(pfTextElem(tmp.str(), text[10].d), 9, 11, black, white, black, lightGrey, true);
-		ue[4].clickFunc = [] { setPage(5); };
+		ue[4].clickFunc = [] { NextPage(PfPage::about); };
 		nue = 4;
 
 		ue[5] = pfLabel(text[16], 12, 15, white, red, white, darkRed, true);
@@ -753,7 +799,7 @@ void buildUiElem() {
 			ue[6] = pfLabel(text[17], ue[5].right() + 2, 15, black, white, black, lightGrey, true);
 		else
 			ue[6] = pfLabel(text[17], ue[5].x, 19, black, white, black, lightGrey, true);
-		ue[6].clickFunc = [] { setPage(0); };
+		ue[6].clickFunc = [] { PrevPage(); };
 		nue = 6;
 		if(tab[0]) {
 			ue[7] = pfLabel(text[20], 8, 10, dfc, dbc, grey, dbc, false);
@@ -762,10 +808,12 @@ void buildUiElem() {
 			ue[8].clickFunc = p1Play22;
 			nue = 8;
 		}
-	} else if(page == 2) {
+		break;
+	}
+	case PfPage::prepare: {
 		if(curGame.d > 0) {
 			ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
-			ue[2].clickFunc = [] { setPage(1); };
+			ue[2].clickFunc = [] { PrevPage(); };
 		} else {
 			ue[2] = pfLabel(text[76], 0, 1, black, yellow, black, darkYellow, false); // give up
 			ue[2].clickFunc = p2Giveup;
@@ -828,7 +876,7 @@ void buildUiElem() {
 			tmp << curGame.h << "*" << curGame.w;
 			if(curGame.d > 0)
 				ue[13] = pfLabel(text[90] + tmp.str(), 4, 16 + curGame.h, black, yellow, black, darkYellow, false),
-				ue[13].clickFunc = [] { setPage(4); };
+				ue[13].clickFunc = [] { NextPage(PfPage::adjust_map); };
 			else
 				ue[13] = pfLabel(text[90] + tmp.str(), 4, 16 + curGame.h, dfc, dbc, grey, black, false);
 			nue = 13;
@@ -837,19 +885,23 @@ void buildUiElem() {
 			ue[++nue] = pfLabel(text[91].s, (scrW - text[91].len()) / 2, scrH * 2 / 3, yellow, dbc, darkYellow, dbc, false);
 		else if(p2isP1Ready)
 			ue[++nue] = pfLabel(text[82].s, (scrW - text[82].len()) / 2, scrH * 2 / 3, yellow, dbc, darkYellow, dbc, false);
-	} else if(page == 4) {
+		break;
+	}
+	case PfPage::adjust_map: {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
 		ue[2].clickFunc = [] {
 			bf1.resize(curGame.w, curGame.h), bf2.resize(curGame.w, curGame.h), bf3.resize(curGame.w, curGame.h);
-			setPage(prevPage);
+			PrevPage();
 		};
 		tmp.str("");
 		tmp << curGame.h << "*" << curGame.w;
 		ue[3] = pfLabel(text[90] + tmp.str(), 4, 2, dfc, dbc, grey, black, false);
 		nue = 3;
-	} else if(page == 5) {
+		break;
+	}
+	case PfPage::about: {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
-		ue[2].clickFunc = [] { setPage(1); };
+		ue[2].clickFunc = [] { PrevPage(); };
 		ue[3] = pfLabel(text[19], (scrW - text[19].len()) / 2, 10, black, yellow, black, darkYellow, false);
 		ue[3].clickFunc = [] {
 			system("explorer https://github.com/Zjl37/planeFight2");
@@ -862,7 +914,9 @@ void buildUiElem() {
 		ue[5] = pfLabel(text[14], 3, 4, dfc, dbc, 0, 0, false);
 		ue[6] = pfLabel(text[15], 3, 5, dfc, dbc, 0, 0, false);
 		nue = 6;
-	} else if(page == 10) {
+		break;
+	}
+	case PfPage::game: {
 		ue[2] = pfLabel(text[38], 0, 1, black, yellow, black, darkYellow, false); // back
 		ue[2].clickFunc = p10Surrender;
 		ue[3] = pfLabel(text[39], 3, 8 + curGame.h, white, darkGreen, black, green, false);
@@ -881,7 +935,9 @@ void buildUiElem() {
 			nue = 5 + PF_NMARKER;
 		} else
 			nue = 5;
-	} else if(page == 19) {
+		break;
+	}
+	case PfPage::gameover: {
 		if(p10srd == 2)
 			ue[2] = pfLabel(text[47], (scrW - text[47].len()) / 2, 4, white, darkGreen, grey, darkGreen, true);
 		else if(p10srd == 1)
@@ -893,14 +949,16 @@ void buildUiElem() {
 		else
 			ue[2] = pfLabel();
 		ue[3] = pfLabel(text[48], (scrW - text[48].len()) / 2, scrH * 2 / 3, black, yellow, black, darkYellow, true);
-		ue[3].clickFunc = [] { setPage(1); };
+		ue[3].clickFunc = PrevPage;
 		nue = 3;
-	} else if(page == 41) {
+		break;
+	}
+	case PfPage::gamerule_setting_server: {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
-		ue[2].clickFunc = [] { setPage(1); };
+		ue[2].clickFunc = PrevPage;
 		ue[3] = pfLabel(text[23], 4, 5, dfc, dbc, 0, 0, false);
 		ue[4] = pfLabel(text[25], (scrW - text[25].len()) / 2, scrH * 2 / 3, black, yellow, black, darkYellow, true);
-		ue[4].clickFunc = [] { setPage(42); };
+		ue[4].clickFunc = [] { SetPage(PfPage::server_init); };
 		ue[5] = pfLabel((curGame.cw ? text[30] : text[29]) + text[31], 4, 7, dfc, dbc, grey, black, false);
 		ue[5].clickFunc = [] {
 			curGame.cw = !curGame.cw;
@@ -929,14 +987,16 @@ void buildUiElem() {
 		tmp.str("");
 		tmp << curGame.h << "*" << curGame.w;
 		ue[11] = pfLabel(text[90] + tmp.str(), 4, 15, black, yellow, black, darkYellow, false),
-		ue[11].clickFunc = [] { setPage(4); };
+		ue[11].clickFunc = [] { NextPage(PfPage::adjust_map); };
 		nue = 11;
-	} else if(page == 42) {
+		break;
+	}
+	case PfPage::server_init: {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
 		ue[2].clickFunc = [] {
 			closesocket(sockServer);
 			if(tSockServer.joinable()) tSockServer.join();
-			setPage(1);
+			PrevPage();
 		};
 		if(sIP.empty())
 			ue[3] = pfLabel(text[55], 0, 4, dfc, dbc, dfc, dbc, false);
@@ -944,13 +1004,23 @@ void buildUiElem() {
 			ue[3] = pfLabel(text[54] + sIP, 0, 4, dfc, dbc, dfc, dbc, false);
 		ue[4] = pfLabel(text[61], 0, 6, dfc, dbc, dfc, dbc, false);
 		nue = 4;
-	} else if(page == 51) {
+		break;
+	}
+	case PfPage::client_init: {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
-		ue[2].clickFunc = [] { setPage(1); };
+		ue[2].clickFunc = [] { PrevPage(); };
 		ue[3] = pfLabel(text[67], 4, 5, dfc, dbc, 0, 0, false);
 		nue = 3;
-	} else
-		nue = 1;
+		break;
+	}
+	case PfPage::error: {
+		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
+		ue[2].clickFunc = PrevPage;
+		nue = 2;
+		return;
+	}
+	default: nue = 1;
+	}
 }
 
 void refreshPage() {
@@ -965,7 +1035,7 @@ void ProcessMouseClick(int mx, int my) {
 		if(ue[i].click(mx, my)) {
 			return;
 		}
-	if(page == 2 && tab[0] == 0) {
+	if(stPage.top() == PfPage::prepare && tab[0] == 0) {
 		if(my >= 10 + curGame.h && my <= 16 + curGame.h) {
 			if(mx >= 4 && mx <= 17)
 				tab[1] = 0;
@@ -993,7 +1063,7 @@ void ProcessMouseClick(int mx, int my) {
 			clearR(0, 7 + curGame.h, scrW, 7 + curGame.h);
 			drawBF(false);
 		}
-	} else if(page == 4) {
+	} else if(stPage.top() == PfPage::adjust_map) {
 		int nx = (mx - bf1.x) / 2, ny = my - bf1.y;
 		if(nx >= 5 && nx <= scrW && ny >= 5)
 			if(nx != curGame.w || ny != curGame.h) {
@@ -1001,7 +1071,7 @@ void ProcessMouseClick(int mx, int my) {
 				curGame.h = ny;
 				refreshPage();
 			}
-	} else if(page == 10) {
+	} else if(stPage.top() == PfPage::game) {
 		if(mx >= bf2.x && mx < bf2.x + bf2.w * 2 && my >= bf2.y && my < bf2.y + bf2.h) {
 			if(tab[0] == 0 && isMyTurn() && bf3.mk[(mx - bf2.x) / 2 + (my - bf2.y) * bf3.w] == black) {
 				attack((mx - bf2.x) / 2, my - bf2.y);
@@ -1025,7 +1095,7 @@ void MouseHandler(int stat, int mx, int my, bool fDown) {
 	if(IsLmbDown()) {
 		ProcessMouseClick(mx, my);
 	} else if(IsRelease()) {
-		if(page == 2) {
+		if(stPage.top() == PfPage::prepare) {
 			if(mx >= bf1.x && mx < bf1.x + bf1.w * 2 && my >= bf1.y && my < bf1.y + bf1.h && tab[0] == 0 && p2npl < curGame.n && bf1.ch[(mx - bf1.x) / 2 + (my - bf1.y) * bf1.w].empty() && !p2isP1Ready) {
 				if(mtxCout.try_lock()) {
 					drawBF(false);
@@ -1034,7 +1104,7 @@ void MouseHandler(int stat, int mx, int my, bool fDown) {
 					mtxCout.unlock();
 				}
 			}
-		} else if(page == 10) {
+		} else if(stPage.top() == PfPage::game) {
 			if(mx >= bf2.x && mx < bf2.x + bf2.w * 2 && my >= bf2.y && my < bf2.y + bf2.h && bf3.mk[(mx - bf2.x) / 2 + (my - bf2.y) * bf2.w] == 0) {
 				if(mtxCout.try_lock()) {
 					bf3.draw(true);
@@ -1053,7 +1123,7 @@ void KeyHandler(const string &s, const vector<int> &v) {
 			refreshPage();
 		}
 	} else {
-		if(page == 0) {
+		if(stPage.top() == PfPage::welcome) {
 			if(s == "\n") {
 				playername.s = vtIn.ReadLine();
 				gotoXY(2, 8);
@@ -1067,11 +1137,11 @@ void KeyHandler(const string &s, const vector<int> &v) {
 				ClearLineRight();
 				cout << text[6].s << vtIn.PeekLine();
 			}
-		} else if(page == 51) {
+		} else if(stPage.top() == PfPage::client_init) {
 			if(s == "\n") {
 				sIP = vtIn.ReadLine();
 				if(pfClientConnect()) {
-					setPage(2);
+					SetPage(PfPage::prepare);
 					if(tSockClient.joinable()) tSockClient.join();
 					tSockClient = thread(pfSockHandler);
 				}
@@ -1178,7 +1248,7 @@ int main(int argc, char **argv) {
 	}
 	pfCompatibility();
 	p0GenBg();
-	setPage(0);
+	NextPage(PfPage::welcome);
 
 	VtEnableMouseTrackingAny();
 	vtIn.mouseHandler = MouseHandler;

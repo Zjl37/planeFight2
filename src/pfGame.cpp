@@ -89,3 +89,15 @@ bool pfBF::placeplane(short x, short y, short d, bool cw) {
 	basic_placeplane(x, y, d, cw);
 	return true;
 }
+bool pfBF::AutoArrange() {
+	int i = 0, ttry = 0;
+	clear();
+	while(i < curGame.n && ttry < 10000) {
+		if(placeplane(rng() % w, rng() % h, rng() & 3, curGame.cw))
+			++i;
+		++ttry;
+	}
+	if(i < curGame.n)
+		return clear(), false;
+	return true;
+}

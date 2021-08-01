@@ -29,6 +29,7 @@ struct pfBF {
 	void draw(bool);
 	void basic_placeplane(short, short, short, bool);
 	bool placeplane(short, short, short, bool);
+	bool AutoArrange();
 };
 
 extern pfGameInfo curGame;

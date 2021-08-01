@@ -4,6 +4,7 @@ AccessModifierOffset: 0
 AlignEscapedNewlinesLeft: true
 AlignTrailingComments: false
 AllowAllParametersOfDeclarationOnNextLine: false
+AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: true
 AllowShortIfStatementsOnASingleLine: true
 AllowShortLoopsOnASingleLine: true
@@ -21,7 +22,7 @@ ConstructorInitializerIndentWidth: 0
 ContinuationIndentWidth: 0
 Cpp11BracedListStyle: false
 FixNamespaceComments: false
-IndentCaseLabels: true
+IndentCaseLabels: false
 IndentFunctionDeclarationAfterType: false
 IndentWidth: 4
 MaxEmptyLinesToKeep: 2
