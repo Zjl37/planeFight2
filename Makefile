@@ -1,4 +1,4 @@
-obj = tmp/main.o tmp/pfGame.o tmp/pfConsole.o tmp/pfUI.o tmp/pfLang.o tmp/pfAI.o tmp/vtsFilter.o
+obj = tmp/main.o tmp/pfGame.o tmp/pfConsole.o tmp/pfUI.o tmp/pfLang.o tmp/pfAI.o tmp/vtsFilter.o tmp/pfRemotePlayer.o
 flags = -Wall -DUNICODE -g
 
 planeFight.exe: $(obj)
@@ -24,3 +24,7 @@ tmp/pfAI.o: src/pfAI.cpp
 
 tmp/vtsFilter.o: src/vtsFilter.cpp
 	g++ -c $< -o $@ $(flags)
+
+tmp/pfRemotePlayer.o: src/pfRemotePlayer.cpp
+	g++ -c $< -o $@ $(flags)
+

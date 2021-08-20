@@ -1,22 +1,13 @@
-#include <cstdio>
 #include <ctime>
-#include <future>
-#include <vector>
-#include <random>
-#include <sstream>
-#include <stack>
-#include <mutex>
 #include <winsock2.h>
 #include "pfGame.hpp"
 #include "pfUI.hpp"
 #include "pfLang.hpp"
 #include "pfAI.hpp"
 #include "vtsFilter.hpp"
+#include "pfRemotePlayer.hpp"
 
 using namespace std;
-
-#define pfVersion "2.6"
-#define pfVerStr "planefight 2.6"
 
 const int PF_NMARKER = 23;
 
@@ -38,71 +29,25 @@ int bdcOpt = 1;
 
 mt19937 rng(time(nullptr)); // random number generator by MT19937 algorithm
 
-enum class PfPage {
-	welcome = 0,
-	main = 1,
-	prepare = 2,
-	adjust_map = 4,
-	about = 5,
-	game = 10,
-	gameover = 19,
-	gamerule_setting_server = 41,
-	server_init = 42,
-	client_init = 51,
-	error,
-};
-
 bool isFirst;
-stack<PfPage> stPage;
-int tab[16], nue, turn;
-pfLabel ue[128];
-pfTextElem errMsg;
-
-int p2npl, p2isP1Ready, p2isP2Ready;
-int p10des1, p10des2, p10srd;
+int p2npl;
 int p10exchgMapLn;
-WSADATA wsaData;
-char buf[65536], sendbuf[65536] = "pf", tmpbuf[65536];
+
+int tab[16], nue;
+pfLabel ue[128];
+extern pfTextElem errMsg;
+pfTextElem p1name;
+pfBF bg, bf1, bf2;
+
 string sIP;
 
-promise<short> p10AttackResPromise;
 thread tSockServer, tSockClient;
 mutex mtxCout;
 
 VtsInputFilter vtIn;
 
-bool _SetPage(PfPage);
-void refreshPage();
-
-int pfCheckVer(const string &s) {
-	stringstream curVer(pfVerStr), iVer(s);
-	char ch;
-	int curVerSec1 = 0, iVerSec1 = 0, curVerSec2 = 0, iVerSec2 = 0;
-	string curGName, iGName;
-	curVer >> curGName >> curVerSec1 >> ch >> curVerSec2;
-	iVer >> iGName >> iVerSec1 >> ch >> iVerSec2;
-	if(curGName != iGName || curVerSec1 != iVerSec1)
-		return -1;
-	if(curVerSec2 != iVerSec2) return 1;
-	return 0;
-}
-
-void showErrorMsg(const pfTextElem &t, PfPage rpage) {
-	errMsg = t;
-	while(stPage.size() > 1) stPage.pop();
-	stPage.push(rpage);
-	_SetPage(PfPage::error);
-	stPage.push(PfPage::error);
-	refreshPage();
-}
-void showErrorMsg(const pfTextElem &t) {
-	errMsg = t;
-	_SetPage(PfPage::error);
-	stPage.push(PfPage::error);
-	refreshPage();
-}
-
 bool getIP() {
+	static char buf[65536];
 	int ret = gethostname(buf, 65536);
 	if(ret == -1) return false;
 	struct hostent *host;
@@ -110,221 +55,6 @@ bool getIP() {
 	if(host == NULL) return false;
 	sIP = inet_ntoa(*(struct in_addr *)host->h_addr_list[0]);
 	return true;
-}
-SOCKET sockServer, sockClient;
-SOCKADDR_IN addrServer, addrClient;
-int hg;
-
-void SetPage(PfPage x) {
-	if(_SetPage(x)) {
-		if(stPage.size()) stPage.pop();
-		stPage.push(x);
-	}
-	refreshPage();
-}
-
-void NextPage(PfPage x) {
-	if(_SetPage(x))
-		stPage.push(x);
-	refreshPage();
-}
-
-void PrevPage() {
-	if(stPage.size()) {
-		stPage.pop();
-		_SetPage(stPage.top());
-	} else {
-		NextPage(PfPage::main);
-	}
-	refreshPage();
-}
-
-// Todo: examine this.
-bool pfCheckMsg(const char *msg, const char *i) {
-	if(msg[0] != 'p' || msg[1] != 'f') {
-		closesocket(sockClient);
-		WSACleanup();
-		showErrorMsg(text[71], PfPage::main);
-		return false;
-	}
-	if(*(int *)(msg + 2) != hg) {
-		closesocket(sockClient);
-		WSACleanup();
-		showErrorMsg(text[71], PfPage::main);
-		return false;
-	}
-	if(!i) return true;
-	int len = strlen(i);
-	memcpy(tmpbuf, msg + 6, len);
-	tmpbuf[len] = 0;
-	if(strcmp(tmpbuf, i)) {
-		closesocket(sockClient);
-		WSACleanup();
-		showErrorMsg(text[71], PfPage::main);
-		return false;
-	}
-	return true;
-}
-void pfSockHandler();
-bool pfServerAccept() {
-	int len = sizeof(SOCKADDR), ret = 0;
-	sockClient = accept(sockServer, (SOCKADDR *)&addrClient, &len);
-	if(sockClient == INVALID_SOCKET)
-		return false;
-	closesocket(sockServer);
-	gotoXY(0, getY() + 1), cout << text[63].s;
-	ret = recv(sockClient, buf, 65536, 0);
-	// check return value
-	ret = pfCheckVer(buf);
-	if(ret == -1) {
-		strcpy(sendbuf + 6, "!ver");
-		send(sockClient, sendbuf, 11, 0);
-		closesocket(sockServer);
-		WSACleanup();
-		showErrorMsg(text[64] + (string)buf, PfPage::main);
-		return false;
-	} else if(ret == 1) {
-		gotoXY(0, getY() + 1), cout << text[65].s << buf;
-	}
-	hg = *(int *)(sendbuf + 2) = rng();
-	strcpy(sendbuf + 6, "hello");
-	ret = send(sockClient, sendbuf, 11, 0);
-	// check ret
-	strcpy(sendbuf + 6, "gameinfo");
-	memcpy(sendbuf + 14, &curGame, sizeof curGame);
-	ret = send(sockClient, sendbuf, 14 + sizeof curGame, 0);
-	// check ret
-	strcpy(sendbuf + 6, "name");
-	*(int *)(sendbuf + 10) = playername.d;
-	strcpy(sendbuf + 14, playername.s.c_str());
-	ret = send(sockClient, sendbuf, 15 + playername.s.length(), 0);
-	// check ret
-	ret = recv(sockClient, buf, 65535, 0);
-	// check ret
-	if(!pfCheckMsg(buf, "name"))
-		return false;
-	enemyname = pfTextElem(string(buf + 14), *(int *)(buf + 10));
-	NextPage(PfPage::prepare);
-	closesocket(sockServer);
-	if(tSockClient.joinable()) tSockClient.join();
-	tSockClient = thread(pfSockHandler);
-	return true;
-}
-bool pfServerInit() {
-	setDefaultColor(), clear();
-	if(WSAStartup(MAKEWORD(2, 2), &wsaData)) {
-		showErrorMsg(text[52], PfPage::main);
-		return false;
-	}
-	sIP = "";
-	getIP();
-	sockServer = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if(sockServer == INVALID_SOCKET) {
-		WSACleanup();
-		showErrorMsg(text[56], PfPage::main);
-		return false;
-	}
-	addrServer.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
-	addrServer.sin_family = AF_INET;
-	addrServer.sin_port = htons(51937);
-	int ret = bind(sockServer, (SOCKADDR *)&addrServer, sizeof(SOCKADDR));
-	if(ret == SOCKET_ERROR) {
-		closesocket(sockServer);
-		WSACleanup();
-		showErrorMsg(text[58], PfPage::main);
-		return false;
-	}
-	ret = listen(sockServer, 1);
-	if(ret == SOCKET_ERROR) {
-		closesocket(sockServer);
-		WSACleanup();
-		showErrorMsg(text[60], PfPage::main);
-		return false;
-	}
-	if(tSockServer.joinable()) tSockServer.join();
-	tSockServer = thread(pfServerAccept);
-	return true;
-}
-bool pfClientInit() {
-	if(WSAStartup(MAKEWORD(2, 2), &wsaData)) {
-		showErrorMsg(text[52], PfPage::main);
-		return false;
-	}
-	gotoXY(0, 3), cout << text[53].s;
-	sockClient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-	if(sockServer == INVALID_SOCKET) {
-		WSACleanup();
-		showErrorMsg(text[66], PfPage::main);
-		return false;
-	}
-	gotoXY(0, getY() + 1), cout << text[67].s;
-	gotoXY(0, getY() + 1);
-	return true;
-}
-bool pfClientConnect() {
-	addrServer.sin_addr.S_un.S_addr = inet_addr(sIP.c_str());
-	addrServer.sin_family = AF_INET;
-	addrServer.sin_port = htons(51937);
-	int ret = connect(sockClient, (SOCKADDR *)&addrServer, sizeof(SOCKADDR));
-	if(ret == SOCKET_ERROR) {
-		closesocket(sockClient);
-		WSACleanup();
-		showErrorMsg(text[68], PfPage::main);
-		return false;
-	}
-	gotoXY(0, getY() + 1), cout << text[69].s;
-	ret = send(sockClient, pfVerStr, strlen(pfVerStr) + 1, 0);
-	// check ret
-	ret = recv(sockClient, buf, 11, 0);
-	buf[11] = 0;
-	if(strcmp(buf + 6, "!ver") == 0) {
-		closesocket(sockClient);
-		WSACleanup();
-		showErrorMsg(text[70], PfPage::main);
-		return false;
-	} else if(buf[0] != 'p' || buf[1] != 'f') {
-		closesocket(sockClient);
-		WSACleanup();
-		showErrorMsg(text[71], PfPage::main);
-		return false;
-	} else if(strcmp(buf + 6, "hello")) {
-		closesocket(sockClient);
-		WSACleanup();
-		showErrorMsg(text[71], PfPage::main);
-		return false;
-	}
-	hg = *(int *)(sendbuf + 2) = *(int *)(buf + 2);
-	ret = recv(sockClient, buf, 14 + sizeof curGame, 0);
-	if(!pfCheckMsg(buf, "gameinfo"))
-		return false;
-	memcpy(&curGame, buf + 14, sizeof curGame);
-	curGame.d = -1;
-	strcpy(sendbuf + 6, "name");
-	*(int *)(sendbuf + 10) = playername.d;
-	strcpy(sendbuf + 14, playername.s.c_str());
-	ret = send(sockClient, sendbuf, 15 + playername.s.length(), 0);
-	// check ret
-	ret = recv(sockClient, buf, 65535, 0);
-	// check ret
-	if(!pfCheckMsg(buf, "name"))
-		return false;
-	enemyname = pfTextElem(string(buf + 14), *(int *)(buf + 10));
-	return true;
-}
-
-void pfExchangeMap() {
-	p10exchgMapLn = 0;
-	strcpy(sendbuf + 6, "mp");
-	*(short *)(sendbuf + 8) = bf1.pl[0];
-	int ret = send(sockClient, sendbuf, 10, 0);
-	if(ret <= 0) {
-		showErrorMsg(text[85]);
-		return;
-	}
-}
-
-bool isMyTurn() {
-	return (turn & 1) ^ 1 ^ isFirst;
 }
 
 void uptCursorState() {
@@ -336,6 +66,7 @@ void uptCursorState() {
 }
 
 bool _SetPage(PfPage x) {
+	// TODO: _SetPage should not do anything about control.
 	vtIn.fTextInputMode = 0;
 	switch(x) {
 	case PfPage::welcome:
@@ -343,58 +74,32 @@ bool _SetPage(PfPage x) {
 		break;
 	case PfPage::prepare:
 		memset(tab, 0, sizeof tab);
-		isFirst = rng() & 1;
-		if(curGame.d == 2) {
-			if(!curGame.n) {
-				curGame.n = 3;
-				bf1.resize(10, 10), bf2.resize(10, 10), bf3.resize(10, 10);
-				curGame.w = curGame.h = 10;
-			} else {
-				bf1.clear(), bf2.clear(), bf3.clear();
-			}
-		} else {
-			bf1.resize(curGame.w, curGame.h),
-			bf2.resize(curGame.w, curGame.h),
-			bf3.resize(curGame.w, curGame.h);
-		}
-		p2isP1Ready = p2isP2Ready = p2npl = 0;
+		p2npl = 0;
 		break;
 	case PfPage::game:
 		memset(tab, 0, sizeof tab);
-		p10des1 = p10des2 = p10srd = 0;
-		break;
-	case PfPage::gameover:
-		bf2.mk = bf3.mk;
-		break;
-	case PfPage::gamerule_setting_server:
-		if(!curGame.n) {
-			curGame.n = 3;
-			bf1.resize(10, 10), bf2.resize(10, 10), bf3.resize(10, 10);
-			curGame.w = curGame.h = 10;
-		} else {
-			bf1.clear(), bf2.clear(), bf3.clear();
-		}
-		break;
-	case PfPage::server_init:
-		curGame.d = -2;
-		if(!pfServerInit()) return false;
 		break;
 	case PfPage::client_init:
 		vtIn.fTextInputMode = 1;
-		curGame.d = -1;
-		sIP = "";
-		if(!pfClientInit()) return false;
 		break;
 	default: break;
 	}
 	return true;
 }
 
+void DrawPrepareBF() {
+	if(curGame.d > 0) {
+		DrawBF(bf1, bf2);
+	} else {
+		DrawBF(player[0]->GetMyBF(), player[0]->GetOthersBF());
+	}
+}
+
 void drawUiElem() {
 	lock_guard<mutex> _lg(mtxCout);
 	setDefaultColor(), clear();
 	if(stPage.top() <= PfPage(1))
-		bg.draw(false);
+		bg.Draw(0, 0, false);
 	for(int i = 1; i <= nue; i++)
 		ue[i].draw();
 	switch(stPage.top()) {
@@ -402,21 +107,22 @@ void drawUiElem() {
 		gotoXY(ue[4].right(), ue[4].y);
 		break;
 	case PfPage::prepare:
-		drawBF(false);
+		DrawPrepareBF();
+		gotoXY(BF1_X(), 2), std::cout << player[0]->GetName().s << std::endl;
+		gotoXY(BF2_X(), 2), std::cout << player[1]->GetName().s << std::endl;
 		if(tab[0] == 0)
-			drawPark(tab[1]);
+			drawPark(tab[1], curGame.h + 10);
 		break;
 	case PfPage::adjust_map:
-		bf1.x = 4, bf1.y = 5;
-		box(bf1.x, bf1.y, curGame.w * 2, curGame.h, 2);
+		box(BF1_X(), BF1_Y(), curGame.w * 2, curGame.h, 2);
 		break;
 	case PfPage::game:
-		drawBF(false);
-		gotoXY(scrW - 10, 1), cout << "#" << turn;
+		DrawBF(player[0]->GetMyBF(), player[0]->GetOthersBF());
+		gotoXY(scrW - 10, 1), cout << "#" << player[0]->GetGame().turn;
 		break;
 	case PfPage::gameover:
-		drawBF(true);
-		gotoXY(scrW - 10, 1), cout << "#" << turn;
+		DrawBF(player[0]->GetMyBF(), player[0]->GetOthersBF());
+		gotoXY(scrW - 10, 1), cout << "#" << player[0]->GetGame().turn;
 		break;
 	case PfPage::client_init:
 		gotoXY(5, 7), cout << sIP;
@@ -435,7 +141,7 @@ void p0GenBg() {
 }
 
 void p0InputOK() {
-	if(playername.s.empty()) {
+	if(p1name.s.empty()) {
 		setDefaultColor();
 		refreshPage();
 		return;
@@ -444,10 +150,32 @@ void p0InputOK() {
 	NextPage(PfPage::main);
 }
 
+void StartLocalGame() {
+	player[0].reset(new PfLocalPlayer(p1name));
+	player[1].reset(new PfAI());
+	player[0]->other = player[1];
+	player[1]->other = player[0];
+	curGame.d = 2;
+	isFirst = rng() & 1;
+	bf1.clear(), bf2.clear();
+	NextPage(PfPage::prepare);
+}
+
+void StartServer() {
+	// NOTE: not implemented yet
+
+	// curGame.d = -2;
+	// if(!pfServerInit()) return;
+	// SetPage(PfPage::server_init);
+}
+
 void p1Play21() {
+	bf1.resize(curGame.w, curGame.h), bf2.resize(curGame.w, curGame.h);
 	NextPage(PfPage::gamerule_setting_server);
 }
 void p1Play22() {
+	curGame.d = -1;
+	sIP = "";
 	NextPage(PfPage::client_init);
 }
 
@@ -456,37 +184,37 @@ void p1Play2() {
 	refreshPage();
 }
 
-void p2Start() {
-	turn = 1;
-	banner(text[36], scrH / 3, white, pink);
-	Sleep(1000);
-	SetPage(PfPage::game);
+void PfClientConnect() {
+	try {
+		player[0].reset(new PfLocalPlayer(p1name));
+		player[1] = PfCreateRemoteServer(sIP, *player[0]);
+		player[0]->other = player[1];
+		player[1]->other = player[0];
+	} catch(pfTextElem t) {
+		showErrorMsg(t);
+		return;
+	}
+	SetPage(PfPage::prepare);
 }
+
 void p2Ready() {
 	if(p2npl != curGame.n) return;
 	if(curGame.d > 0) {
+		if(!curGame.n) return;
 		bool tmp = bf2.AutoArrange();
 		if(tmp == false) {
 			refreshPage();
 			return;
 		}
-		p2Start();
+		unsigned gameId = rng();
+		player[0]->NewGame(curGame, gameId, isFirst);
+		player[1]->NewGame(curGame, gameId, !isFirst);
+
+		dynamic_cast<PfAI*>(&*player[1])->ArrangeReady(bf2);
+		dynamic_cast<PfLocalPlayer *>(&*player[0])->ArrangeReady(bf1);
 	} else {
-		int ret;
-		if(!p2isP1Ready) {
-			p2isP1Ready = 1;
-			strcpy(sendbuf + 6, "ready");
-			ret = send(sockClient, sendbuf, 12, 0);
-			if(ret < 0) {
-				showErrorMsg(text[85], PfPage::main);
-				return;
-			}
-			if(!(curGame.d & 1) && p2isP2Ready) {
-				strcpy(sendbuf + 6, "start");
-				*(bool *)(sendbuf + 11) = isFirst;
-				ret = send(sockClient, sendbuf, 12, 0);
-				p2Start();
-			}
+		if(!(player[0]->GetGame().state & PfGame::me_ready)) {
+			dynamic_cast<PfLocalPlayer *>(&*player[0])->ArrangeReady(bf1);
 		}
 	}
 }
@@ -513,235 +241,19 @@ void p2AddPl(short x) {
 	refreshPage();
 }
 void p2Giveup() {
-	strcpy(sendbuf + 6, "giveup");
-	send(sockClient, sendbuf, 12, 0);
-	closesocket(sockClient);
+	player[0]->Giveup();
 	if(tSockClient.joinable()) tSockClient.join();
 	PrevPage();
 }
+void ClearMyBf() {
+	if(!(player[0]->GetGame().state & PfGame::me_ready)) {
+		bf1.clear(), p2npl = 0;
+		refreshPage();
+	}
+}
 
 void p10Surrender() {
-	p10srd = 1;
-	if(curGame.d <= 0) {
-		strcpy(sendbuf + 6, "isurrender");
-		send(sockClient, sendbuf, 16, 0);
-		pfExchangeMap();
-	} else {
-		SetPage(PfPage::gameover);
-	}
-}
-
-short attackL(int x, int y, vector<short> &pl, vector<short> &mk) {
-	if(mk[x + y * curGame.w] != black)
-		return -1;
-	if(pl[x + y * curGame.w] & 8) {
-		if(curGame.cd) {
-			short d = pl[x + y * curGame.w] & 3;
-			for(int i = 0; i < 10; i++) {
-				short tx = x + plShape[d][i].dx, ty = y + plShape[d][i].dy;
-				if(curGame.cw) {
-					if(tx < 0) tx += curGame.w;
-					if(tx >= curGame.w) tx -= curGame.w;
-					if(ty < 0) ty += curGame.h;
-					if(ty >= curGame.h) ty -= curGame.h;
-				}
-				pl[tx + ty * curGame.w] |= 16;
-			}
-		}
-		return mk[x + y * curGame.w] = darkRed, 2;
-	}
-	if(pl[x + y * curGame.w] & 4 && !(pl[x + y * curGame.w] & 16))
-		return mk[x + y * curGame.w] = red, 1;
-	return mk[x + y * curGame.w] = green, 0;
-}
-
-short attackR(short x, short y) {
-	auto attackResFuture = p10AttackResPromise.get_future();
-
-	strcpy(sendbuf + 6, "attack");
-	*(short *)(sendbuf + 12) = x, *(short *)(sendbuf + 14) = y;
-	int ret = send(sockClient, sendbuf, 16, 0);
-	if(ret < 0) {
-		showErrorMsg(text[85], PfPage::main);
-		return -1;
-	}
-	short res = attackResFuture.get();
-	p10AttackResPromise = promise<short>();
-	if(res == 2) {
-		bf3.mk[x + y * curGame.w] = darkRed;
-	} else if(res == 1) {
-		bf3.mk[x + y * curGame.w] = red;
-	} else if(res == 0) {
-		bf3.mk[x + y * curGame.w] = green;
-	}
-	return res;
-}
-
-void showAttackMsg(short res) {
-	if(res == 0)
-		setColor(black, green);
-	else if(res == 1)
-		setColor(white, red);
-	else if(res == 2)
-		setColor(white, darkRed);
-	if(res >= 0 && res <= 2)
-		gotoXY((scrW - text[41 + res].len()) / 2, 7), cout << text[41 + res].s;
-	Sleep(1000);
-}
-
-void p10EnemyTurn() {
-	// assume curGame.d > 0
-	short res, ax, ay;
-	short ret = pfAIdecide(curGame, bf1.mk, ax, ay);
-	if(!ret) {
-		p10srd = 2;
-		SetPage(PfPage::gameover);
-		return;
-	}
-	res = attackL(ax, ay, bf1.pl, bf1.mk);
-	{
-		lock_guard<mutex> _lg(mtxCout);
-		BlinkCoord(ax, ay, 0);
-		bf1.draw(false);
-		showAttackMsg(res);
-	}
-	refreshPage();
-	if(res == 2) {
-		++p10des1;
-		if(p10des1 == curGame.n) {
-			SetPage(PfPage::gameover);
-			return;
-		}
-	}
-	++turn;
-}
-
-void attack(short x, short y) {
-	short res;
-	if(curGame.d > 0)
-		res = attackL(x, y, bf2.pl, bf3.mk);
-	else
-		res = attackR(x, y);
-	if(res < 0 || res > 2) return;
-	{
-		lock_guard<mutex> _lg(mtxCout);
-		drawBF(false);
-		BlinkCoord(x, y, 1);
-		showAttackMsg(res);
-	}
-	refreshPage();
-
-	if(res == 2) {
-		++p10des2;
-		if(p10des2 == curGame.n) {
-			if(curGame.d <= 0) pfExchangeMap();
-			else SetPage(PfPage::gameover);
-			return;
-		}
-	}
-	if(curGame.d > 0) {
-		p10EnemyTurn();
-	}
-	++turn;
-}
-
-void pfSockHandler() {
-	while(1) {
-		int ret = recv(sockClient, buf, 65536, 0);
-		if(ret < 0) {
-			showErrorMsg(text[86], PfPage::main);
-			break;
-		}
-		if(!pfCheckMsg(buf, NULL)) continue;
-		memcpy(tmpbuf, buf + 6, 10);
-		tmpbuf[10] = 0;
-		if(strcmp(tmpbuf, "isurrender") == 0) {
-			p10srd = 2;
-			pfExchangeMap();
-			continue;
-		}
-		tmpbuf[6] = 0;
-		if(strcmp(tmpbuf, "giveup") == 0) {
-			showErrorMsg(text[80], PfPage::main);
-			break;
-		}
-		if(strcmp(tmpbuf, "attack") == 0) {
-			short ax = *(short *)(buf + 12), ay = *(short *)(buf + 14);
-			short res = attackL(ax, ay, bf1.pl, bf1.mk);
-			strcpy(sendbuf + 6, "result");
-			*(short *)(sendbuf + 12) = res;
-			int ret = send(sockClient, sendbuf, 14, 0);
-			if(ret < 0) {
-				showErrorMsg(text[85], PfPage::main);
-				break;
-			}
-			{
-				lock_guard<mutex> _lg(mtxCout);
-				BlinkCoord(ax, ay, 0);
-				bf1.draw(false);
-				showAttackMsg(res);
-			}
-			refreshPage();
-			if(res == 2) {
-				++p10des1;
-				if(p10des1 == curGame.n) {
-					if(curGame.d <= 0) pfExchangeMap();
-				}
-			}
-			++turn;
-			continue;
-		}
-		if(strcmp(tmpbuf, "result") == 0) {
-			short res = *(short *)(buf + 12);
-			p10AttackResPromise.set_value(res);
-			continue;
-		}
-		tmpbuf[5] = 0;
-		if(strcmp(tmpbuf, "ready") == 0) {
-			p2isP2Ready = 1;
-			if(!(curGame.d & 1) && p2isP1Ready) {
-				strcpy(sendbuf + 6, "start");
-				*(bool *)(sendbuf + 11) = isFirst;
-				ret = send(sockClient, sendbuf, 12, 0);
-				p2Start();
-			} else
-				refreshPage();
-			continue;
-		}
-		if((curGame.d & 1) && strcmp(tmpbuf, "start") == 0) {
-			isFirst = !*(bool *)(buf + 11);
-			p2Start();
-			continue;
-		}
-		tmpbuf[2] = 0;
-		if(strcmp(tmpbuf, "mp") == 0) {
-			if(ret > 10) {
-				std::clog << "[!] in " << __PRETTY_FUNCTION__ << ", received `mp` msg of length: " << ret << " which is larget than 10.\n";
-			}
-			bf2.pl[p10exchgMapLn++] = *(short *)(buf + 8);
-			if(p10exchgMapLn < bf2.pl.size()) {
-				strcpy(sendbuf + 6, "mp");
-				*(short *)(sendbuf + 8) = bf1.pl[p10exchgMapLn];
-				int ret = send(sockClient, sendbuf, 10, 0);
-				if(ret < 0) {
-					showErrorMsg(text[85], PfPage::main);
-					break;
-				}
-			} else {
-				for(int i = 0; i < bf2.h; i++)
-					for(int j = 0; j < bf2.w; j++)
-						if(bf2.pl[j + i * bf2.w] & 8) {
-							bf2.basic_placeplane(j, i, bf2.pl[j + i * bf2.w] & 3, curGame.cw);
-						}
-				vtIn.WaitForHandlerThreads();
-				SetPage(PfPage::gameover);
-				break;
-			}
-			continue;
-		}
-		showErrorMsg(text[71]);
-	}
-	closesocket(sockClient);
+	player[0]->Surrender();
 }
 
 void pfExit() {
@@ -759,7 +271,7 @@ void buildUiElem() {
 		ue[2] = pfLabel(pfTextElem(tmp.str(), text[2].d), 0, 5, white, pink, 0, 0, true);
 		ue[3] = pfLabel(text[7], 2, 10, black, yellow, black, darkYellow, false);
 		ue[3].clickFunc = p0InputOK;
-		ue[4] = pfLabel(text[6] + playername, 2, 8, dfc, dbc, 0, 0, false);
+		ue[4] = pfLabel(text[6] + p1name, 2, 8, dfc, dbc, 0, 0, false);
 		ue[5] = pfLabel(text[92], ue[3].right() + 2, 10, white, red, white, darkRed, false);
 		ue[5].clickFunc = [] { pfExit(); };
 
@@ -782,7 +294,7 @@ void buildUiElem() {
 		tmp.str("");
 		tmp << setw(scrW - 1 + text[8].d) << text[8].s;
 		ue[2] = pfLabel(pfTextElem(tmp.str(), text[8].d), 3, 3, black, white, black, lightGrey, true);
-		ue[2].clickFunc = [] { enemyname = text[37], curGame.d = 2, NextPage(PfPage::prepare); };
+		ue[2].clickFunc = StartLocalGame;
 		tmp.str("");
 		tmp << setw(scrW - 1 + text[9].d) << text[9].s;
 		ue[3] = pfLabel(pfTextElem(tmp.str(), text[9].d), 6, 7, black, white, black, lightGrey, true);
@@ -831,11 +343,11 @@ void buildUiElem() {
 			ue[6] = pfLabel();
 		ue[6].clickFunc = p2Ready;
 		if(tab[0] == 0) {
-			if(p2isP1Ready) {
+			if(player[0]->GetGame().state & PfGame::me_ready) {
 				nue = 6;
 			} else {
 				ue[7] = pfLabel(text[26], 12, 18 + curGame.h, black, yellow, black, darkYellow, false);
-				ue[7].clickFunc = [] { if(!p2isP1Ready) bf1.clear(), p2npl=0, refreshPage(); };
+				ue[7].clickFunc = ClearMyBf;
 				nue = 7;
 			}
 		} else if(tab[0] == 1) {
@@ -881,16 +393,17 @@ void buildUiElem() {
 				ue[13] = pfLabel(text[90] + tmp.str(), 4, 16 + curGame.h, dfc, dbc, grey, black, false);
 			nue = 13;
 		}
-		if(p2isP2Ready)
+		if(player[0]->GetGame().state & PfGame::other_ready) {
 			ue[++nue] = pfLabel(text[91].s, (scrW - text[91].len()) / 2, scrH * 2 / 3, yellow, dbc, darkYellow, dbc, false);
-		else if(p2isP1Ready)
+		} else if(player[0]->GetGame().state & PfGame::me_ready) {
 			ue[++nue] = pfLabel(text[82].s, (scrW - text[82].len()) / 2, scrH * 2 / 3, yellow, dbc, darkYellow, dbc, false);
+		}
 		break;
 	}
 	case PfPage::adjust_map: {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
 		ue[2].clickFunc = [] {
-			bf1.resize(curGame.w, curGame.h), bf2.resize(curGame.w, curGame.h), bf3.resize(curGame.w, curGame.h);
+			bf1.resize(curGame.w, curGame.h), bf2.resize(curGame.w, curGame.h);
 			PrevPage();
 		};
 		tmp.str("");
@@ -938,13 +451,13 @@ void buildUiElem() {
 		break;
 	}
 	case PfPage::gameover: {
-		if(p10srd == 2)
+		if(player[0]->GetGame().state & PfGame::other_surrender)
 			ue[2] = pfLabel(text[47], (scrW - text[47].len()) / 2, 4, white, darkGreen, grey, darkGreen, true);
-		else if(p10srd == 1)
+		else if(player[0]->GetGame().state & PfGame::me_surrender)
 			ue[2] = pfLabel(text[46], (scrW - text[46].len()) / 2, 4, white, darkRed, grey, darkRed, true);
-		else if(p10des1 == curGame.n)
+		else if(player[0]->GetGame().nDestroyedMine == curGame.n)
 			ue[2] = pfLabel(text[45], (scrW - text[45].len()) / 2, 4, white, red, grey, red, true);
-		else if(p10des2 == curGame.n)
+		else if(player[0]->GetGame().nDestroyedOthers == curGame.n)
 			ue[2] = pfLabel(text[44], (scrW - text[44].len()) / 2, 4, black, green, black, darkGreen, true);
 		else
 			ue[2] = pfLabel();
@@ -958,7 +471,7 @@ void buildUiElem() {
 		ue[2].clickFunc = PrevPage;
 		ue[3] = pfLabel(text[23], 4, 5, dfc, dbc, 0, 0, false);
 		ue[4] = pfLabel(text[25], (scrW - text[25].len()) / 2, scrH * 2 / 3, black, yellow, black, darkYellow, true);
-		ue[4].clickFunc = [] { SetPage(PfPage::server_init); };
+		ue[4].clickFunc = StartServer;
 		ue[5] = pfLabel((curGame.cw ? text[30] : text[29]) + text[31], 4, 7, dfc, dbc, grey, black, false);
 		ue[5].clickFunc = [] {
 			curGame.cw = !curGame.cw;
@@ -994,8 +507,7 @@ void buildUiElem() {
 	case PfPage::server_init: {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
 		ue[2].clickFunc = [] {
-			closesocket(sockServer);
-			if(tSockServer.joinable()) tSockServer.join();
+			player[1].reset();
 			PrevPage();
 		};
 		if(sIP.empty())
@@ -1046,10 +558,11 @@ void ProcessMouseClick(int mx, int my) {
 			else if(mx >= 52 && mx <= 65)
 				tab[1] = 3;
 			lock_guard<mutex> _lg(mtxCout);
-			drawPark(tab[1]);
+			drawPark(tab[1], curGame.h + 10);
 		}
-		if(mx >= bf1.x && mx < bf1.x + bf1.w * 2 && my >= bf1.y && my < bf1.y + bf1.h && p2npl < curGame.n && !p2isP1Ready) {
-			if(bf1.placeplane((mx - bf1.x) >> 1, my - bf1.y, tab[1], curGame.cw)) {
+		if(mx >= BF1_X() && mx < BF1_X() + bf1.w * 2 && my >= BF1_Y() && my < BF1_Y() + bf1.h
+		   && p2npl < curGame.n && !(player[0]->GetGame().state & PfGame::me_ready)) { 
+			if(bf1.placeplane((mx - BF1_X()) >> 1, my - BF1_Y(), tab[1], curGame.cw)) {
 				++p2npl;
 				if(p2npl == curGame.n)
 					refreshPage(); // so that the play button will appear
@@ -1061,10 +574,10 @@ void ProcessMouseClick(int mx, int my) {
 			lock_guard<mutex> _lg(mtxCout);
 			setDefaultColor();
 			clearR(0, 7 + curGame.h, scrW, 7 + curGame.h);
-			drawBF(false);
+			DrawPrepareBF();
 		}
 	} else if(stPage.top() == PfPage::adjust_map) {
-		int nx = (mx - bf1.x) / 2, ny = my - bf1.y;
+		int nx = (mx - BF1_X()) / 2, ny = my - BF1_Y();
 		if(nx >= 5 && nx <= scrW && ny >= 5)
 			if(nx != curGame.w || ny != curGame.h) {
 				curGame.w = nx;
@@ -1072,17 +585,18 @@ void ProcessMouseClick(int mx, int my) {
 				refreshPage();
 			}
 	} else if(stPage.top() == PfPage::game) {
-		if(mx >= bf2.x && mx < bf2.x + bf2.w * 2 && my >= bf2.y && my < bf2.y + bf2.h) {
-			if(tab[0] == 0 && isMyTurn() && bf3.mk[(mx - bf2.x) / 2 + (my - bf2.y) * bf3.w] == black) {
-				attack((mx - bf2.x) / 2, my - bf2.y);
+		if(mx >= BF2_X() && mx < BF2_X() + bf2.w * 2 && my >= BF2_Y() && my < BF2_Y() + bf2.h) {
+			auto &bf3 = player[0]->GetOthersBF();
+			if(tab[0] == 0 && player[0]->GetGame().isMyTurn() && bf3.mk[(mx - BF2_X()) / 2 + (my - BF2_Y()) * bf3.w] == black) {
+				player[0]->Attack((mx - BF2_X()) / 2, my - BF2_Y());
 			} else if(tab[0] == 1) {
-				bf3.ch[(mx - bf2.x) / 2 + (my - bf2.y) * bf3.w] = marker[tab[1]];
+				bf3.ch[(mx - BF2_X()) / 2 + (my - BF2_Y()) * bf3.w] = marker[tab[1]];
 				lock_guard<mutex> _lg(mtxCout);
-				drawBF(false);
+				DrawBF(player[0]->GetMyBF(), player[0]->GetOthersBF());
 			} else if(tab[0] == 2) {
-				bf3.ch[(mx - bf2.x) / 2 + (my - bf2.y) * bf3.w] = "";
+				bf3.ch[(mx - BF2_X()) / 2 + (my - BF2_Y()) * bf3.w] = "";
 				lock_guard<mutex> _lg(mtxCout);
-				drawBF(false);
+				DrawBF(player[0]->GetMyBF(), player[0]->GetOthersBF());
 			}
 		}
 	}
@@ -1096,20 +610,26 @@ void MouseHandler(int stat, int mx, int my, bool fDown) {
 		ProcessMouseClick(mx, my);
 	} else if(IsRelease()) {
 		if(stPage.top() == PfPage::prepare) {
-			if(mx >= bf1.x && mx < bf1.x + bf1.w * 2 && my >= bf1.y && my < bf1.y + bf1.h && tab[0] == 0 && p2npl < curGame.n && bf1.ch[(mx - bf1.x) / 2 + (my - bf1.y) * bf1.w].empty() && !p2isP1Ready) {
-				if(mtxCout.try_lock()) {
-					drawBF(false);
-					setColor(grey, dbc);
-					drawPlane(bf1.x + ((mx - bf1.x) & (short)-2), my, tab[1], true);
-					mtxCout.unlock();
+			if(mx >= BF1_X() && mx < BF1_X() + bf1.w * 2 && my >= BF1_Y() && my < BF1_Y() + bf1.h
+			   && tab[0] == 0 && p2npl < curGame.n && bf1.ch[(mx - BF1_X()) / 2 + (my - BF1_Y()) * bf1.w].empty()
+			   && !(player[0]->GetGame().state & PfGame::me_ready)) {
+				lock_guard<mutex> _lg(mtxCout);
+				DrawPrepareBF();
+				setColor(grey, dbc);
+				if(curGame.cw) {
+					DrawPlaneCw(BF1_X() + ((mx - BF1_X()) & (short)-2), my, tab[1], BF1_X(), BF1_Y(), curGame.w, curGame.h);
+				} else {
+					DrawPlane(BF1_X() + ((mx - BF1_X()) & (short)-2), my, tab[1], BF1_X(), BF1_Y(), curGame.w, curGame.h);
 				}
 			}
 		} else if(stPage.top() == PfPage::game) {
-			if(mx >= bf2.x && mx < bf2.x + bf2.w * 2 && my >= bf2.y && my < bf2.y + bf2.h && bf3.mk[(mx - bf2.x) / 2 + (my - bf2.y) * bf2.w] == 0) {
+			if(mx >= BF2_X() && mx < BF2_X() + bf2.w * 2 && my >= BF2_Y() && my < BF2_Y() + bf2.h
+			   && player[1]->GetOthersBF().mk[(mx - BF2_X()) / 2 + (my - BF2_Y()) * bf2.w] == 0) {
 				if(mtxCout.try_lock()) {
-					bf3.draw(true);
+					setDefaultColor();
+					player[0]->GetOthersBF().Draw(BF2_X(), BF2_Y(), true);
 					setColor(grey, dbc);
-					gotoXY(bf2.x + ((mx - bf2.x) | 1) - 1, my), cout << text[40].s;
+					gotoXY(BF2_X() + ((mx - BF2_X()) | 1) - 1, my), cout << text[40].s;
 					mtxCout.unlock();
 				}
 			}
@@ -1125,11 +645,11 @@ void KeyHandler(const string &s, const vector<int> &v) {
 	} else {
 		if(stPage.top() == PfPage::welcome) {
 			if(s == "\n") {
-				playername.s = vtIn.ReadLine();
+				p1name.s = vtIn.ReadLine();
 				gotoXY(2, 8);
-				cout << text[6].s << playername.s;
+				cout << text[6].s << p1name.s;
 				auto pos = getXY();
-				playername.d = playername.s.length() - (pos.first - (2 + text[6].len()) + (pos.second - 8) * scrW);
+				p1name.d = p1name.s.length() - (pos.first - (2 + text[6].len()) + (pos.second - 8) * scrW);
 
 				ue[3]._click();
 			} else if(s == "\x7f") {
@@ -1140,11 +660,7 @@ void KeyHandler(const string &s, const vector<int> &v) {
 		} else if(stPage.top() == PfPage::client_init) {
 			if(s == "\n") {
 				sIP = vtIn.ReadLine();
-				if(pfClientConnect()) {
-					SetPage(PfPage::prepare);
-					if(tSockClient.joinable()) tSockClient.join();
-					tSockClient = thread(pfSockHandler);
-				}
+				PfClientConnect();
 			} else if(s == "\x7f") {
 				gotoXY(5, 7);
 				ClearLineRight();

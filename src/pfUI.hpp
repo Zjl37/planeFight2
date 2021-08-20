@@ -1,9 +1,16 @@
 #pragma once
+#include "pfCommon.hpp"
 #include "pfLang.hpp"
 #include "pfConsole.hpp"
 #include <iostream>
 #include <iomanip>
 #include <functional>
+#include <stack>
+
+#define BF1_X() 4
+#define BF1_Y() 5
+#define BF2_X() (scrW - 4 - bf2.w * 2) // TODO: this macro might get into some trouble
+#define BF2_Y() 5
 
 extern int scrW, scrH;
 
@@ -27,6 +34,35 @@ void box(short, short, short, short, short);
 void clearR(short, short, short, short);
 
 void BlinkCoord(short, short, bool);
-void drawPlane(short x, short y, short d, bool r);
-void drawPark(int selDir);
-void drawBF(bool showBf2);
+void DrawPlane(int x, int y, int d);
+void DrawPlane(int x, int y, int d, int bx, int by, int bw, int bh);
+void DrawPlaneCw(int x, int y, int d, int bx, int by, int bw, int bh);
+void drawPark(int selDir, int y);
+void DrawBF(const pfBF &bf1, const pfBF &bf2);
+
+enum class PfPage {
+	welcome = 0,
+	main = 1,
+	prepare = 2,
+	adjust_map = 4,
+	about = 5,
+	game = 10,
+	gameover = 19,
+	gamerule_setting_server = 41,
+	server_init = 42,
+	client_init = 51,
+	error,
+};
+
+void refreshPage();
+void showErrorMsg(const pfTextElem &t, PfPage rpage);
+void showErrorMsg(const pfTextElem &t);
+void SetPage(PfPage x);
+void NextPage(PfPage x);
+void PrevPage();
+
+void UiGameStart();
+void UiGameover();
+void UiShowAtkRes(PfAtkRes);
+
+extern std::stack<PfPage> stPage;

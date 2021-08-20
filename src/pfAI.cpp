@@ -1,12 +1,11 @@
-#include "pfGame.hpp"
 #include "pfAI.hpp"
-#include "pfUI.hpp"
+#include <random>
 
 extern std::mt19937 rng;
 
 pfBF vbf;
 
-bool pfAIinit(const pfGameInfo &g, const vector<short> &mk) {
+bool pfAIinit(const pfGameInfo &g, const std::vector<short> &mk) {
 	vbf.clear();
 	int k = 0;
 	for(short i = 0; i < g.h; i++)
@@ -38,7 +37,7 @@ bool pfAIinit(const pfGameInfo &g, const vector<short> &mk) {
 	return true;
 }
 
-bool pfAIcheck(const pfGameInfo &g, const vector<short> &mk) {
+bool pfAIcheck(const pfGameInfo &g, const std::vector<short> &mk) {
 	for(short j = 0; j < g.h; j++)
 		for(short i = 0; i < g.w; i++) {
 			if(!g.cd && mk[i + j * g.w] == green && vbf.pl[i + j * g.w])
@@ -50,7 +49,7 @@ bool pfAIcheck(const pfGameInfo &g, const vector<short> &mk) {
 }
 
 #define PFAI_MAXTRY 1000000
-bool pfAIdecide(const pfGameInfo &g, const vector<short> &mk, short &tgx, short &tgy) {
+bool pfAIdecide(const pfGameInfo &g, const std::vector<short> &mk, short &tgx, short &tgy) {
 	vbf.resize(g.w, g.h);
 	int ttt = 0;
 	do {
@@ -63,7 +62,7 @@ bool pfAIdecide(const pfGameInfo &g, const vector<short> &mk, short &tgx, short 
 	if(ttt >= PFAI_MAXTRY) {
 		return false;
 	}
-	vector<COORD> pos;
+	std::vector<COORD> pos;
 	for(short i = 0; i < g.h; i++)
 		for(short j = 0; j < g.w; j++)
 			if(vbf.pl[j + i * g.w] & 8 && mk[j + i * g.w] != darkRed)
@@ -72,4 +71,55 @@ bool pfAIdecide(const pfGameInfo &g, const vector<short> &mk, short &tgx, short 
 	int i = rng() % pos.size();
 	tgx = pos[i].X, tgy = pos[i].Y;
 	return true;
+}
+
+PfAI::PfAI() {
+	name = text[37];
+}
+
+void PfAI::ArrangeReady(const pfBF &ar) {
+	PfPlayer::ArrangeReady();
+	myBf = ar;
+}
+
+void PfAI::BeingAttacked(short x, short y) {
+	PfPlayer::BeingAttacked(x, y);
+	if(!game.Over()) {
+		short ax, ay;
+		short ret = pfAIdecide(game.gamerules, othersBf.mk, ax, ay);
+		if(!ret) {
+			Surrender();
+			return;
+		}
+		Attack(ax, ay);
+	}
+}
+
+void PfAI::AttackResulted(PfAtkRes res) {
+	PfPlayer::AttackResulted(res);
+	if(res == PfAtkRes::destroy) {
+		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = darkRed;
+	} else if(res == PfAtkRes::hit) {
+		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = red;
+	} else if(res == PfAtkRes::empty) {
+		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = green;
+	}
+}
+
+void PfAI::OnGameStart() {
+	PfPlayer::OnGameStart();
+	if(game.isFirst) {
+		short ax, ay;
+		short ret = pfAIdecide(game.gamerules, othersBf.mk, ax, ay);
+		if(!ret) {
+			Surrender();
+			return;
+		}
+		Attack(ax, ay);
+	}
+}
+
+void PfAI::Attack(short x, short y) {
+	lastAtk = {x, y};
+	PfPlayer::Attack(x, y);
 }

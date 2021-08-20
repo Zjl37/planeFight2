@@ -1,7 +1,4 @@
-#include "pfGame.hpp"
 #include "pfUI.hpp"
-#include "pfConsole.hpp"
-#include "pfLang.hpp"
 #include "vtsFilter.hpp"
 #include <mutex>
 using namespace std;
@@ -130,73 +127,144 @@ void BlinkCoord(short ax, short ay, bool signDir) {
 	Sleep(500 + rng() % 250);
 }
 
-void drawPlane(short x, short y, short d, bool r) {
-	// direction: 0=up 1=right 2=down 3=left
-	if(r && !curGame.cw)
-		for(int i = 0; i < 10; i++)
-			if(x + plShape[d][i].dx * 2 >= bf1.x + bf1.w * 2 || x + plShape[d][i].dx * 2 < bf1.x || y + plShape[d][i].dy >= bf1.y + bf1.h || y + plShape[d][i].dy < bf1.y)
-				return;
-	for(int i = 0; i < 10; i++) {
-		int tx = x + plShape[d][i].dx * 2, ty = y + plShape[d][i].dy;
-		if(r) {
-			if(tx < bf1.x) tx += bf1.w * 2;
-			if(tx >= bf1.x + bf1.w * 2) tx -= bf1.w * 2;
-			if(ty < bf1.y) ty += bf1.h * 2;
-			if(ty >= bf1.y + bf1.h) ty -= bf1.h;
-		}
+void DrawPlane(int x, int y, int d) {
+	for(const auto &ps: plShape[d]) {
+		int tx = x + ps.dx * 2, ty = y + ps.dy;
 		gotoXY(tx, ty);
-		cout << plShape[d][i].ch;
+		cout << ps.ch;
+	}
+}
+void DrawPlane(int x, int y, int d, int bx, int by, int bw, int bh) {
+	for(const auto &ps: plShape[d])
+		if(x + ps.dx * 2 >= bx + bw * 2 || x + ps.dx * 2 < bx || y + ps.dy >= by + bh || y + ps.dy < by)
+			return;
+	for(const auto &ps: plShape[d]) {
+		int tx = x + ps.dx * 2, ty = y + ps.dy;
+		gotoXY(tx, ty);
+		cout << ps.ch;
+	}
+}
+void DrawPlaneCw(int x, int y, int d, int bx, int by, int bw, int bh) {
+	for(const auto &ps: plShape[d]) {
+		int tx = x + ps.dx * 2, ty = y + ps.dy;
+		if(tx < bx) tx += bw * 2;
+		if(tx >= bx + bw * 2) tx -= bw * 2;
+		if(ty < by) ty += bh * 2;
+		if(ty >= by + bh) ty -= bh;
+		gotoXY(tx, ty);
+		cout << ps.ch;
 	}
 }
 
-void drawPark(int selDir) {
+void drawPark(int selDir, int y) {
 	if(selDir == 0)
 		setColor(black, aqua);
 	else
 		setColor(black, white);
-	clearR(4, 10 + curGame.h, 17, 16 + curGame.h);
-	drawPlane(10, 12 + curGame.h, 0, false);
+	clearR(4, y, 17, y + 6);
+	DrawPlane(10, y + 2, 0);
 	if(selDir == 1)
 		setColor(black, aqua);
 	else
 		setColor(black, white);
-	clearR(20, 10 + curGame.h, 33, 16 + curGame.h);
-	drawPlane(28, 13 + curGame.h, 1, false);
+	clearR(20, y, 33, y + 6);
+	DrawPlane(28, y + 3, 1);
 	if(selDir == 2)
 		setColor(black, aqua);
 	else
 		setColor(black, white);
-	clearR(36, 10 + curGame.h, 49, 16 + curGame.h);
-	drawPlane(42, 14 + curGame.h, 2, false);
+	clearR(36, y, 49, y + 6);
+	DrawPlane(42, y + 4, 2);
 	if(selDir == 3)
 		setColor(black, aqua);
 	else
 		setColor(black, white);
-	clearR(52, 10 + curGame.h, 65, 16 + curGame.h);
-	drawPlane(56, 13 + curGame.h, 3, false);
+	clearR(52, y, 65, y + 6);
+	DrawPlane(56, y + 3, 3);
 }
 
-void drawBF(bool showBf2) {
-	bf1.x = 4, bf1.y = bf2.y = bf3.y = 5;
-	bf2.x = bf3.x = scrW - 4 - bf2.w * 2;
+void DrawBF(const pfBF &bf1, const pfBF &bf2) {
 	setDefaultColor();
-	box(bf1.x, bf1.y, bf1.w * 2, bf1.h, 2);
-	box(bf2.x, bf2.y, bf2.w * 2, bf2.h, 2);
-	for(int i = 0; i < curGame.w; i++) {
+	box(BF1_X(), BF1_Y(), bf1.w * 2, bf1.h, 2);
+	box(BF2_X(), BF2_Y(), bf2.w * 2, bf2.h, 2);
+	for(int i = 0; i < bf1.w; i++) {
 		int j = i;
 		while(j && j % 10 == 0) j /= 10;
-		gotoXY(bf1.x + i * 2, bf1.y - 2), cout << setw(2) << j % 10;
-		gotoXY(bf2.x + i * 2, bf2.y - 2), cout << setw(2) << j % 10;
+		gotoXY(BF1_X() + i * 2, BF1_Y() - 2), std::cout << std::setw(2) << j % 10;
+		gotoXY(BF2_X() + i * 2, BF2_Y() - 2), std::cout << std::setw(2) << j % 10;
 	}
-	for(int i = 0; i < curGame.h; i++) {
-		gotoXY(bf1.x - 4, bf1.y + i), cout << i;
-		gotoXY(bf2.x - 4, bf2.y + i), cout << i;
+	for(int i = 0; i < bf1.h; i++) {
+		gotoXY(BF1_X() - 4, BF1_Y() + i), std::cout << i;
+		gotoXY(BF2_X() - 4, BF2_Y() + i), std::cout << i;
 	}
-	gotoXY(bf1.x, 2), cout << playername.s << endl;
-	gotoXY(bf2.x, 2), cout << enemyname.s << endl;
-	bf1.draw(true);
-	if(showBf2)
-		bf2.draw(true);
-	else
-		bf3.draw(true);
+	bf1.Draw(BF1_X(), BF1_Y(), true);
+	bf2.Draw(BF2_X(), BF2_Y(), true);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+
+pfTextElem errMsg;
+std::stack<PfPage> stPage;
+
+bool _SetPage(PfPage);
+
+void showErrorMsg(const pfTextElem &t, PfPage rpage) {
+	errMsg = t;
+	while(stPage.size() > 1) stPage.pop();
+	stPage.push(rpage);
+	_SetPage(PfPage::error);
+	stPage.push(PfPage::error);
+	refreshPage();
+}
+void showErrorMsg(const pfTextElem &t) {
+	errMsg = t;
+	_SetPage(PfPage::error);
+	stPage.push(PfPage::error);
+	refreshPage();
+}
+
+void SetPage(PfPage x) {
+	if(_SetPage(x)) {
+		if(stPage.size()) stPage.pop();
+		stPage.push(x);
+	}
+	refreshPage();
+}
+
+void NextPage(PfPage x) {
+	if(_SetPage(x))
+		stPage.push(x);
+	refreshPage();
+}
+
+void PrevPage() {
+	if(stPage.size()) {
+		stPage.pop();
+		_SetPage(stPage.top());
+	} else {
+		NextPage(PfPage::main);
+	}
+	refreshPage();
+}
+
+void UiGameStart() {
+	banner(text[36], scrH / 3, white, pink);
+	Sleep(1000);
+	SetPage(PfPage::game);
+}
+
+void UiGameover() {
+	SetPage(PfPage::gameover);
+}
+
+void UiShowAtkRes(PfAtkRes res) {
+	if(res == PfAtkRes::empty) {
+		setColor(black, green);
+	} else if(res == PfAtkRes::hit) {
+		setColor(white, red);
+	} else if(res == PfAtkRes::destroy) {
+		setColor(white, darkRed);
+	}
+	gotoXY((scrW - text[41 + (int)res].len()) / 2, 7), cout << text[41 + (int)res].s;
+	Sleep(1000);
 }
