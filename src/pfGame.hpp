@@ -30,7 +30,7 @@ struct PfGame {
 	};
 	unsigned state;
 
-	PfGame(): state(0) {}
+	PfGame();
 	PfGame(pfGameInfo, unsigned id, bool);
 
 	public:
@@ -51,11 +51,11 @@ class PfPlayer {
 	std::weak_ptr<PfPlayer> other;
 
 	// Actions
-	void NewGame(pfGameInfo, unsigned, bool);
+	void SetFirst(bool); // bad design again
+	void NewGame(pfGameInfo, unsigned, bool = true);
 	void ArrangeReady();
 	void Giveup();
 	virtual void Attack(short, short);
-	void Surrender();
 
 	// Callback?
 	virtual void OnOtherReady();
@@ -64,6 +64,7 @@ class PfPlayer {
 	virtual void BeingAttacked(short, short);
 	virtual void AttackResulted(PfAtkRes); // hmm, how shold I name this fucntion
 	virtual void MapRequested();
+	virtual void Surrender();
 	virtual void SetOthersBF(const std::vector<short> &pl);
 	virtual void OnGameover();
 
@@ -86,6 +87,7 @@ class PfLocalPlayer: public PfPlayer {
 	void Attack(short, short);
 	void AttackResulted(PfAtkRes);
 	void BeingAttacked(short x, short y);
+	void Surrender();
 	void SetOthersBF(const std::vector<short> &pl);
 
 	public:
@@ -94,5 +96,5 @@ class PfLocalPlayer: public PfPlayer {
 };
 
 extern pfGameInfo curGame;
-extern pfBF bg, bf1, bf2;
+extern pfBF bg, bf1;
 extern std::shared_ptr<PfPlayer> player[2];

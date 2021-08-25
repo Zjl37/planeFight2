@@ -73,7 +73,7 @@ bool pfAIdecide(const pfGameInfo &g, const std::vector<short> &mk, short &tgx, s
 	return true;
 }
 
-PfAI::PfAI() {
+PfAI::PfAI(): PfPlayer() {
 	name = text[37];
 }
 

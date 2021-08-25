@@ -5,12 +5,14 @@ extern std::mt19937 rng;
 WSADATA wsaData;
 SOCKET sockServer;
 SOCKADDR_IN addrClient;
+std::thread tSockServer;
 
 // TODO: reduce abuse of C string
 char buf[65536], sendbuf[65536] = "pf", tmpbuf[65536];
 
 // temporary implementation
 bool pfCheckMsg(const char *msg, const char *i) {
+	if(!i) return true;
 	return std::string(msg+6, strlen(i)) == i;
 }
 
@@ -39,6 +41,7 @@ bool pfCheckMsg(const char *msg, const char *i) {
 	}
 	return true;
 }
+#endif
 
 int pfCheckVer(const std::string &s) {
 	std::stringstream curVer(pfVerStr), iVer(s);
@@ -53,90 +56,116 @@ int pfCheckVer(const std::string &s) {
 	return 0;
 }
 
-bool pfServerAccept() {
-	int len = sizeof(SOCKADDR), ret = 0;
-	sockClient = accept(sockServer, (SOCKADDR *)&addrClient, &len);
-	if(sockClient == INVALID_SOCKET)
-		return false;
-	closesocket(sockServer);
+std::shared_ptr<PfRemotePlayer> PfCreateRemoteClient(SOCKET sockClient, const PfPlayer &o) {
+	auto p = std::make_shared<PfRemotePlayer>();
+	p->as = p->pos_client;
+	p->sock = sockClient;
+
 	gotoXY(0, getY() + 1), std::cout << text[63].s;
-	ret = recv(sockClient, buf, 65536, 0);
-	// check return value
+	int ret = recv(p->sock, buf, 65536, 0);
+	if(ret < 0) {
+		throw text[86];
+	}
 	ret = pfCheckVer(buf);
 	if(ret == -1) {
 		strcpy(sendbuf + 6, "!ver");
-		send(sockClient, sendbuf, 11, 0);
+		send(p->sock, sendbuf, 11, 0);
 		closesocket(sockServer);
 		WSACleanup();
-		showErrorMsg(text[64] + (std::string)buf, PfPage::main);
-		return false;
+		throw(text[64] + (std::string)buf);
 	} else if(ret == 1) {
 		gotoXY(0, getY() + 1), std::cout << text[65].s << buf;
 	}
-	// hg = *(int *)(sendbuf + 2) = rng();
+	p->game.id = *(unsigned *)(sendbuf + 2) = rng();
 	strcpy(sendbuf + 6, "hello");
-	ret = send(sockClient, sendbuf, 11, 0);
+	ret = send(p->sock, sendbuf, 11, 0);
 	// check ret
 	strcpy(sendbuf + 6, "gameinfo");
 	memcpy(sendbuf + 14, &curGame, sizeof curGame);
-	ret = send(sockClient, sendbuf, 14 + sizeof curGame, 0);
+	curGame.d = -2;
+	ret = send(p->sock, sendbuf, 14 + sizeof curGame, 0);
 	// check ret
 	strcpy(sendbuf + 6, "name");
-	*(int *)(sendbuf + 10) = playername.d;
-	strcpy(sendbuf + 14, playername.s.c_str());
-	ret = send(sockClient, sendbuf, 15 + playername.s.length(), 0);
+	// TODO: d value should not be transmitted over the net
+	*(int *)(sendbuf + 10) = o.GetName().d;
+	strcpy(sendbuf + 14, o.GetName().s.c_str());
+	ret = send(p->sock, sendbuf, 15 + o.GetName().s.length(), 0);
 	// check ret
-	ret = recv(sockClient, buf, 65535, 0);
+	ret = recv(p->sock, buf, 65535, 0);
 	// check ret
 	if(!pfCheckMsg(buf, "name"))
-		return false;
-	enemyname = pfTextElem(string(buf + 14), *(int *)(buf + 10));
-	NextPage(PfPage::prepare);
-	closesocket(sockServer);
-	if(tSockClient.joinable()) tSockClient.join();
-	tSockClient = thread(pfSockHandler);
-	return true;
+		throw text[71];
+	p->name = pfTextElem(std::string(buf + 14), *(int *)(buf + 10));
+	extern bool isFirst; // why this can't be a part of GameInfo !!??
+	p->NewGame(curGame, *(unsigned *)(buf + 2), !isFirst);
+	p->tSock = std::thread(&PfRemotePlayer::SockHandler, &*p);
+	return p;
 }
-bool pfServerInit() {
-	setDefaultColor(), clear();
-	if(WSAStartup(MAKEWORD(2, 2), &wsaData)) {
-		showErrorMsg(text[52], PfPage::main);
+
+bool PfServerAccept() {
+	int len = sizeof(SOCKADDR);
+	SOCKET sockClient = accept(sockServer, (SOCKADDR *)&addrClient, &len);
+	closesocket(sockServer);
+	if(sockClient == INVALID_SOCKET)
+		return false;
+	try {
+		player[1] = PfCreateRemoteClient(sockClient, *player[0]);
+		extern bool isFirst; // why !!??
+		player[0]->NewGame(curGame, player[1]->GetGame().id, isFirst);
+		player[0]->other = player[1];
+		player[1]->other = player[0];
+		bf1.resize(curGame.w, curGame.h);
+		SetPage(PfPage::prepare);
+	} catch(const pfTextElem &t) {
+		showErrorMsg(t);
 		return false;
 	}
-	sIP = "";
-	getIP();
+	return true;
+}
+
+void PfServerInit() {
+	if(WSAStartup(MAKEWORD(2, 2), &wsaData)) {
+		throw text[52];
+	}
 	sockServer = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 	if(sockServer == INVALID_SOCKET) {
 		WSACleanup();
-		showErrorMsg(text[56], PfPage::main);
-		return false;
+		throw text[56];
 	}
+	SOCKADDR_IN addrServer;
 	addrServer.sin_addr.S_un.S_addr = htonl(INADDR_ANY);
 	addrServer.sin_family = AF_INET;
 	addrServer.sin_port = htons(51937);
 	int ret = bind(sockServer, (SOCKADDR *)&addrServer, sizeof(SOCKADDR));
 	if(ret == SOCKET_ERROR) {
 		closesocket(sockServer);
+		sockServer = INVALID_SOCKET;
 		WSACleanup();
-		showErrorMsg(text[58], PfPage::main);
-		return false;
+		throw text[58];
 	}
 	ret = listen(sockServer, 1);
 	if(ret == SOCKET_ERROR) {
 		closesocket(sockServer);
+		sockServer = INVALID_SOCKET;
 		WSACleanup();
-		showErrorMsg(text[60], PfPage::main);
-		return false;
+		throw text[60];
 	}
 	if(tSockServer.joinable()) tSockServer.join();
-	tSockServer = thread(pfServerAccept);
-	return true;
+	tSockServer = std::thread(PfServerAccept);
 }
-#endif
+
+void PfServerStop() {
+	if(sockServer != INVALID_SOCKET) {
+		closesocket(sockServer);
+	}
+	if(tSockServer.joinable()) {
+		tSockServer.join();
+	}
+}
 
 std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP, const PfPlayer &o) {
 	auto p = std::make_shared<PfRemotePlayer>();
-	p->as = p->pos_client;
+	p->as = p->pos_server;
 	if(WSAStartup(MAKEWORD(2, 2), &wsaData)) {
 		throw text[52];
 	}
@@ -173,10 +202,11 @@ std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP, const PfPl
 		WSACleanup();
 		throw text[71];
 	}
-	p->game.id = *(int *)(sendbuf + 2) = *(int *)(buf + 2);
+	*(unsigned *)(sendbuf + 2) = *(unsigned *)(buf + 2);
 	ret = recv(p->sock, buf, 14 + sizeof curGame, 0);
 	if(!pfCheckMsg(buf, "gameinfo"))
 		throw text[71];
+	// TODO: don't memcpy a struct.
 	memcpy(&curGame, buf + 14, sizeof curGame);
 	curGame.d = -1;
 	// TODO: d value should not be transmitted over the net
@@ -190,11 +220,12 @@ std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP, const PfPl
 	if(!pfCheckMsg(buf, "name"))
 		throw text[71];
 	p->name = pfTextElem(std::string(buf + 14), *(int *)(buf + 10));
-	p->tSock = std::thread([&]() {
-		p->SockHandler();
-	});
+	p->NewGame(curGame, *(unsigned int *)(buf + 2));
+	p->tSock = std::thread(&PfRemotePlayer::SockHandler, &*p);
 	return p;
 }
+
+PfRemotePlayer::PfRemotePlayer(): PfPlayer(), as(pos_null), exchgMapLn(0) {}
 
 void PfRemotePlayer::ArrangeReady() {
 	PfPlayer::ArrangeReady();
@@ -203,84 +234,95 @@ void PfRemotePlayer::ArrangeReady() {
 void PfRemotePlayer::OnGameStart() {
 	if(as == pos_client) {
 		strcpy(sendbuf + 6, "start");
-		*(bool *)(sendbuf + 11) = game.isFirst;
+		*(bool *)(sendbuf + 11) = !game.isFirst;
 		send(sock, sendbuf, 12, 0);
 	}
 }
 
 void PfRemotePlayer::SockHandler() {
-	while(1) {
-		int ret = recv(sock, buf, 65536, 0);
-		if(ret < 0) {
-			showErrorMsg(text[86], PfPage::main);
-			break;
-		}
-		if(!pfCheckMsg(buf, NULL)) continue;
-		memcpy(tmpbuf, buf + 6, 10);
-		tmpbuf[10] = 0;
-		if(strcmp(tmpbuf, "isurrender") == 0) {
-			Surrender();
-			continue;
-		}
-		tmpbuf[6] = 0;
-		if(strcmp(tmpbuf, "giveup") == 0) {
-			Giveup();
-			break;
-		}
-		if(strcmp(tmpbuf, "attack") == 0) {
-			short ax = *(short *)(buf + 12), ay = *(short *)(buf + 14);
-			Attack(ax, ay);
-			continue;
-		}
-		if(strcmp(tmpbuf, "result") == 0) {
-			short res = *(short *)(buf + 12);
-			if(auto o = other.lock()) {
-				o->AttackResulted(PfAtkRes(res));
+	// TODO: deal with sticking TCP message
+	try {
+		while(1) {
+			int ret = recv(sock, buf, 65536, 0);
+			if(ret < 0) {
+				throw text[86];
 			}
-			continue;
-		}
-		tmpbuf[5] = 0;
-		if(strcmp(tmpbuf, "ready") == 0) {
-			ArrangeReady();
-			continue;
-		}
-		if(as == pos_server && strcmp(tmpbuf, "start") == 0) {
-			game.isFirst = !*(bool *)(buf + 11);
-			// p2Start();
-			// legacy. No need to do anything here.
-			continue;
-		}
-		tmpbuf[2] = 0;
-		if(strcmp(tmpbuf, "mp") == 0) {
-			if(ret > 10) {
-				std::clog << "[!] in " << __PRETTY_FUNCTION__ << ", received `mp` msg of length: " << ret << " which is larget than 10.\n";
+			if(!pfCheckMsg(buf, NULL)) continue;
+			memcpy(tmpbuf, buf + 6, 10);
+			tmpbuf[10] = 0;
+			if(strcmp(tmpbuf, "isurrender") == 0) {
+				Surrender();
+				continue;
 			}
-			myBf.pl[exchgMapLn++] = *(short *)(buf + 8);
-			if(exchgMapLn < myBf.pl.size()) {
-				strcpy(sendbuf + 6, "mp");
-				*(short *)(sendbuf + 8) = bf1.pl[exchgMapLn];
-				int ret = send(sock, sendbuf, 10, 0);
-				if(ret < 0) {
-					showErrorMsg(text[85], PfPage::main);
-					break;
-				}
-			} else {
-				if(auto o = other.lock()) {
-					o->SetOthersBF(myBf.pl);
-				}
+			tmpbuf[6] = 0;
+			if(strcmp(tmpbuf, "giveup") == 0) {
+				Giveup();
 				break;
 			}
-			continue;
+			if(strcmp(tmpbuf, "attack") == 0) {
+				short ax = *(short *)(buf + 12), ay = *(short *)(buf + 14);
+				Attack(ax, ay);
+				continue;
+			}
+			if(strcmp(tmpbuf, "result") == 0) {
+				short res = *(short *)(buf + 12);
+				if(auto o = other.lock()) {
+					o->AttackResulted(PfAtkRes(res));
+				}
+				continue;
+			}
+			tmpbuf[5] = 0;
+			if(strcmp(tmpbuf, "ready") == 0) {
+				ArrangeReady();
+				continue;
+			}
+			if(as == pos_server && strcmp(tmpbuf, "start") == 0) {
+				game.isFirst = *(bool *)(buf + 11);
+				if(auto o = other.lock()) {
+					o->SetFirst(!game.isFirst);
+					// 'isFirst' logic is like nightmare!!!
+				}
+				continue;
+			}
+			tmpbuf[2] = 0;
+			if(strcmp(tmpbuf, "mp") == 0) {
+				// NOTE: a temporary solution of sticking message.
+				auto procSingleMpMsg = [&](short pli) {
+					myBf.pl[exchgMapLn++] = *(short *)(buf + 8);
+					if(exchgMapLn < myBf.pl.size()) {
+						strcpy(sendbuf + 6, "mp");
+						*(short *)(sendbuf + 8) = bf1.pl[exchgMapLn];
+						int ret = send(sock, sendbuf, 10, 0);
+						if(ret < 0) {
+							throw text[85];
+						}
+					}
+				};
+				for(int j = 0; j + 10 <= ret; j += 10) {
+					procSingleMpMsg(*(short *)(buf + j + 8));
+				}
+				if(exchgMapLn >= myBf.pl.size()) {
+					if(auto o = other.lock()) {
+						o->SetOthersBF(myBf.pl);
+					}
+				}
+				if(ret % 10) {
+					std::clog << "[!] in " << __PRETTY_FUNCTION__ << ", received `mp` msg of length: " << ret << " which is not multiple of 10.\n";
+				}
+				continue;
+			}
+			throw text[71];
 		}
-		showErrorMsg(text[71]);
+	} catch(const pfTextElem &t) {
+		showErrorMsg(t);
+		return;
 	}
-	closesocket(sock);
-	sock = -1;
+	shutdown(sock, SD_BOTH);
 }
 
 void PfRemotePlayer::OnOtherReady() {
-	int ret = send(sock, sendbuf, 12, 0);
 	strcpy(sendbuf + 6, "ready");
+	int ret = send(sock, sendbuf, 12, 0);
 	if(ret < 0) {
 		showErrorMsg(text[85], PfPage::main);
 		return;
@@ -328,7 +370,6 @@ void PfRemotePlayer::MapRequested() {
 }
 
 void PfRemotePlayer::SetOthersBF(const std::vector<short> &pl) {
-	exchgMapLn = 0;
 	othersBf.pl = pl;
 	strcpy(sendbuf + 6, "mp");
 	*(short *)(sendbuf + 8) = pl[0];
@@ -339,10 +380,8 @@ void PfRemotePlayer::SetOthersBF(const std::vector<short> &pl) {
 }
 
 PfRemotePlayer::~PfRemotePlayer() {
-	if(sock != -1) {
+	if(sock != INVALID_SOCKET) {
 		closesocket(sock);
 	}
 	if(tSock.joinable()) tSock.join();
-	// closesocket(sockServer);
-	// if(tSockServer.joinable()) tSockServer.join();
 }

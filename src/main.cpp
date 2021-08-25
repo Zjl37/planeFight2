@@ -1,11 +1,10 @@
 #include <ctime>
-#include <winsock2.h>
+#include "pfRemotePlayer.hpp"
 #include "pfGame.hpp"
 #include "pfUI.hpp"
 #include "pfLang.hpp"
 #include "pfAI.hpp"
 #include "vtsFilter.hpp"
-#include "pfRemotePlayer.hpp"
 
 using namespace std;
 
@@ -37,16 +36,15 @@ int tab[16], nue;
 pfLabel ue[128];
 extern pfTextElem errMsg;
 pfTextElem p1name;
-pfBF bg, bf1, bf2;
+pfBF bg, bf1;
 
 string sIP;
 
-thread tSockServer, tSockClient;
 mutex mtxCout;
 
 VtsInputFilter vtIn;
 
-bool getIP() {
+bool GetIP() {
 	static char buf[65536];
 	int ret = gethostname(buf, 65536);
 	if(ret == -1) return false;
@@ -87,12 +85,22 @@ bool _SetPage(PfPage x) {
 	return true;
 }
 
-void DrawPrepareBF() {
-	if(curGame.d > 0) {
-		DrawBF(bf1, bf2);
+#define BF1_X() 4
+#define BF1_Y() 5
+#define BF2_X() (scrW - 4 - (player[0]->GetOthersBF().w) * 2)
+#define BF2_Y() 5
+
+void DrawBF() {
+	if(stPage.top() == PfPage::prepare) {
+		DrawBF(bf1, player[0]->GetOthersBF(), BF1_X(), BF1_Y(), BF2_X(), BF2_Y());
 	} else {
-		DrawBF(player[0]->GetMyBF(), player[0]->GetOthersBF());
+		DrawBF(player[0]->GetMyBF(), player[0]->GetOthersBF(), BF1_X(), BF1_Y(), BF2_X(), BF2_Y());
 	}
+}
+
+inline void DrawPlayerNames() {
+	gotoXY(BF1_X(), 2), std::cout << player[0]->GetName().s << std::endl;
+	gotoXY(BF2_X(), 2), std::cout << player[1]->GetName().s << std::endl;
 }
 
 void drawUiElem() {
@@ -107,9 +115,8 @@ void drawUiElem() {
 		gotoXY(ue[4].right(), ue[4].y);
 		break;
 	case PfPage::prepare:
-		DrawPrepareBF();
-		gotoXY(BF1_X(), 2), std::cout << player[0]->GetName().s << std::endl;
-		gotoXY(BF2_X(), 2), std::cout << player[1]->GetName().s << std::endl;
+		DrawBF();
+		DrawPlayerNames();
 		if(tab[0] == 0)
 			drawPark(tab[1], curGame.h + 10);
 		break;
@@ -117,11 +124,13 @@ void drawUiElem() {
 		box(BF1_X(), BF1_Y(), curGame.w * 2, curGame.h, 2);
 		break;
 	case PfPage::game:
-		DrawBF(player[0]->GetMyBF(), player[0]->GetOthersBF());
+		DrawBF();
+		DrawPlayerNames();
 		gotoXY(scrW - 10, 1), cout << "#" << player[0]->GetGame().turn;
 		break;
 	case PfPage::gameover:
-		DrawBF(player[0]->GetMyBF(), player[0]->GetOthersBF());
+		DrawBF();
+		DrawPlayerNames();
 		gotoXY(scrW - 10, 1), cout << "#" << player[0]->GetGame().turn;
 		break;
 	case PfPage::client_init:
@@ -157,24 +166,28 @@ void StartLocalGame() {
 	player[1]->other = player[0];
 	curGame.d = 2;
 	isFirst = rng() & 1;
-	bf1.clear(), bf2.clear();
+	bf1.clear();
 	NextPage(PfPage::prepare);
 }
 
 void StartServer() {
-	// NOTE: not implemented yet
-
-	// curGame.d = -2;
-	// if(!pfServerInit()) return;
-	// SetPage(PfPage::server_init);
+	try {
+		player[0].reset(new PfLocalPlayer(p1name));
+		PfServerInit();
+	} catch(const pfTextElem &t) {
+		showErrorMsg(t);
+		return;
+	}
+	GetIP();
+	NextPage(PfPage::server_init);
 }
 
 void p1Play21() {
-	bf1.resize(curGame.w, curGame.h), bf2.resize(curGame.w, curGame.h);
+	isFirst = rng() & 1;
+	bf1.resize(curGame.w, curGame.h);
 	NextPage(PfPage::gamerule_setting_server);
 }
 void p1Play22() {
-	curGame.d = -1;
 	sIP = "";
 	NextPage(PfPage::client_init);
 }
@@ -188,9 +201,11 @@ void PfClientConnect() {
 	try {
 		player[0].reset(new PfLocalPlayer(p1name));
 		player[1] = PfCreateRemoteServer(sIP, *player[0]);
+		player[0]->NewGame(curGame, player[1]->GetGame().id);
 		player[0]->other = player[1];
 		player[1]->other = player[0];
-	} catch(pfTextElem t) {
+		bf1.resize(curGame.w, curGame.h);
+	} catch(const pfTextElem &t) {
 		showErrorMsg(t);
 		return;
 	}
@@ -201,6 +216,7 @@ void p2Ready() {
 	if(p2npl != curGame.n) return;
 	if(curGame.d > 0) {
 		if(!curGame.n) return;
+		pfBF bf2(curGame.w, curGame.h);
 		bool tmp = bf2.AutoArrange();
 		if(tmp == false) {
 			refreshPage();
@@ -242,7 +258,6 @@ void p2AddPl(short x) {
 }
 void p2Giveup() {
 	player[0]->Giveup();
-	if(tSockClient.joinable()) tSockClient.join();
 	PrevPage();
 }
 void ClearMyBf() {
@@ -382,7 +397,12 @@ void buildUiElem() {
 				ue[9] = pfLabel(pfTextElem(tmp.str(), text[75].d), 4, 11 + curGame.h, dfc, dbc, 0, 0, false);
 				ue[10] = pfLabel(text[curGame.d == -1 ? 78 : 79], 4, 13 + curGame.h, dfc, dbc, 0, 0, false);
 				ue[11] = pfLabel();
-				ue[12] = pfLabel(text[89] + (isFirst ? text[87] : text[88]), 4, 14 + curGame.h, dfc, dbc, grey, black, false);
+
+				// NOTE: Due to a protocol design flaw, a client in a remote
+				// game does not know its 'isFirst' here. This lable is
+				// disabled until we upgrade the network protocol.
+				ue[12] = pfLabel();
+				// ue[12] = pfLabel(text[89] + (isFirst ? text[87] : text[88]), 4, 14 + curGame.h, dfc, dbc, grey, black, false);
 			}
 			tmp.str("");
 			tmp << curGame.h << "*" << curGame.w;
@@ -403,7 +423,7 @@ void buildUiElem() {
 	case PfPage::adjust_map: {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
 		ue[2].clickFunc = [] {
-			bf1.resize(curGame.w, curGame.h), bf2.resize(curGame.w, curGame.h);
+			bf1.resize(curGame.w, curGame.h);
 			PrevPage();
 		};
 		tmp.str("");
@@ -508,6 +528,7 @@ void buildUiElem() {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
 		ue[2].clickFunc = [] {
 			player[1].reset();
+			PfServerStop();
 			PrevPage();
 		};
 		if(sIP.empty())
@@ -574,7 +595,7 @@ void ProcessMouseClick(int mx, int my) {
 			lock_guard<mutex> _lg(mtxCout);
 			setDefaultColor();
 			clearR(0, 7 + curGame.h, scrW, 7 + curGame.h);
-			DrawPrepareBF();
+			DrawBF();
 		}
 	} else if(stPage.top() == PfPage::adjust_map) {
 		int nx = (mx - BF1_X()) / 2, ny = my - BF1_Y();
@@ -585,18 +606,20 @@ void ProcessMouseClick(int mx, int my) {
 				refreshPage();
 			}
 	} else if(stPage.top() == PfPage::game) {
-		if(mx >= BF2_X() && mx < BF2_X() + bf2.w * 2 && my >= BF2_Y() && my < BF2_Y() + bf2.h) {
+		auto &w = player[0]->GetOthersBF().w;
+		auto &h = player[0]->GetOthersBF().h;
+		if(mx >= BF2_X() && mx < BF2_X() + w * 2 && my >= BF2_Y() && my < BF2_Y() + h) {
 			auto &bf3 = player[0]->GetOthersBF();
-			if(tab[0] == 0 && player[0]->GetGame().isMyTurn() && bf3.mk[(mx - BF2_X()) / 2 + (my - BF2_Y()) * bf3.w] == black) {
+			if(tab[0] == 0 && player[0]->GetGame().isMyTurn() && bf3.mk[(mx - BF2_X()) / 2 + (my - BF2_Y()) * w] == black) {
 				player[0]->Attack((mx - BF2_X()) / 2, my - BF2_Y());
 			} else if(tab[0] == 1) {
-				bf3.ch[(mx - BF2_X()) / 2 + (my - BF2_Y()) * bf3.w] = marker[tab[1]];
+				bf3.ch[(mx - BF2_X()) / 2 + (my - BF2_Y()) * w] = marker[tab[1]];
 				lock_guard<mutex> _lg(mtxCout);
-				DrawBF(player[0]->GetMyBF(), player[0]->GetOthersBF());
+				DrawBF();
 			} else if(tab[0] == 2) {
-				bf3.ch[(mx - BF2_X()) / 2 + (my - BF2_Y()) * bf3.w] = "";
+				bf3.ch[(mx - BF2_X()) / 2 + (my - BF2_Y()) * w] = "";
 				lock_guard<mutex> _lg(mtxCout);
-				DrawBF(player[0]->GetMyBF(), player[0]->GetOthersBF());
+				DrawBF();
 			}
 		}
 	}
@@ -614,7 +637,7 @@ void MouseHandler(int stat, int mx, int my, bool fDown) {
 			   && tab[0] == 0 && p2npl < curGame.n && bf1.ch[(mx - BF1_X()) / 2 + (my - BF1_Y()) * bf1.w].empty()
 			   && !(player[0]->GetGame().state & PfGame::me_ready)) {
 				lock_guard<mutex> _lg(mtxCout);
-				DrawPrepareBF();
+				DrawBF();
 				setColor(grey, dbc);
 				if(curGame.cw) {
 					DrawPlaneCw(BF1_X() + ((mx - BF1_X()) & (short)-2), my, tab[1], BF1_X(), BF1_Y(), curGame.w, curGame.h);
@@ -623,8 +646,10 @@ void MouseHandler(int stat, int mx, int my, bool fDown) {
 				}
 			}
 		} else if(stPage.top() == PfPage::game) {
-			if(mx >= BF2_X() && mx < BF2_X() + bf2.w * 2 && my >= BF2_Y() && my < BF2_Y() + bf2.h
-			   && player[1]->GetOthersBF().mk[(mx - BF2_X()) / 2 + (my - BF2_Y()) * bf2.w] == 0) {
+			auto &w = player[0]->GetOthersBF().w;
+			auto &h = player[0]->GetOthersBF().h;
+			if(mx >= BF2_X() && mx < BF2_X() + w * 2 && my >= BF2_Y() && my < BF2_Y() + h
+			   && player[1]->GetOthersBF().mk[(mx - BF2_X()) / 2 + (my - BF2_Y()) * w] == 0) {
 				if(mtxCout.try_lock()) {
 					setDefaultColor();
 					player[0]->GetOthersBF().Draw(BF2_X(), BF2_Y(), true);

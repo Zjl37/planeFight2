@@ -78,7 +78,7 @@ const vector<pfLfIdx> idx{
 	{ 60, "socket", "err6" },
 	{ 61, "socket", "msg6" },
 	{ 62, "socket", "err7" },
-	{ 63, "socket", "msg7" },
+	// { 63, "socket", "msg7" },
 	{ 64, "socket", "bad_ver1" },
 	{ 65, "socket", "bad_ver2" },
 	{ 66, "socket", "err8" },

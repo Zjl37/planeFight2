@@ -183,22 +183,22 @@ void drawPark(int selDir, int y) {
 	DrawPlane(56, y + 3, 3);
 }
 
-void DrawBF(const pfBF &bf1, const pfBF &bf2) {
+void DrawBF(const pfBF &bf1, const pfBF &bf2, int x1, int y1, int x2, int y2) {
 	setDefaultColor();
-	box(BF1_X(), BF1_Y(), bf1.w * 2, bf1.h, 2);
-	box(BF2_X(), BF2_Y(), bf2.w * 2, bf2.h, 2);
+	box(x1, y1, bf1.w * 2, bf1.h, 2);
+	box(x2, y2, bf2.w * 2, bf2.h, 2);
 	for(int i = 0; i < bf1.w; i++) {
 		int j = i;
 		while(j && j % 10 == 0) j /= 10;
-		gotoXY(BF1_X() + i * 2, BF1_Y() - 2), std::cout << std::setw(2) << j % 10;
-		gotoXY(BF2_X() + i * 2, BF2_Y() - 2), std::cout << std::setw(2) << j % 10;
+		gotoXY(x1 + i * 2, y1 - 2), std::cout << std::setw(2) << j % 10;
+		gotoXY(x2 + i * 2, y2 - 2), std::cout << std::setw(2) << j % 10;
 	}
 	for(int i = 0; i < bf1.h; i++) {
-		gotoXY(BF1_X() - 4, BF1_Y() + i), std::cout << i;
-		gotoXY(BF2_X() - 4, BF2_Y() + i), std::cout << i;
+		gotoXY(x1 - 4, y1 + i), std::cout << i;
+		gotoXY(x2 - 4, y2 + i), std::cout << i;
 	}
-	bf1.Draw(BF1_X(), BF1_Y(), true);
-	bf2.Draw(BF2_X(), BF2_Y(), true);
+	bf1.Draw(x1, y1, true);
+	bf2.Draw(x2, y2, true);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

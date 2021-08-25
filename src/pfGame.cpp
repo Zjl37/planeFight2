@@ -104,7 +104,8 @@ bool pfBF::AutoArrange() {
 	return true;
 }
 
-PfGame::PfGame(pfGameInfo gi, unsigned id, bool ff): id(id), gamerules(gi), isFirst(ff) {}
+PfGame::PfGame(): state(0) {}
+PfGame::PfGame(pfGameInfo gi, unsigned id, bool ff): id(id), gamerules(gi), isFirst(ff), state(0) {}
 
 bool PfGame::isMyTurn() const {
 	return (turn & 1) ^ 1 ^ isFirst;
@@ -122,6 +123,10 @@ void PfPlayer::NewGame(pfGameInfo gi, unsigned id, bool isFirst) {
 	game = {gi, id, isFirst};
 	game.nDestroyedOthers = game.nDestroyedMine = 0;
 	othersBf.resize(gi.w, gi.h); // ?
+}
+
+void PfPlayer::SetFirst(bool ff) {
+	game.isFirst = ff;
 }
 
 void PfPlayer::OnGameStart() {
@@ -203,11 +208,6 @@ void PfPlayer::BeingAttacked(short x, short y) {
 	}
 	if(res == PfAtkRes::destroy) {
 		++game.nDestroyedMine;
-		if(game.nDestroyedMine == game.gamerules.n) {
-			if(auto o = other.lock()) {
-				o->MapRequested();
-			}
-		}
 	}
 }
 
@@ -242,7 +242,7 @@ const pfBF &PfPlayer::GetOthersBF() const {
 	return othersBf;
 }
 
-PfLocalPlayer::PfLocalPlayer(pfTextElem t) {
+PfLocalPlayer::PfLocalPlayer(pfTextElem t): PfPlayer() {
 	name = t;
 }
 
@@ -280,7 +280,6 @@ void PfLocalPlayer::AttackResulted(PfAtkRes res) {
 	}
 	{
 		std::lock_guard<std::mutex> _lg(mtxCout);
-		DrawBF(myBf, othersBf);
 		UiShowAtkRes(res);
 	}
 	refreshPage();
@@ -304,20 +303,32 @@ void PfLocalPlayer::BeingAttacked(short x, short y) {
 		               dummy == red     ? PfAtkRes::hit :
                                           PfAtkRes::empty;
 		UiShowAtkRes(res);
+		if(game.nDestroyedMine == game.gamerules.n) {
+			if(auto o = other.lock()) {
+				o->MapRequested();
+			}
+		}
 	}
 	refreshPage();
 }
 
 void PfLocalPlayer::OnOtherSurrender() {
-	PfPlayer::OnOtherSurrender();
 	if(auto o = other.lock()) {
 		o->MapRequested();
 	}
+	PfPlayer::OnOtherSurrender();
 }
 
 void PfLocalPlayer::OnOtherGiveup() {
 	// ?
 	showErrorMsg(text[80], PfPage::main);
+}
+
+void PfLocalPlayer::Surrender() {
+	if(auto o = other.lock()) {
+		o->MapRequested();
+	}
+	PfPlayer::Surrender();
 }
 
 void PfLocalPlayer::SetOthersBF(const std::vector<short> &pl) {

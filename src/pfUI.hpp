@@ -7,11 +7,6 @@
 #include <functional>
 #include <stack>
 
-#define BF1_X() 4
-#define BF1_Y() 5
-#define BF2_X() (scrW - 4 - bf2.w * 2) // TODO: this macro might get into some trouble
-#define BF2_Y() 5
-
 extern int scrW, scrH;
 
 void banner(const pfTextElem &, short, short, short);
@@ -38,7 +33,7 @@ void DrawPlane(int x, int y, int d);
 void DrawPlane(int x, int y, int d, int bx, int by, int bw, int bh);
 void DrawPlaneCw(int x, int y, int d, int bx, int by, int bw, int bh);
 void drawPark(int selDir, int y);
-void DrawBF(const pfBF &bf1, const pfBF &bf2);
+void DrawBF(const pfBF &bf1, const pfBF &bf2, int x1, int y1, int x2, int y2);
 
 enum class PfPage {
 	welcome = 0,
