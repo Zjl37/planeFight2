@@ -1,5 +1,8 @@
 #include "pfConsole.hpp"
 #include "vtsFilter.hpp"
+#ifdef _WIN32
+#	include <windows.h>
+#endif
 
 extern std::mt19937 rng;
 extern VtsInputFilter vtIn;

@@ -1,6 +1,7 @@
 #include "pfUI.hpp"
 #include "vtsFilter.hpp"
 #include <mutex>
+#include <thread>
 using namespace std;
 
 extern std::string mapEdge[256];
@@ -40,7 +41,7 @@ void pfLabel::_click() {
 	}
 	gotoXY(x, y), cout << t.s;
 	mtxCout.unlock();
-	Sleep(100);
+	this_thread::sleep_for(100ms);
 	clickFunc();
 }
 
@@ -112,19 +113,19 @@ void BlinkCoord(short ax, short ay, bool signDir) {
 	setColor(lightGrey, dbc);
 	gotoXY((scrW - tmp2.length()) / 2, 9);
 	cout << tmp2;
-	Sleep(rng() % 250);
+	this_thread::sleep_for(chrono::milliseconds(rng() % 250));
 	setColor(black, dbc);
 	gotoXY((scrW - tmp2.length()) / 2, 9);
 	cout << tmp2;
-	Sleep(rng() % 250);
+	this_thread::sleep_for(chrono::milliseconds(rng() % 250));
 	setColor(grey, dbc);
 	gotoXY((scrW - tmp2.length()) / 2, 9);
 	cout << tmp2;
-	Sleep(rng() % 250);
+	this_thread::sleep_for(chrono::milliseconds(rng() % 250));
 	setColor(white, dbc);
 	gotoXY((scrW - tmp2.length()) / 2, 9);
 	cout << tmp2;
-	Sleep(500 + rng() % 250);
+	this_thread::sleep_for(chrono::milliseconds(500 + rng() % 250));
 }
 
 void DrawPlane(int x, int y, int d) {
@@ -249,7 +250,7 @@ void PrevPage() {
 
 void UiGameStart() {
 	banner(text[36], scrH / 3, white, pink);
-	Sleep(1000);
+	this_thread::sleep_for(1s);
 	SetPage(PfPage::game);
 }
 
@@ -266,5 +267,5 @@ void UiShowAtkRes(PfAtkRes res) {
 		setColor(white, darkRed);
 	}
 	gotoXY((scrW - text[41 + (int)res].len()) / 2, 7), cout << text[41 + (int)res].s;
-	Sleep(1000);
+	this_thread::sleep_for(1s);
 }

@@ -5,7 +5,11 @@
  ** it is impossible to read UTF-8 input from standard input.
  **/
 
-#ifdef WIN32
+#ifdef _WIN32
+#	include <windows.h>
+
+extern HANDLE hIn;
+
 std::string VtsInputFilter::_readNextCodept() {
 	wchar_t res[3] = L"\0\0";
 	char u8res[10];

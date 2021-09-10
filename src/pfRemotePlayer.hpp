@@ -1,18 +1,11 @@
 #pragma once
-#ifdef WIN32
-#	include <winsock2.h>
-#endif
+#include "asio.hpp"
 #include "pfGame.hpp"
 #include <thread>
 
-// bool pfCheckMsg(const char *msg, const char *i);
-// void pfSockHandler(); // to remove
-bool PfServerAccept();
 void PfServerInit();
 void PfServerStop();
-// bool pfClientInit();
 bool pfClientConnect();
-// void pfExchangeMap();
 
 class PfRemotePlayer: public PfPlayer {
 	enum {
@@ -21,8 +14,9 @@ class PfRemotePlayer: public PfPlayer {
 		pos_server = -2,
 	} as;
 
-	SOCKET sock;
 	std::thread tSock;
+	asio::ip::tcp::socket sock;
+	asio::streambuf buf, sendbuf;
 	unsigned exchgMapLn;
 
 	void OnGameStart();
@@ -41,7 +35,7 @@ class PfRemotePlayer: public PfPlayer {
 	PfRemotePlayer();
 	~PfRemotePlayer();
 	friend std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP, const PfPlayer &opponent);
-	friend std::shared_ptr<PfRemotePlayer> PfCreateRemoteClient(SOCKET, const PfPlayer &opponent);
+	friend std::shared_ptr<PfRemotePlayer> PfCreateRemoteClient(asio::ip::tcp::socket &&, const PfPlayer &opponent);
 };
 
 std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP, const PfPlayer &opponent);

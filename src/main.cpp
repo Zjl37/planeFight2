@@ -44,6 +44,13 @@ mutex mtxCout;
 
 VtsInputFilter vtIn;
 
+enum {
+	pf_local_game,
+	pf_remote_game_client,
+	pf_remote_game_server,
+} curGameType;
+
+// TODO: change this, the asio way
 bool GetIP() {
 	static char buf[65536];
 	int ret = gethostname(buf, 65536);
@@ -164,7 +171,7 @@ void StartLocalGame() {
 	player[1].reset(new PfAI());
 	player[0]->other = player[1];
 	player[1]->other = player[0];
-	curGame.d = 2;
+	curGameType = pf_local_game;
 	isFirst = rng() & 1;
 	bf1.clear();
 	NextPage(PfPage::prepare);
@@ -174,17 +181,17 @@ void StartServer() {
 	try {
 		player[0].reset(new PfLocalPlayer(p1name));
 		PfServerInit();
+		curGameType = pf_remote_game_server;
+		GetIP();
+		NextPage(PfPage::server_init);
 	} catch(const pfTextElem &t) {
 		showErrorMsg(t);
 		return;
 	}
-	GetIP();
-	NextPage(PfPage::server_init);
 }
 
 void p1Play21() {
 	isFirst = rng() & 1;
-	bf1.resize(curGame.w, curGame.h);
 	NextPage(PfPage::gamerule_setting_server);
 }
 void p1Play22() {
@@ -201,20 +208,18 @@ void PfClientConnect() {
 	try {
 		player[0].reset(new PfLocalPlayer(p1name));
 		player[1] = PfCreateRemoteServer(sIP, *player[0]);
-		player[0]->NewGame(curGame, player[1]->GetGame().id);
 		player[0]->other = player[1];
 		player[1]->other = player[0];
-		bf1.resize(curGame.w, curGame.h);
+		curGameType = pf_remote_game_client;
 	} catch(const pfTextElem &t) {
 		showErrorMsg(t);
 		return;
 	}
-	SetPage(PfPage::prepare);
 }
 
 void p2Ready() {
 	if(p2npl != curGame.n) return;
-	if(curGame.d > 0) {
+	if(curGameType == pf_local_game) {
 		if(!curGame.n) return;
 		pfBF bf2(curGame.w, curGame.h);
 		bool tmp = bf2.AutoArrange();
@@ -338,7 +343,7 @@ void buildUiElem() {
 		break;
 	}
 	case PfPage::prepare: {
-		if(curGame.d > 0) {
+		if(curGameType == pf_local_game) {
 			ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
 			ue[2].clickFunc = [] { PrevPage(); };
 		} else {
@@ -353,7 +358,7 @@ void buildUiElem() {
 		if(tab[0] >= 0 && tab[0] <= 2)
 			ue[3 + tab[0]].fgc = black, ue[3 + tab[0]].bgc = green;
 		if(p2npl == curGame.n)
-			ue[6] = pfLabel(text[curGame.d > 0 ? 25 : 77], (scrW - text[curGame.d > 0 ? 25 : 77].len()) / 2, 10, black, yellow, black, darkYellow, true);
+			ue[6] = pfLabel(text[curGameType == pf_local_game ? 25 : 77], (scrW - text[curGameType == pf_local_game ? 25 : 77].len()) / 2, 10, black, yellow, black, darkYellow, true);
 		else
 			ue[6] = pfLabel();
 		ue[6].clickFunc = p2Ready;
@@ -366,7 +371,7 @@ void buildUiElem() {
 				nue = 7;
 			}
 		} else if(tab[0] == 1) {
-			if(curGame.d > 0) {
+			if(curGameType == pf_local_game) {
 				ue[7] = pfLabel((curGame.cw ? text[30] : text[29]) + text[31], 4, 10 + curGame.h, dfc, dbc, grey, black, false);
 				ue[7].clickFunc = p2SwitchCw;
 			} else if(curGame.cw) {
@@ -374,14 +379,14 @@ void buildUiElem() {
 			} else {
 				ue[7] = pfLabel();
 			}
-			if(curGame.d > 0) {
+			if(curGameType == pf_local_game) {
 				ue[8] = pfLabel((curGame.cd ? text[30] : text[29]) + text[83], 4, 12 + curGame.h, dfc, dbc, grey, black, false);
 				ue[8].clickFunc = [] { curGame.cd=!curGame.cd; refreshPage(); };
 			} else if(curGame.cd) {
 				ue[8] = pfLabel(text[84], 4, 12 + curGame.h, dfc, dbc, grey, black, false);
 			} else
 				ue[8] = pfLabel();
-			if(curGame.d > 0) {
+			if(curGameType == pf_local_game) {
 				ue[9] = pfLabel(text[32], 4, 11 + curGame.h, black, yellow, black, darkYellow, false);
 				ue[9].clickFunc = [] { p2AddPl(-1); };
 				tmp.str("");
@@ -395,7 +400,7 @@ void buildUiElem() {
 				tmp.str("");
 				tmp << text[75].s << curGame.n;
 				ue[9] = pfLabel(pfTextElem(tmp.str(), text[75].d), 4, 11 + curGame.h, dfc, dbc, 0, 0, false);
-				ue[10] = pfLabel(text[curGame.d == -1 ? 78 : 79], 4, 13 + curGame.h, dfc, dbc, 0, 0, false);
+				ue[10] = pfLabel();
 				ue[11] = pfLabel();
 
 				// NOTE: Due to a protocol design flaw, a client in a remote
@@ -406,7 +411,7 @@ void buildUiElem() {
 			}
 			tmp.str("");
 			tmp << curGame.h << "*" << curGame.w;
-			if(curGame.d > 0)
+			if(curGameType == pf_local_game)
 				ue[13] = pfLabel(text[90] + tmp.str(), 4, 16 + curGame.h, black, yellow, black, darkYellow, false),
 				ue[13].clickFunc = [] { NextPage(PfPage::adjust_map); };
 			else
@@ -541,7 +546,10 @@ void buildUiElem() {
 	}
 	case PfPage::client_init: {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
-		ue[2].clickFunc = [] { PrevPage(); };
+		ue[2].clickFunc = [] {
+			player[1].reset();
+			PrevPage();
+		};
 		ue[3] = pfLabel(text[67], 4, 5, dfc, dbc, 0, 0, false);
 		nue = 3;
 		break;

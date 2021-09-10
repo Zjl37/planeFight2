@@ -1,5 +1,6 @@
 #include "pfUI.hpp"
 #include "pfLang.hpp"
+#include <windows.h>
 using namespace std;
 
 pfTextElem operator+(const pfTextElem &t1, const pfTextElem &t2) {
@@ -67,7 +68,7 @@ const vector<pfLfIdx> idx{
 	{ 48, "game", "back_to_main" },
 	{ 49, "game", "mark" },
 	{ 50, "game", "erase" },
-	{ 52, "socket", "err1" },
+	// { 52, "socket", "err1" },
 	// { 53, "socket", "msg1" },
 	{ 54, "socket", "msg2" },
 	{ 55, "socket", "msg3" },
@@ -91,8 +92,8 @@ const vector<pfLfIdx> idx{
 	{ 75, "game", "msg_plane_num" },
 	{ 76, "game", "give_up" },
 	{ 77, "game", "ready" },
-	{ 78, "game", "setting_info1" },
-	{ 79, "game", "setting_info2" },
+	// { 78, "game", "setting_info1" },
+	// { 79, "game", "setting_info2" },
 	{ 80, "game", "msg_give_up" },
 	{ 81, "game", "err_bad_ready" },
 	{ 82, "game", "wait_ready" },

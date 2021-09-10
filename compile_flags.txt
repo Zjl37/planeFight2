@@ -1,4 +1,0 @@
--Wall
--DUNICODE
---target=x86_64-w64-mingw
--lwsock32

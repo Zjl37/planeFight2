@@ -24,6 +24,7 @@ Cpp11BracedListStyle: true
 FixNamespaceComments: false
 IndentCaseLabels: false
 IndentFunctionDeclarationAfterType: false
+IndentPPDirectives: AfterHash
 IndentWidth: 4
 MaxEmptyLinesToKeep: 2
 NamespaceIndentation: All

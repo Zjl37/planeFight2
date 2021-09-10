@@ -2,7 +2,7 @@
 
 extern std::mt19937 rng;
 
-pfGameInfo curGame{ 10, 10, 3, 2, 0, 0 };
+pfGameInfo curGame{ 10, 10, 3, false, false };
 std::shared_ptr<PfPlayer> player[2];
 
 PfRePosCh plShape[4][10] = {
@@ -119,14 +119,10 @@ const PfGame &PfPlayer::GetGame() const {
 	return game;
 }
 
-void PfPlayer::NewGame(pfGameInfo gi, unsigned id, bool isFirst) {
+void PfPlayer::NewGame(const pfGameInfo &gi, unsigned id, bool isFirst) {
 	game = {gi, id, isFirst};
 	game.nDestroyedOthers = game.nDestroyedMine = 0;
-	othersBf.resize(gi.w, gi.h); // ?
-}
-
-void PfPlayer::SetFirst(bool ff) {
-	game.isFirst = ff;
+	othersBf.resize(gi.w, gi.h);
 }
 
 void PfPlayer::OnGameStart() {
@@ -244,6 +240,12 @@ const pfBF &PfPlayer::GetOthersBF() const {
 
 PfLocalPlayer::PfLocalPlayer(pfTextElem t): PfPlayer() {
 	name = t;
+}
+
+void PfLocalPlayer::NewGame(const pfGameInfo &gi, unsigned id, bool isFirst) {
+	PfPlayer::NewGame(gi, id, isFirst);
+	bf1.resize(curGame.w, curGame.h);
+	SetPage(PfPage::prepare);
 }
 
 void PfLocalPlayer::OnGameStart() {

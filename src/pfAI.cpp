@@ -62,14 +62,14 @@ bool pfAIdecide(const pfGameInfo &g, const std::vector<short> &mk, short &tgx, s
 	if(ttt >= PFAI_MAXTRY) {
 		return false;
 	}
-	std::vector<COORD> pos;
+	std::vector<std::pair<int, int>> pos;
 	for(short i = 0; i < g.h; i++)
 		for(short j = 0; j < g.w; j++)
 			if(vbf.pl[j + i * g.w] & 8 && mk[j + i * g.w] != darkRed)
-				pos.push_back((COORD){ j, i });
+				pos.push_back({j, i});
 	if(!pos.size()) return false;
 	int i = rng() % pos.size();
-	tgx = pos[i].X, tgy = pos[i].Y;
+	tgx = pos[i].first, tgy = pos[i].second;
 	return true;
 }
 

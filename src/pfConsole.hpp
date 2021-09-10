@@ -1,7 +1,4 @@
 #pragma once
-#ifdef WIN32
-#	include <windows.h>
-#endif
 #include <random>
 #include <string>
 #include <mutex>
@@ -52,8 +49,6 @@ void ClearLineRight();
 void showCursor_(bool f);
 void UseAltScrBuf();
 void UseMainScrBuf();
-
-extern HANDLE hIn, hOut;
 
 #define showCursor() showCursor_(true)
 #define hideCursor() showCursor_(false)

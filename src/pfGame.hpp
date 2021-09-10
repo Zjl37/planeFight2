@@ -8,10 +8,17 @@
 // High contrast color
 const short hcc[17] = { 7, 15, 15, 15, 15, 15, 15, 0, 15, 15, 0, 0, 15, 0, 0, 0, 16 };
 
-struct pfGameInfo {
+struct pfGameInfo_legacy {
 	short w, h, n, d;
 	// w,h: map size; n: number of planes; d: difficulty
 	bool cw, cd; // cw: enable cross-border mode, cd: enable completely-destroy
+};
+
+struct pfGameInfo {
+	// w,h: map size; n: number of planes
+	uint16_t w, h, n;
+	// cw: enable cross-border mode; cd: enable completely-destroy
+	bool cw, cd;
 };
 
 struct PfGame {
@@ -51,8 +58,7 @@ class PfPlayer {
 	std::weak_ptr<PfPlayer> other;
 
 	// Actions
-	void SetFirst(bool); // bad design again
-	void NewGame(pfGameInfo, unsigned, bool = true);
+	virtual void NewGame(const pfGameInfo &, unsigned id, bool isFirst);
 	void ArrangeReady();
 	void Giveup();
 	virtual void Attack(short, short);
@@ -79,7 +85,8 @@ class PfLocalPlayer: public PfPlayer {
 	struct {
 		int x, y;
 	} lastAtk;
-	
+
+	void NewGame(const pfGameInfo &, unsigned id, bool isFirst);
 	void OnGameStart();
 	void OnGameover();
 	void OnOtherGiveup();
