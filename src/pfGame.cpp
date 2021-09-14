@@ -154,10 +154,10 @@ void PfPlayer::Giveup() {
 
 void PfPlayer::Surrender() {
 	game.state |= game.me_surrender;
+	OnGameover();
 	if(auto o = other.lock()) {
 		o->OnOtherSurrender();
 	}
-	OnGameover();
 }
 
 void PfPlayer::OnOtherSurrender() {

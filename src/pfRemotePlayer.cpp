@@ -81,35 +81,56 @@ std::shared_ptr<PfRemotePlayer> PfCreateRemoteClient(tcp::socket &&sockClient, c
 
 void PfServerAccept(const asio::error_code &ec) {
 	if(ec) {
-		/* TODO */
+		std::clog << "in " << __PRETTY_FUNCTION__ << " network error (error code): " << ec.message() << std::endl;
+		// Do not show error message when user stops server
+		if(stPage.top() == PfPage::server_init) {
+			showErrorMsg(text[62], PfPage::gamerule_setting_server);
+		}
 		return;
 	}
-	acceptor.close();
 	try {
+		acceptor.close();
 		player[1] = PfCreateRemoteClient(std::move(sockClient), *player[0]);
 		player[0]->other = player[1];
 		player[1]->other = player[0];
-	} catch(const pfTextElem &t) {
-		showErrorMsg(t);
-		return;
+	} catch(const asio::system_error &e) {
+		std::clog << "in " << __PRETTY_FUNCTION__ << " network error (system error): " << e.what() << std::endl;
+		showErrorMsg(text[62], PfPage::gamerule_setting_server);
+	} catch(const std::exception &e) {
+		std::clog << "in " << __PRETTY_FUNCTION__ << " error: " << e.what() << std::endl;
+		showErrorMsg(text[62], PfPage::gamerule_setting_server);
 	}
 	return;
 }
 
 void PfServerInit() {
-	acceptor.open(tcp::v4());
-	acceptor.bind(tcp::endpoint(tcp::v4(), 51937));
-	acceptor.listen();
-	if(tServer.joinable()) tServer.join();
-	acceptor.async_accept(sockClient, PfServerAccept);
-	tServer = std::thread([]() {
-		ioctxt.run();
-	});
+	try {
+		acceptor = tcp::acceptor(ioctxt, tcp::endpoint(tcp::v4(), 51937));
+		sockClient.close();
+		if(tServer.joinable()) tServer.join();
+		acceptor.async_accept(sockClient, PfServerAccept);
+		if(ioctxt.stopped()) {
+			ioctxt.restart();
+		}
+		tServer = std::thread([]() {
+			ioctxt.run();
+		});
+	} catch(const asio::system_error &e) {
+		showErrorMsg(text[56], PfPage::gamerule_setting_server);
+		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
+		PfServerStop();
+	} catch(const std::exception &e) {
+		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " error: " << e.what() << std::endl;
+	}
 }
 
 void PfServerStop() {
 	acceptor.close();
 	if(tServer.joinable()) tServer.join();
+}
+
+void PfStopConnect() {
+	ioctxt.stop();
 }
 
 void ToBytes(std::ostream &os, const uint32_t &x) {
@@ -184,10 +205,6 @@ std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP, const PfPl
 	tcp::resolver resolver(ioctxt);
 	asio::connect(p->sock, resolver.resolve(sIP, "51937"));
 
-	// these error text maybe used:
-	// throw text[66]; // cannot create socket; useless;
-	// throw text[68]; // cannot connect to server; useful;
-
 	std::ostream os(&p->sendbuf);
 	os << "PLAY " << pfProtoNameStr << " " << pfProtoVerStr << "\r\n"
 	   << "User-Agent: "s << pfUA << "\r\n"
@@ -215,14 +232,14 @@ std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP, const PfPl
 		}
 	} while(!hdLn.empty());
 
-	ToBytes(os, 0u, PfNwPacket::join); // TODO: what happens here?
+	ToBytes(os, 0u, PfNwPacket::join);
 	asio::write(p->sock, p->sendbuf);
 
 	p->tSock = std::thread(&PfRemotePlayer::SockHandler, &*p);
 	return p;
 }
 
-PfRemotePlayer::PfRemotePlayer(): PfPlayer(), as(pos_null), sock(ioctxt), exchgMapLn(0) {}
+PfRemotePlayer::PfRemotePlayer(): PfPlayer(), as(pos_null), sock(ioctxt) {}
 
 void PfRemotePlayer::ArrangeReady() {
 	PfPlayer::ArrangeReady();
@@ -268,7 +285,7 @@ void PfRemotePlayer::SockHandler() {
 			}
 			case PfNwPacket::game_info: {
 				if(len < 7) {
-					std::clog << "[!] in " << __PRETTY_FUNCTION__ << ":\nReceived too short Game-info packet whose len is "<<len<<".\n";
+					std::clog << "[!] in " << __PRETTY_FUNCTION__ << ":\nReceived too short Game-info packet whose len is " << len << ".\n";
 					is.ignore(len);
 					break;
 				}
@@ -288,7 +305,12 @@ void PfRemotePlayer::SockHandler() {
 					this->NewGame(curGame, id, st & 4);
 					if(auto o = other.lock()) {
 						o->NewGame(curGame, id, !(st & 4));
+						const auto &oName = o->GetName().s;
+						ToBytes(os, uint32_t(oName.length()), PfNwPacket::name);
+						os.write(oName.c_str(), oName.length());
 					}
+					extern bool isFirst;
+					isFirst = !(st & 4);
 				} else {
 					std::clog << "[!] in " << __PRETTY_FUNCTION__ << ":\nUnexpected Game-info packet received from client.\n";
 				}
@@ -297,10 +319,12 @@ void PfRemotePlayer::SockHandler() {
 			case PfNwPacket::name: {
 				name.s.resize(len);
 				is.read(name.s.data(), len);
+				refreshPage();
 				break;
 			}
 			case PfNwPacket::give_up: {
 				_run = false;
+				expectDisconnect = 1;
 				is.ignore(len);
 				Giveup();
 				break;
@@ -330,8 +354,13 @@ void PfRemotePlayer::SockHandler() {
 				}
 				uint8_t res;
 				FromBytes(is, res);
+
+				++game.turn;
 				if(auto o = other.lock()) {
 					o->AttackResulted(PfAtkRes(res));
+				}
+				if(PfAtkRes(res) == PfAtkRes::destroy) {
+					++game.nDestroyedMine;
 				}
 				break;
 			}
@@ -346,6 +375,10 @@ void PfRemotePlayer::SockHandler() {
 				if(auto o = other.lock()) {
 					o->SetOthersBF(myBf.pl);
 				}
+				othersMapReceived = 1;
+				if(game.Over()) {
+					expectDisconnect = 1;
+				}
 				break;
 			}
 			default: {
@@ -358,7 +391,9 @@ void PfRemotePlayer::SockHandler() {
 		showErrorMsg(t);
 		return;
 	} catch(const asio::system_error &e) {
-		showErrorMsg(text[86]);
+		if(!expectDisconnect) {
+			showErrorMsg(text[86]);
+		}
 		return;
 	} catch(const std::exception &e) {
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " some exception occured! " << e.what() << std::endl;
@@ -368,49 +403,74 @@ void PfRemotePlayer::SockHandler() {
 }
 
 void PfRemotePlayer::OnOtherReady() {
-	std::ostream os(&sendbuf);
-	ToBytes(os, 0u, PfNwPacket::ready);
-	asio::write(sock, sendbuf);
-	
-	PfPlayer::OnOtherReady();
+	try {
+		std::ostream os(&sendbuf);
+		ToBytes(os, 0u, PfNwPacket::ready);
+		asio::write(sock, sendbuf);
+
+		PfPlayer::OnOtherReady();
+	} catch(const asio::system_error &e) {
+		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
+		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
+	}
 }
 
 void PfRemotePlayer::OnOtherGiveup() {
-	std::ostream os(&sendbuf);
-	ToBytes(os, 0u, PfNwPacket::give_up);
-	asio::write(sock, sendbuf);
+	try {
+		expectDisconnect = 1;
+		std::ostream os(&sendbuf);
+		ToBytes(os, 0u, PfNwPacket::give_up);
+		asio::write(sock, sendbuf);
 
-	sock.shutdown(sock.shutdown_both);
+		sock.shutdown(sock.shutdown_both);
+	} catch(const asio::system_error &e) {
+		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
+	}
 }
 
 void PfRemotePlayer::OnOtherSurrender() {
 	PfPlayer::OnOtherSurrender();
+	try {
+		std::ostream os(&sendbuf);
+		ToBytes(os, 0u, PfNwPacket::surrender);
+		asio::write(sock, sendbuf);
+	} catch(const asio::system_error &e) {
+		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
+		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
+	}
+}
 
-	std::ostream os(&sendbuf);
-	ToBytes(os, 0u, PfNwPacket::surrender);
-	asio::write(sock, sendbuf);
+void PfRemotePlayer::OnGameover() {
+	if(othersMapReceived) {
+		expectDisconnect = 1;
+	}
 }
 
 void PfRemotePlayer::BeingAttacked(short x, short y) {
-	std::ostream os(&sendbuf);
-	ToBytes(os, 4u, PfNwPacket::attack, (uint16_t)x, (uint16_t)y);
-	asio::write(sock, sendbuf);
-
-	// if(ret < 0) {
-	// 	showErrorMsg(text[85], PfPage::main);
-	// 	return;
-	// }
+	try {
+		std::ostream os(&sendbuf);
+		ToBytes(os, 4u, PfNwPacket::attack, (uint16_t)x, (uint16_t)y);
+		asio::write(sock, sendbuf);
+	} catch(const asio::system_error &e) {
+		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
+		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
+	}
+	// Here base class BeingAttacked func cannot be called because it immediately
+	// respond with an attack result according to myBf, which is unknown now.
+	// Turn and destroy count increment is done at the arrival of network packet atk_result
 }
 
 void PfRemotePlayer::AttackResulted(PfAtkRes res) {
-	std::ostream os(&sendbuf);
-	ToBytes(os, 1u, PfNwPacket::atk_result, (uint8_t)res);
-	asio::write(sock, sendbuf);
-
-	// if(ret < 0) {
-	// 	showErrorMsg(text[85], PfPage::main);
-	// 	return;
-	// }
+	try {
+		std::ostream os(&sendbuf);
+		ToBytes(os, 1u, PfNwPacket::atk_result, (uint8_t)res);
+		asio::write(sock, sendbuf);
+		
+		PfPlayer::AttackResulted(res);
+	} catch(const asio::system_error &e) {
+		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
+		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
+	}
 }
 
 void PfRemotePlayer::MapRequested() {
@@ -421,19 +481,28 @@ void PfRemotePlayer::MapRequested() {
 
 void PfRemotePlayer::SetOthersBF(const std::vector<short> &pl) {
 	othersBf.pl = pl;
-
-	std::ostream os(&sendbuf);
-	ToBytes(os, uint32_t(game.gamerules.n * 5), PfNwPacket::exchg_map);
-	const auto &w = game.gamerules.w;
-	for(size_t i = 0; i < pl.size(); ++i) {
-		if(pl[i] & 8) {
-			ToBytes(os, uint16_t(i % w), uint16_t(i / w), uint8_t(pl[i] & 3));
+	try {
+		std::ostream os(&sendbuf);
+		ToBytes(os, uint32_t(game.gamerules.n * 5), PfNwPacket::exchg_map);
+		const auto &w = game.gamerules.w;
+		for(size_t i = 0; i < pl.size(); ++i) {
+			if(pl[i] & 8) {
+				ToBytes(os, uint16_t(i % w), uint16_t(i / w), uint8_t(pl[i] & 3));
+			}
 		}
+		asio::write(sock, sendbuf);
+	} catch(const asio::system_error &e) {
+		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
+		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
 	}
-	asio::write(sock, sendbuf);
 }
 
 PfRemotePlayer::~PfRemotePlayer() {
-	sock.close();
-	if(tSock.joinable()) tSock.join();
+	expectDisconnect = 1;
+	try {
+		sock.close();
+		if(tSock.joinable()) tSock.join();
+	} catch(const std::exception &e) {
+		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " error: " << e.what() << std::endl;
+	}
 }

@@ -30,7 +30,6 @@ mt19937 rng(time(nullptr)); // random number generator by MT19937 algorithm
 
 bool isFirst;
 int p2npl;
-int p10exchgMapLn;
 
 int tab[16], nue;
 pfLabel ue[128];
@@ -49,18 +48,6 @@ enum {
 	pf_remote_game_client,
 	pf_remote_game_server,
 } curGameType;
-
-// TODO: change this, the asio way
-bool GetIP() {
-	static char buf[65536];
-	int ret = gethostname(buf, 65536);
-	if(ret == -1) return false;
-	struct hostent *host;
-	host = gethostbyname(buf);
-	if(host == NULL) return false;
-	sIP = inet_ntoa(*(struct in_addr *)host->h_addr_list[0]);
-	return true;
-}
 
 void uptCursorState() {
 	lock_guard<mutex> _lg(mtxCout);
@@ -178,16 +165,10 @@ void StartLocalGame() {
 }
 
 void StartServer() {
-	try {
-		player[0].reset(new PfLocalPlayer(p1name));
-		PfServerInit();
-		curGameType = pf_remote_game_server;
-		GetIP();
-		NextPage(PfPage::server_init);
-	} catch(const pfTextElem &t) {
-		showErrorMsg(t);
-		return;
-	}
+	player[0].reset(new PfLocalPlayer(p1name));
+	curGameType = pf_remote_game_server;
+	NextPage(PfPage::server_init);
+	PfServerInit();
 }
 
 void p1Play21() {
@@ -204,7 +185,13 @@ void p1Play2() {
 	refreshPage();
 }
 
-void PfClientConnect() {
+void StartClient() {
+	static bool connecting = 0;
+	if(connecting) {
+		return;
+	} else {
+		connecting = 1;
+	}
 	try {
 		player[0].reset(new PfLocalPlayer(p1name));
 		player[1] = PfCreateRemoteServer(sIP, *player[0]);
@@ -213,8 +200,10 @@ void PfClientConnect() {
 		curGameType = pf_remote_game_client;
 	} catch(const pfTextElem &t) {
 		showErrorMsg(t);
-		return;
+	} catch(const asio::system_error &e) {
+		showErrorMsg(text[68]);
 	}
+	connecting = 0;
 }
 
 void p2Ready() {
@@ -402,12 +391,7 @@ void buildUiElem() {
 				ue[9] = pfLabel(pfTextElem(tmp.str(), text[75].d), 4, 11 + curGame.h, dfc, dbc, 0, 0, false);
 				ue[10] = pfLabel();
 				ue[11] = pfLabel();
-
-				// NOTE: Due to a protocol design flaw, a client in a remote
-				// game does not know its 'isFirst' here. This lable is
-				// disabled until we upgrade the network protocol.
-				ue[12] = pfLabel();
-				// ue[12] = pfLabel(text[89] + (isFirst ? text[87] : text[88]), 4, 14 + curGame.h, dfc, dbc, grey, black, false);
+				ue[12] = pfLabel(text[89] + (isFirst ? text[87] : text[88]), 4, 14 + curGame.h, dfc, dbc, grey, black, false);
 			}
 			tmp.str("");
 			tmp << curGame.h << "*" << curGame.w;
@@ -533,13 +517,10 @@ void buildUiElem() {
 		ue[2] = pfLabel(text[11], 0, 1, black, yellow, black, darkYellow, false); // back
 		ue[2].clickFunc = [] {
 			player[1].reset();
-			PfServerStop();
 			PrevPage();
+			PfServerStop();
 		};
-		if(sIP.empty())
-			ue[3] = pfLabel(text[55], 0, 4, dfc, dbc, dfc, dbc, false);
-		else
-			ue[3] = pfLabel(text[54] + sIP, 0, 4, dfc, dbc, dfc, dbc, false);
+		ue[3] = pfLabel(text[55], 0, 4, dfc, dbc, dfc, dbc, false);
 		ue[4] = pfLabel(text[61], 0, 6, dfc, dbc, dfc, dbc, false);
 		nue = 4;
 		break;
@@ -549,6 +530,7 @@ void buildUiElem() {
 		ue[2].clickFunc = [] {
 			player[1].reset();
 			PrevPage();
+			PfStopConnect();
 		};
 		ue[3] = pfLabel(text[67], 4, 5, dfc, dbc, 0, 0, false);
 		nue = 3;
@@ -693,7 +675,7 @@ void KeyHandler(const string &s, const vector<int> &v) {
 		} else if(stPage.top() == PfPage::client_init) {
 			if(s == "\n") {
 				sIP = vtIn.ReadLine();
-				PfClientConnect();
+				StartClient();
 			} else if(s == "\x7f") {
 				gotoXY(5, 7);
 				ClearLineRight();

@@ -5,7 +5,7 @@
 
 void PfServerInit();
 void PfServerStop();
-bool pfClientConnect();
+void PfStopConnect();
 
 class PfRemotePlayer: public PfPlayer {
 	enum {
@@ -17,13 +17,15 @@ class PfRemotePlayer: public PfPlayer {
 	std::thread tSock;
 	asio::ip::tcp::socket sock;
 	asio::streambuf buf, sendbuf;
-	unsigned exchgMapLn;
+	bool expectDisconnect = 0;
+	bool othersMapReceived = 0;
 
 	void OnGameStart();
 	void ArrangeReady();
 	void OnOtherReady();
 	void OnOtherGiveup();
 	void OnOtherSurrender();
+	void OnGameover();
 	void BeingAttacked(short, short);
 	void AttackResulted(PfAtkRes);
 	void MapRequested();
