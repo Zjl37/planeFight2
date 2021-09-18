@@ -1,11 +1,11 @@
 obj = tmp/main.o tmp/pfGame.o tmp/pfConsole.o tmp/pfUI.o tmp/pfLang.o tmp/pfAI.o tmp/vtsFilter.o tmp/pfRemotePlayer.o
-flags = -Wall -DUNICODE -D_WIN32_WINNT=0x0a00 -g -I$(ASIO_INCLUDE_PATH)
+flags = -Wall -DUNICODE -D_WIN32_WINNT=0x0a00 -g -I$(BOOST_ROOT)
 
 all: check-env planeFight.exe
 
 check-env:
-ifndef ASIO_INCLUDE_PATH
-	$(error Please define environment variable ASIO_INCLUDE_PATH.)
+ifndef BOOST_ROOT
+	$(error Please define environment variable BOOST_ROOT.)
 endif
 
 planeFight.exe: $(obj)

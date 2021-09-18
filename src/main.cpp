@@ -200,7 +200,7 @@ void StartClient() {
 		curGameType = pf_remote_game_client;
 	} catch(const pfTextElem &t) {
 		showErrorMsg(t);
-	} catch(const asio::system_error &e) {
+	} catch(const boost::system::system_error &e) {
 		showErrorMsg(text[68]);
 	}
 	connecting = 0;

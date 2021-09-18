@@ -1,7 +1,10 @@
 #pragma once
-#include "asio.hpp"
+#include "boost/asio/ip/tcp.hpp"
+#include "boost/asio/streambuf.hpp"
 #include "pfGame.hpp"
 #include <thread>
+
+namespace asio = boost::asio;
 
 void PfServerInit();
 void PfServerStop();

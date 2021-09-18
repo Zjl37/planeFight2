@@ -1,4 +1,5 @@
 #include "pfRemotePlayer.hpp"
+#include "boost/asio.hpp"
 #include <string>
 
 using namespace std::string_literals;
@@ -79,7 +80,7 @@ std::shared_ptr<PfRemotePlayer> PfCreateRemoteClient(tcp::socket &&sockClient, c
 	return p;
 }
 
-void PfServerAccept(const asio::error_code &ec) {
+void PfServerAccept(const boost::system::error_code &ec) {
 	if(ec) {
 		std::clog << "in " << __PRETTY_FUNCTION__ << " network error (error code): " << ec.message() << std::endl;
 		// Do not show error message when user stops server
@@ -93,7 +94,7 @@ void PfServerAccept(const asio::error_code &ec) {
 		player[1] = PfCreateRemoteClient(std::move(sockClient), *player[0]);
 		player[0]->other = player[1];
 		player[1]->other = player[0];
-	} catch(const asio::system_error &e) {
+	} catch(const boost::system::system_error &e) {
 		std::clog << "in " << __PRETTY_FUNCTION__ << " network error (system error): " << e.what() << std::endl;
 		showErrorMsg(text[62], PfPage::gamerule_setting_server);
 	} catch(const std::exception &e) {
@@ -115,7 +116,7 @@ void PfServerInit() {
 		tServer = std::thread([]() {
 			ioctxt.run();
 		});
-	} catch(const asio::system_error &e) {
+	} catch(const boost::system::system_error &e) {
 		showErrorMsg(text[56], PfPage::gamerule_setting_server);
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
 		PfServerStop();
@@ -390,7 +391,7 @@ void PfRemotePlayer::SockHandler() {
 		sock.shutdown(sock.shutdown_both);
 		showErrorMsg(t);
 		return;
-	} catch(const asio::system_error &e) {
+	} catch(const boost::system::system_error &e) {
 		if(!expectDisconnect) {
 			showErrorMsg(text[86]);
 		}
@@ -409,7 +410,7 @@ void PfRemotePlayer::OnOtherReady() {
 		asio::write(sock, sendbuf);
 
 		PfPlayer::OnOtherReady();
-	} catch(const asio::system_error &e) {
+	} catch(const boost::system::system_error &e) {
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
 		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
 	}
@@ -423,7 +424,7 @@ void PfRemotePlayer::OnOtherGiveup() {
 		asio::write(sock, sendbuf);
 
 		sock.shutdown(sock.shutdown_both);
-	} catch(const asio::system_error &e) {
+	} catch(const boost::system::system_error &e) {
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
 	}
 }
@@ -434,7 +435,7 @@ void PfRemotePlayer::OnOtherSurrender() {
 		std::ostream os(&sendbuf);
 		ToBytes(os, 0u, PfNwPacket::surrender);
 		asio::write(sock, sendbuf);
-	} catch(const asio::system_error &e) {
+	} catch(const boost::system::system_error &e) {
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
 		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
 	}
@@ -451,7 +452,7 @@ void PfRemotePlayer::BeingAttacked(short x, short y) {
 		std::ostream os(&sendbuf);
 		ToBytes(os, 4u, PfNwPacket::attack, (uint16_t)x, (uint16_t)y);
 		asio::write(sock, sendbuf);
-	} catch(const asio::system_error &e) {
+	} catch(const boost::system::system_error &e) {
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
 		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
 	}
@@ -467,7 +468,7 @@ void PfRemotePlayer::AttackResulted(PfAtkRes res) {
 		asio::write(sock, sendbuf);
 		
 		PfPlayer::AttackResulted(res);
-	} catch(const asio::system_error &e) {
+	} catch(const boost::system::system_error &e) {
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
 		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
 	}
@@ -491,7 +492,7 @@ void PfRemotePlayer::SetOthersBF(const std::vector<short> &pl) {
 			}
 		}
 		asio::write(sock, sendbuf);
-	} catch(const asio::system_error &e) {
+	} catch(const boost::system::system_error &e) {
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
 		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
 	}
