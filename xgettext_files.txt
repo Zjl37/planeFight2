@@ -1,0 +1,5 @@
+../src/main.cpp
+../src/pfAI.cpp
+../src/pfGame.cpp
+../src/pfRemotePlayer.cpp
+../src/pfUI.cpp

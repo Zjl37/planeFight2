@@ -1,5 +1,6 @@
 #include "pfRemotePlayer.hpp"
 #include "boost/asio.hpp"
+#include "pfLocale.hpp"
 #include <string>
 
 using namespace std::string_literals;
@@ -23,12 +24,12 @@ void PfCheckReqLn(std::istream &is) {
 	is >> reqMethod;
 	if(is.fail() || reqMethod != "PLAY") {
 		// TODO: more detailed error message.
-		throw text[71];
+		throw TT("Error: Bad game message sent from the other player.");
 	};
 	is.ignore();
 	std::getline(is, protoStr);
 	if(is.fail() || protoStr.length() < pfProtoNameStr.length() || std::string_view(protoStr.data(), pfProtoNameStr.length()) != pfProtoNameStr) {
-		throw text[71];
+		throw TT("Error: Bad game message sent from the other player.");
 	}
 	{
 		std::stringstream ss{protoStr.substr(pfProtoNameStr.length())};
@@ -36,7 +37,7 @@ void PfCheckReqLn(std::istream &is) {
 		int vMaj, vMin, vPat;
 		ss >> vMaj >> ch >> vMin >> ch >> vPat;
 		if(vMaj != pfProtoVerMajor || vMin != pfProtoVerMinor) {
-			throw text[64] + protoStr.substr(pfProtoNameStr.length());
+			throw TT("Error: Client version incompatible, which is ").str() + protoStr.substr(pfProtoNameStr.length());
 		}
 	}
 }
@@ -85,7 +86,7 @@ void PfServerAccept(const boost::system::error_code &ec) {
 		std::clog << "in " << __PRETTY_FUNCTION__ << " network error (error code): " << ec.message() << std::endl;
 		// Do not show error message when user stops server
 		if(stPage.top() == PfPage::server_init) {
-			showErrorMsg(text[62], PfPage::gamerule_setting_server);
+			showErrorMsg(TT("Error: Cannot accept client."), PfPage::gamerule_setting_server);
 		}
 		return;
 	}
@@ -96,10 +97,10 @@ void PfServerAccept(const boost::system::error_code &ec) {
 		player[1]->other = player[0];
 	} catch(const boost::system::system_error &e) {
 		std::clog << "in " << __PRETTY_FUNCTION__ << " network error (system error): " << e.what() << std::endl;
-		showErrorMsg(text[62], PfPage::gamerule_setting_server);
+		showErrorMsg(TT("Error: Cannot accept client."), PfPage::gamerule_setting_server);
 	} catch(const std::exception &e) {
 		std::clog << "in " << __PRETTY_FUNCTION__ << " error: " << e.what() << std::endl;
-		showErrorMsg(text[62], PfPage::gamerule_setting_server);
+		showErrorMsg(TT("Error: Cannot accept client."), PfPage::gamerule_setting_server);
 	}
 	return;
 }
@@ -117,7 +118,7 @@ void PfServerInit() {
 			ioctxt.run();
 		});
 	} catch(const boost::system::system_error &e) {
-		showErrorMsg(text[56], PfPage::gamerule_setting_server);
+		showErrorMsg(TT("Error: Cannot create a server."), PfPage::gamerule_setting_server);
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
 		PfServerStop();
 	} catch(const std::exception &e) {
@@ -273,7 +274,7 @@ void PfRemotePlayer::SockHandler() {
 					        uint32_t(game.id));
 					if(auto o = other.lock()) {
 						o->NewGame(game.gamerules, game.id, !game.isFirst);
-						const auto &oName = o->GetName().s;
+						const auto &oName = o->GetName();
 						ToBytes(os, uint32_t(oName.length()), PfNwPacket::name);
 						os.write(oName.c_str(), oName.length());
 					}
@@ -306,7 +307,7 @@ void PfRemotePlayer::SockHandler() {
 					this->NewGame(curGame, id, st & 4);
 					if(auto o = other.lock()) {
 						o->NewGame(curGame, id, !(st & 4));
-						const auto &oName = o->GetName().s;
+						const auto &oName = o->GetName();
 						ToBytes(os, uint32_t(oName.length()), PfNwPacket::name);
 						os.write(oName.c_str(), oName.length());
 					}
@@ -318,8 +319,8 @@ void PfRemotePlayer::SockHandler() {
 				break;
 			}
 			case PfNwPacket::name: {
-				name.s.resize(len);
-				is.read(name.s.data(), len);
+				name.resize(len);
+				is.read(name.data(), len);
 				refreshPage();
 				break;
 			}
@@ -342,7 +343,7 @@ void PfRemotePlayer::SockHandler() {
 			}
 			case PfNwPacket::attack: {
 				if(len != 4) {
-					throw text[71];
+					throw TT("Error: Bad game message sent from the other player.");
 				}
 				uint16_t ax, ay;
 				FromBytes(is, ax, ay);
@@ -351,7 +352,7 @@ void PfRemotePlayer::SockHandler() {
 			}
 			case PfNwPacket::atk_result: {
 				if(len != 1) {
-					throw text[71];
+					throw TT("Error: Bad game message sent from the other player.");
 				}
 				uint8_t res;
 				FromBytes(is, res);
@@ -383,17 +384,17 @@ void PfRemotePlayer::SockHandler() {
 				break;
 			}
 			default: {
-				throw text[71];
+				throw TT("Error: Bad game message sent from the other player.");
 			}
 			}
 		}
-	} catch(const pfTextElem &t) {
+	} catch(const std::string &t) {
 		sock.shutdown(sock.shutdown_both);
 		showErrorMsg(t);
 		return;
 	} catch(const boost::system::system_error &e) {
 		if(!expectDisconnect) {
-			showErrorMsg(text[86]);
+			showErrorMsg(TT("Failed to receive message: connection lost."));
 		}
 		return;
 	} catch(const std::exception &e) {
@@ -412,7 +413,7 @@ void PfRemotePlayer::OnOtherReady() {
 		PfPlayer::OnOtherReady();
 	} catch(const boost::system::system_error &e) {
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
-		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
+		showErrorMsg(TT("Failed to send message: connection lost."), othersMapReceived ? PfPage::gameover : PfPage::main);
 	}
 }
 
@@ -437,7 +438,7 @@ void PfRemotePlayer::OnOtherSurrender() {
 		asio::write(sock, sendbuf);
 	} catch(const boost::system::system_error &e) {
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
-		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
+		showErrorMsg(TT("Failed to send message: connection lost."), othersMapReceived ? PfPage::gameover : PfPage::main);
 	}
 }
 
@@ -454,7 +455,7 @@ void PfRemotePlayer::BeingAttacked(short x, short y) {
 		asio::write(sock, sendbuf);
 	} catch(const boost::system::system_error &e) {
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
-		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
+		showErrorMsg(TT("Failed to send message: connection lost."), othersMapReceived ? PfPage::gameover : PfPage::main);
 	}
 	// Here base class BeingAttacked func cannot be called because it immediately
 	// respond with an attack result according to myBf, which is unknown now.
@@ -470,7 +471,7 @@ void PfRemotePlayer::AttackResulted(PfAtkRes res) {
 		PfPlayer::AttackResulted(res);
 	} catch(const boost::system::system_error &e) {
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
-		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
+		showErrorMsg(TT("Failed to send message: connection lost."), othersMapReceived ? PfPage::gameover : PfPage::main);
 	}
 }
 
@@ -494,7 +495,7 @@ void PfRemotePlayer::SetOthersBF(const std::vector<short> &pl) {
 		asio::write(sock, sendbuf);
 	} catch(const boost::system::system_error &e) {
 		std::clog << "[E] in " << __PRETTY_FUNCTION__ << " network error: " << e.what() << std::endl;
-		showErrorMsg(text[85], othersMapReceived ? PfPage::gameover : PfPage::main);
+		showErrorMsg(TT("Failed to send message: connection lost."), othersMapReceived ? PfPage::gameover : PfPage::main);
 	}
 }
 

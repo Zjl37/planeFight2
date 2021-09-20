@@ -2,8 +2,6 @@
 #include <string>
 #include <vector>
 
-#define pfVersion "2.6"
-#define pfVerStr "planefight 2.6"
 #define pfUA "planeFight console application 2.6 (Zjl37/planefight2)"
 
 // A structure to describe the shape of a "plane", storing a short string at

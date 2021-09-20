@@ -49,7 +49,7 @@ class PfPlayer {
 	protected:
 	PfGame game;
 	pfBF myBf, othersBf;
-	pfTextElem name;
+	std::string name;
 
 	virtual void OnGameStart();
 
@@ -76,7 +76,7 @@ class PfPlayer {
 
 	// Observer
 	const PfGame &GetGame() const;
-	const pfTextElem &GetName() const;
+	const std::string &GetName() const;
 	const pfBF &GetMyBF() const;
 	const pfBF &GetOthersBF() const;
 };
@@ -98,7 +98,7 @@ class PfLocalPlayer: public PfPlayer {
 	void SetOthersBF(const std::vector<short> &pl);
 
 	public:
-	PfLocalPlayer(pfTextElem name);
+	PfLocalPlayer(const std::string &name);
 	void ArrangeReady(const pfBF &ar);
 };
 

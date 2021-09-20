@@ -1,5 +1,6 @@
 #include "pfUI.hpp"
 #include "vtsFilter.hpp"
+#include "pfLocale.hpp"
 #include <mutex>
 #include <thread>
 using namespace std;
@@ -9,7 +10,7 @@ extern std::mt19937 rng;
 
 int scrW, scrH;
 
-void banner(const pfTextElem &msg, short h, short fgc, short bgc) {
+void banner(const std::string &msg, short h, short fgc, short bgc) {
 	setColor(fgc, bgc);
 	gotoXY(0, h);
 	cout << setw(scrW) << " ";
@@ -17,8 +18,8 @@ void banner(const pfTextElem &msg, short h, short fgc, short bgc) {
 	cout << setw(scrW) << " ";
 	gotoXY(0, h + 2);
 	cout << setw(scrW) << " ";
-	gotoXY((scrW - msg.len()) / 2, h + 1);
-	cout << msg.s;
+	gotoXY((scrW - msg.length()) / 2, h + 1);
+	cout << msg;
 	setDefaultColor();
 }
 
@@ -26,20 +27,20 @@ void pfLabel::draw() {
 	if(!~x || !~y) return;
 	setColor(fgc, bgc);
 	if(w) {
-		gotoXY(x, y - 1), cout << setw(t.len()) << "";
-		gotoXY(x, y + 1), cout << setw(t.len()) << "";
+		gotoXY(x, y - 1), cout << setw(t.length()) << "";
+		gotoXY(x, y + 1), cout << setw(t.length()) << "";
 	}
-	gotoXY(x, y), cout << t.s;
+	gotoXY(x, y), cout << t;
 }
 
 void pfLabel::_click() {
 	mtxCout.lock();
 	setColor(fgc2, bgc2);
 	if(w) {
-		gotoXY(x, y - 1), cout << setw(t.len()) << "";
-		gotoXY(x, y + 1), cout << setw(t.len()) << "";
+		gotoXY(x, y - 1), cout << setw(t.length()) << "";
+		gotoXY(x, y + 1), cout << setw(t.length()) << "";
 	}
-	gotoXY(x, y), cout << t.s;
+	gotoXY(x, y), cout << t;
 	mtxCout.unlock();
 	this_thread::sleep_for(100ms);
 	clickFunc();
@@ -47,13 +48,13 @@ void pfLabel::_click() {
 
 bool pfLabel::click(short mx, short my) {
 	if(clickFunc == nullptr) return false;
-	if(my < y - 1 || my > y + 1 || (!w && my != y) || mx < x || mx > x + t.len()) return false;
+	if(my < y - 1 || my > y + 1 || (!w && my != y) || mx < x || mx > x + t.length()) return false;
 	_click();
 	return true;
 }
 
 short pfLabel::right() {
-	return x + t.len();
+	return x + t.length();
 }
 
 void box(short x, short y, short w, short h, short edge) {
@@ -204,12 +205,12 @@ void DrawBF(const pfBF &bf1, const pfBF &bf2, int x1, int y1, int x2, int y2) {
 
 ///////////////////////////////////////////////////////////////////////////////
 
-pfTextElem errMsg;
+std::string errMsg;
 std::stack<PfPage> stPage;
 
 bool _SetPage(PfPage);
 
-void showErrorMsg(const pfTextElem &t, PfPage rpage) {
+void showErrorMsg(const std::string &t, PfPage rpage) {
 	errMsg = t;
 	while(stPage.size() > 1) stPage.pop();
 	stPage.push(rpage);
@@ -217,7 +218,7 @@ void showErrorMsg(const pfTextElem &t, PfPage rpage) {
 	stPage.push(PfPage::error);
 	refreshPage();
 }
-void showErrorMsg(const pfTextElem &t) {
+void showErrorMsg(const std::string &t) {
 	errMsg = t;
 	_SetPage(PfPage::error);
 	stPage.push(PfPage::error);
@@ -249,7 +250,7 @@ void PrevPage() {
 }
 
 void UiGameStart() {
-	banner(text[36], scrH / 3, white, pink);
+	banner(TT("Game starting..."), scrH / 3, white, pink);
 	this_thread::sleep_for(1s);
 	SetPage(PfPage::game);
 }
@@ -266,6 +267,10 @@ void UiShowAtkRes(PfAtkRes res) {
 	} else if(res == PfAtkRes::destroy) {
 		setColor(white, darkRed);
 	}
-	gotoXY((scrW - text[41 + (int)res].len()) / 2, 7), cout << text[41 + (int)res].s;
+	const string tres = res == PfAtkRes::destroy ? TT(" DESTROY ") :
+	                    res == PfAtkRes::hit     ? TT(" HIT ") :
+                                                   TT(" VOID ");
+	gotoXY((scrW - tres.length()) / 2, 7),
+	cout << tres;
 	this_thread::sleep_for(1s);
 }

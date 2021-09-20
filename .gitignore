@@ -7,3 +7,4 @@ lang/test.txt
 compile_flags.txt
 tmp/
 dev-*
+*.mo

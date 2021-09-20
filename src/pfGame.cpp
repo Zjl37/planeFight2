@@ -1,4 +1,5 @@
 #include "pfGame.hpp"
+#include "pfLocale.hpp"
 
 extern std::mt19937 rng;
 
@@ -214,7 +215,7 @@ void PfPlayer::AttackResulted(PfAtkRes res) {
 	}
 }
 
-const pfTextElem &PfPlayer::GetName() const {
+const std::string &PfPlayer::GetName() const {
 	return name;
 }
 
@@ -238,7 +239,7 @@ const pfBF &PfPlayer::GetOthersBF() const {
 	return othersBf;
 }
 
-PfLocalPlayer::PfLocalPlayer(pfTextElem t): PfPlayer() {
+PfLocalPlayer::PfLocalPlayer(const std::string &t): PfPlayer() {
 	name = t;
 }
 
@@ -322,8 +323,7 @@ void PfLocalPlayer::OnOtherSurrender() {
 }
 
 void PfLocalPlayer::OnOtherGiveup() {
-	// ?
-	showErrorMsg(text[80], PfPage::main);
+	showErrorMsg(TT("The other player gave up this game."), PfPage::main);
 }
 
 void PfLocalPlayer::Surrender() {

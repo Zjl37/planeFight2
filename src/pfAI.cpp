@@ -1,4 +1,5 @@
 #include "pfAI.hpp"
+#include "pfLocale.hpp"
 #include <random>
 
 extern std::mt19937 rng;
@@ -74,7 +75,7 @@ bool pfAIdecide(const pfGameInfo &g, const std::vector<short> &mk, short &tgx, s
 }
 
 PfAI::PfAI(): PfPlayer() {
-	name = text[37];
+	name = TT("AI");
 }
 
 void PfAI::ArrangeReady(const pfBF &ar) {
