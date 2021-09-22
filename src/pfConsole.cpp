@@ -2,6 +2,9 @@
 #include "vtsFilter.hpp"
 #ifdef _WIN32
 #	include <windows.h>
+#else
+#	include <termio.h>
+#	include <unistd.h>
 #endif
 
 extern std::mt19937 rng;
@@ -106,6 +109,7 @@ void UseMainScrBuf() {
 	std::cout << ESC "[?1049l";
 }
 
+#ifdef _WIN32
 HANDLE hIn, hOut;
 CONSOLE_SCREEN_BUFFER_INFO csbi;
 DWORD orgConInMode, orgConOutMode; // original console mode
@@ -118,7 +122,6 @@ DWORD orgConInMode, orgConOutMode; // original console mode
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
 #endif
 
-// initialise the console
 void ConInit() {
 	hIn = GetStdHandle(STD_INPUT_HANDLE);
 	hOut = GetStdHandle(STD_OUTPUT_HANDLE); // get standard handles
@@ -147,8 +150,6 @@ void ConInit() {
 	SetConsoleCP(65001); // change to utf-8
 	SetConsoleOutputCP(65001);
 
-	UseAltScrBuf(); 
-
 	GetConsoleScreenBufferInfo(hOut, &csbi);
 	csbi.dwSize.X = std::max((short)80, csbi.dwSize.X);
 	csbi.dwSize.Y = std::max((short)30, csbi.dwSize.Y);
@@ -160,6 +161,8 @@ void ConInit() {
 	}
 	scrW = csbi.srWindow.Right, scrH = csbi.srWindow.Bottom;
 
+	UseAltScrBuf(); 
+
 }
 
 void ConReset() {
@@ -168,3 +171,26 @@ void ConReset() {
 	SetConsoleMode(hOut, orgConOutMode);
 	SetConsoleMode(hIn, orgConInMode);
 }
+#else
+
+termios orgTermios;
+
+void ConInit() {
+	tcgetattr(STDIN_FILENO, &orgTermios);
+	termios raw = orgTermios;
+	raw.c_lflag &= ~(ECHO | ICANON);
+	tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+
+	// TODO: get console window size
+	scrW = 80, scrH = 30;
+
+	UseAltScrBuf();
+}
+
+void ConReset() {
+	UseMainScrBuf();
+	VtDisableMouseTracking();
+	tcsetattr(STDIN_FILENO, TCSAFLUSH, &orgTermios);
+}
+
+#endif

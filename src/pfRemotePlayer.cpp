@@ -8,7 +8,6 @@ extern std::mt19937 rng;
 
 using asio::ip::tcp;
 
-WSADATA wsaData;
 asio::io_context ioctxt;
 tcp::acceptor acceptor(ioctxt);
 tcp::socket sockClient(ioctxt);
