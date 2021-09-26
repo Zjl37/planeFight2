@@ -2,7 +2,7 @@
 #include "pfRemotePlayer.hpp"
 #include "pfLocale.hpp"
 #include "pfAI.hpp"
-#include "vtsFilter.hpp"
+#include "pfConio.hpp"
 
 using namespace std;
 
@@ -37,7 +37,7 @@ string sIP;
 
 mutex mtxCout;
 
-VtsInputFilter vtIn;
+PfConioContext vtIn;
 
 enum {
 	pf_local_game,
@@ -133,7 +133,7 @@ void drawUiElem() {
 	}
 }
 
-void p0GenBg() {
+void GenerateBackground() {
 	bg.resize(scrW / 2, scrH);
 	for(int i = 0; i < (int)bg.w * bg.h / 25; i++)
 		bg.placeplane(rng() % bg.w, rng() % bg.h, rng() & 3, curGame.cw);
@@ -142,7 +142,7 @@ void p0GenBg() {
 void p0InputOK() {
 	if(p1name.empty()) {
 		setDefaultColor();
-		refreshPage();
+		RefreshPage();
 		return;
 	}
 	setDefaultColor();
@@ -178,7 +178,7 @@ void p1Play22() {
 
 void p1Play2() {
 	tab[0] = !tab[0];
-	refreshPage();
+	RefreshPage();
 }
 
 void StartClient() {
@@ -209,7 +209,7 @@ void p2Ready() {
 		pfBF bf2(curGame.w, curGame.h);
 		bool tmp = bf2.AutoArrange();
 		if(tmp == false) {
-			refreshPage();
+			RefreshPage();
 			return;
 		}
 		unsigned gameId = rng();
@@ -232,11 +232,11 @@ void p2SwitchCw() {
 	} else {
 		curGame.cw = true;
 	}
-	refreshPage();
+	RefreshPage();
 }
 void p2AddPl(short x) {
 	if(curGame.n + x < 1 || curGame.n + x > curGame.w * curGame.h / 10) {
-		refreshPage();
+		RefreshPage();
 		return;
 	}
 	curGame.n += x;
@@ -244,7 +244,7 @@ void p2AddPl(short x) {
 		p2npl = 0;
 		bf1.clear();
 	}
-	refreshPage();
+	RefreshPage();
 }
 void p2Giveup() {
 	player[0]->Giveup();
@@ -253,7 +253,7 @@ void p2Giveup() {
 void ClearMyBf() {
 	if(!(player[0]->GetGame().state & PfGame::me_ready)) {
 		bf1.clear(), p2npl = 0;
-		refreshPage();
+		RefreshPage();
 	}
 }
 
@@ -343,9 +343,9 @@ void buildUiElem() {
 			ue[2].clickFunc = p2Giveup;
 		}
 		ue[3] = pfLabel(TT(" PARK "), 3, 8 + curGame.h, white, darkGreen, black, green, false);
-		ue[3].clickFunc = [] { tab[0] = 0; refreshPage(); };
+		ue[3].clickFunc = [] { tab[0] = 0; RefreshPage(); };
 		ue[4] = pfLabel(TT(" GAMERULES "), ue[3].right() + 2, 8 + curGame.h, white, darkGreen, black, green, false);
-		ue[4].clickFunc = [] { tab[0] = 1; refreshPage(); };
+		ue[4].clickFunc = [] { tab[0] = 1; RefreshPage(); };
 		ue[5] = pfLabel(); // reserved for [Preferences] tab
 		if(tab[0] >= 0 && tab[0] <= 2)
 			ue[3 + tab[0]].fgc = black, ue[3 + tab[0]].bgc = green;
@@ -375,7 +375,7 @@ void buildUiElem() {
 			}
 			if(curGameType == pf_local_game) {
 				ue[8] = pfLabel((curGame.cd ? TT("✓ Enable completely-destroy") : TT("□ Enable completely-destroy")), 4, 12 + curGame.h, dfc, dbc, grey, black, false);
-				ue[8].clickFunc = [] { curGame.cd=!curGame.cd; refreshPage(); };
+				ue[8].clickFunc = [] { curGame.cd=!curGame.cd; RefreshPage(); };
 			} else if(curGame.cd) {
 				ue[8] = pfLabel(TT("✓ Completely-destroy enabled"), 4, 12 + curGame.h, dfc, dbc, grey, black, false);
 			} else
@@ -389,7 +389,7 @@ void buildUiElem() {
 				ue[11] = pfLabel(TT("＋"), ue[10].right() + 2, 11 + curGame.h, black, yellow, black, darkYellow, false);
 				ue[11].clickFunc = [] { p2AddPl(1); };
 				ue[12] = pfLabel((isFirst ? TT("○ I go first") : TT("○ The other player goes first")), 4, 14 + curGame.h, dfc, dbc, grey, black, false);
-				ue[12].clickFunc = [] { isFirst = !isFirst, refreshPage(); };
+				ue[12].clickFunc = [] { isFirst = !isFirst, RefreshPage(); };
 			} else {
 				tmp.str("");
 				tmp << TT("Number of planes: ") << curGame.n;
@@ -437,7 +437,7 @@ void buildUiElem() {
 			system("explorer https://github.com/Zjl37/planeFight2");
 			// TODO: recover console mode
 			// conSetMode();
-			refreshPage();
+			RefreshPage();
 		};
 		ue[4] = pfLabel(pfUA, 1, 2, dfc, dbc, 0, 0, false);
 		setDefaultColor();
@@ -450,17 +450,17 @@ void buildUiElem() {
 		ue[2] = pfLabel(TT("<<Surrender"), 0, 1, black, yellow, black, darkYellow, false);
 		ue[2].clickFunc = p10Surrender;
 		ue[3] = pfLabel(TT(" ATTACK "), 3, 8 + curGame.h, white, darkGreen, black, green, false);
-		ue[3].clickFunc = [] { tab[0] = 0, refreshPage(); };
+		ue[3].clickFunc = [] { tab[0] = 0, RefreshPage(); };
 		ue[4] = pfLabel(TT(" MARK "), ue[3].right() + 2, 8 + curGame.h, white, darkGreen, black, green, false);
-		ue[4].clickFunc = [] { tab[0] = 1, refreshPage(); };
+		ue[4].clickFunc = [] { tab[0] = 1, RefreshPage(); };
 		ue[5] = pfLabel(TT(" ERASE "), ue[4].right() + 2, 8 + curGame.h, white, darkGreen, black, green, false);
-		ue[5].clickFunc = [] { tab[0] = 2, refreshPage(); };
+		ue[5].clickFunc = [] { tab[0] = 2, RefreshPage(); };
 		if(tab[0] >= 0 && tab[0] <= 2)
 			ue[3 + tab[0]].fgc = black, ue[3 + tab[0]].bgc = green;
 		if(tab[0] == 1) {
 			for(int i = 0; i < PF_NMARKER; i++) {
 				ue[6 + i] = pfLabel(marker[i], 3 + i % 7 * 4, 10 + curGame.h + i / 7 * 2, i == tab[1] ? white : black, i == tab[1] ? darkYellow : yellow, white, darkYellow, false);
-				ue[6 + i].clickFunc = [i] { tab[1]=i; refreshPage(); };
+				ue[6 + i].clickFunc = [i] { tab[1]=i; RefreshPage(); };
 			}
 			nue = 5 + PF_NMARKER;
 		} else
@@ -497,12 +497,12 @@ void buildUiElem() {
 		ue[5] = pfLabel((curGame.cw ? TT("✓ Enable cross-border mode") : TT("□ Enable cross-border mode")), 4, 7, dfc, dbc, grey, black, false);
 		ue[5].clickFunc = [] {
 			curGame.cw = !curGame.cw;
-			refreshPage();
+			RefreshPage();
 		};
 		ue[6] = pfLabel(TT("－"), 4, 9, black, yellow, black, darkYellow, false);
 		ue[6].clickFunc = [] {
 			curGame.n = max(1, curGame.n - 1);
-			refreshPage();
+			RefreshPage();
 		};
 		tmp.str("");
 		tmp << TT("Number of planes: ") << curGame.n;
@@ -510,15 +510,15 @@ void buildUiElem() {
 		ue[8] = pfLabel(TT("＋"), ue[7].right() + 2, 9, black, yellow, black, darkYellow, false);
 		ue[8].clickFunc = [] {
 			curGame.n = min(curGame.n + 1, curGame.w * curGame.h / 10);
-			refreshPage();
+			RefreshPage();
 		};
 		ue[9] = pfLabel((curGame.cd ? TT("✓ Enable completely-destroy") : TT("□ Enable completely-destroy")), 4, 11, dfc, dbc, grey, black, false);
 		ue[9].clickFunc = [] {
 			curGame.cd = !curGame.cd;
-			refreshPage();
+			RefreshPage();
 		};
 		ue[10] = pfLabel((isFirst ? TT("○ I go first") : TT("○ The other player goes first")), 4, 13, dfc, dbc, grey, black, false);
-		ue[10].clickFunc = [] { isFirst = !isFirst, refreshPage(); };
+		ue[10].clickFunc = [] { isFirst = !isFirst, RefreshPage(); };
 		tmp.str("");
 		tmp << curGame.h << "*" << curGame.w;
 		ue[11] = pfLabel(TT("Map size: ").str() + tmp.str(), 4, 15, black, yellow, black, darkYellow, false),
@@ -559,7 +559,7 @@ void buildUiElem() {
 	}
 }
 
-void refreshPage() {
+void RefreshPage() {
 	uptCursorState();
 	if(scrW < 70 || scrH < 28) return;
 	buildUiElem();
@@ -589,7 +589,7 @@ void ProcessMouseClick(int mx, int my) {
 			if(bf1.placeplane((mx - BF1_X()) >> 1, my - BF1_Y(), tab[1], curGame.cw)) {
 				++p2npl;
 				if(p2npl == curGame.n)
-					refreshPage(); // so that the play button will appear
+					RefreshPage(); // so that the play button will appear
 			} else {
 				lock_guard<mutex> _lg(mtxCout);
 				setColor(red, black);
@@ -608,7 +608,7 @@ void ProcessMouseClick(int mx, int my) {
 			if(nx != curGame.w || ny != curGame.h) {
 				curGame.w = nx;
 				curGame.h = ny;
-				refreshPage();
+				RefreshPage();
 			}
 	} else if(stPage.top() == PfPage::game) {
 		auto &w = player[0]->GetOthersBF().w;
@@ -670,7 +670,7 @@ void MouseHandler(int stat, int mx, int my, bool fDown) {
 void KeyHandler(const string &s, const vector<int> &v) {
 	if(s.empty() && v.size()) {
 		if(v[0] == 15) {
-			refreshPage();
+			RefreshPage();
 		}
 	} else {
 		if(stPage.top() == PfPage::welcome) {
@@ -696,6 +696,12 @@ void KeyHandler(const string &s, const vector<int> &v) {
 			}
 		}
 	}
+}
+
+void ResizeHandler(std::pair<int, int> size) {
+	std::tie(scrW, scrH) = size;
+	GenerateBackground();
+	RefreshPage();
 }
 
 // parse command line arguments
@@ -776,12 +782,13 @@ int main(int argc, char **argv) {
 	PfLocaleInit("");
 
 	pfCompatibility();
-	p0GenBg();
+	GenerateBackground();
 	NextPage(PfPage::welcome);
 
 	VtEnableMouseTrackingAny();
 	vtIn.mouseHandler = MouseHandler;
 	vtIn.keyHandler = KeyHandler;
+	vtIn.resizeHandler = ResizeHandler;
 	vtIn.Work();
 	// TODO:
 	// window size event;

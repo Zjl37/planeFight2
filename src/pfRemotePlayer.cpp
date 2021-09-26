@@ -320,7 +320,7 @@ void PfRemotePlayer::SockHandler() {
 			case PfNwPacket::name: {
 				name.resize(len);
 				is.read(name.data(), len);
-				refreshPage();
+				RefreshPage();
 				break;
 			}
 			case PfNwPacket::give_up: {

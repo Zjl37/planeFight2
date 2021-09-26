@@ -1,5 +1,6 @@
 #include "pfConsole.hpp"
-#include "vtsFilter.hpp"
+#include "pfConio.hpp"
+#include <csignal>
 #ifdef _WIN32
 #	include <windows.h>
 #else
@@ -8,7 +9,7 @@
 #endif
 
 extern std::mt19937 rng;
-extern VtsInputFilter vtIn;
+extern PfConioContext vtIn;
 extern int scrW, scrH;
 
 #define ESC "\x1b"
@@ -122,6 +123,14 @@ DWORD orgConInMode, orgConOutMode; // original console mode
 #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
 #endif
 
+std::pair<int, int> GetConScrSize() {
+	// We do not want the buffer size:
+	// e.Event.WindowBufferSizeEvent.dwSize.X and e.Event.WindowBufferSizeEvent.dwSize.Y;
+	// instead, the window boundary size.
+	GetConsoleScreenBufferInfo(hOut, &csbi);
+	return {csbi.srWindow.Right, csbi.srWindow.Bottom};
+}
+
 void ConInit() {
 	hIn = GetStdHandle(STD_INPUT_HANDLE);
 	hOut = GetStdHandle(STD_OUTPUT_HANDLE); // get standard handles
@@ -147,21 +156,12 @@ void ConInit() {
 	mode &= ~ENABLE_ECHO_INPUT;
 	SetConsoleMode(hIn, mode);
 
-	SetConsoleCP(65001); // change to utf-8
+	SetConsoleCP(65001); // change code page to UTF-8
 	SetConsoleOutputCP(65001);
 
-	GetConsoleScreenBufferInfo(hOut, &csbi);
-	csbi.dwSize.X = std::max((short)80, csbi.dwSize.X);
-	csbi.dwSize.Y = std::max((short)30, csbi.dwSize.Y);
-	if(csbi.srWindow.Right < 80 || csbi.srWindow.Bottom < 30) {
-		SetConsoleScreenBufferSize(hOut, csbi.dwSize);
-		csbi.srWindow.Right = csbi.dwSize.X - 1;
-		csbi.srWindow.Bottom = csbi.dwSize.Y - 1;
-		SetConsoleWindowInfo(hOut, true, &csbi.srWindow);
-	}
-	scrW = csbi.srWindow.Right, scrH = csbi.srWindow.Bottom;
+	std::tie(scrW, scrH) = GetConScrSize();
 
-	UseAltScrBuf(); 
+	UseAltScrBuf();
 
 }
 
@@ -175,16 +175,31 @@ void ConReset() {
 
 termios orgTermios;
 
+void ResizeHandler(std::pair<int, int> size);
+
+std::pair<int, int> GetConScrSize() {
+	struct winsize winsz;
+	ioctl(0, TIOCGWINSZ, &winsz);
+	return {winsz.ws_col, winsz.ws_row};
+}
+
+void sigHandler(int sig) {
+	if(sig == SIGWINCH) {
+		ResizeHandler(GetConScrSize());
+	}
+}
+
 void ConInit() {
 	tcgetattr(STDIN_FILENO, &orgTermios);
 	termios raw = orgTermios;
 	raw.c_lflag &= ~(ECHO | ICANON);
 	tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
 
-	// TODO: get console window size
-	scrW = 80, scrH = 30;
+	std::tie(scrW, scrH) = GetConScrSize();
 
 	UseAltScrBuf();
+
+	signal(SIGWINCH, sigHandler);
 }
 
 void ConReset() {

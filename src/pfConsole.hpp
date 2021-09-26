@@ -53,5 +53,7 @@ void UseMainScrBuf();
 #define showCursor() showCursor_(true)
 #define hideCursor() showCursor_(false)
 
+std::pair<int, int> GetConScrSize();
+
 void ConInit();
 void ConReset();

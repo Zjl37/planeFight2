@@ -1,5 +1,5 @@
 #include "pfUI.hpp"
-#include "vtsFilter.hpp"
+#include "pfConio.hpp"
 #include "pfLocale.hpp"
 #include <mutex>
 #include <thread>
@@ -7,8 +7,6 @@ using namespace std;
 
 extern std::string mapEdge[256];
 extern std::mt19937 rng;
-
-int scrW, scrH;
 
 void banner(const std::string &msg, short h, short fgc, short bgc) {
 	setColor(fgc, bgc);
@@ -216,13 +214,13 @@ void showErrorMsg(const std::string &t, PfPage rpage) {
 	stPage.push(rpage);
 	_SetPage(PfPage::error);
 	stPage.push(PfPage::error);
-	refreshPage();
+	RefreshPage();
 }
 void showErrorMsg(const std::string &t) {
 	errMsg = t;
 	_SetPage(PfPage::error);
 	stPage.push(PfPage::error);
-	refreshPage();
+	RefreshPage();
 }
 
 void SetPage(PfPage x) {
@@ -230,13 +228,13 @@ void SetPage(PfPage x) {
 		if(stPage.size()) stPage.pop();
 		stPage.push(x);
 	}
-	refreshPage();
+	RefreshPage();
 }
 
 void NextPage(PfPage x) {
 	if(_SetPage(x))
 		stPage.push(x);
-	refreshPage();
+	RefreshPage();
 }
 
 void PrevPage() {
@@ -246,7 +244,7 @@ void PrevPage() {
 	} else {
 		NextPage(PfPage::main);
 	}
-	refreshPage();
+	RefreshPage();
 }
 
 void UiGameStart() {

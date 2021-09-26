@@ -1,4 +1,4 @@
-obj = src/main.o src/pfGame.o src/pfConsole.o src/pfUI.o src/pfLocale.o src/pfAI.o src/vtsFilter.o src/pfRemotePlayer.o
+obj = src/main.o src/pfGame.o src/pfConsole.o src/pfUI.o src/pfLocale.o src/pfAI.o src/pfConio.o src/pfRemotePlayer.o
 flags = -std=c++17 -Wall -g -I$(BOOST_ROOT) -pthread
 LIB_PATH = -L/home/stdent/boost_1_77_0/stage/lib
 LIBS = -Wl,-Bstatic -lboost_locale -Wl,-Bdynamic
@@ -14,16 +14,16 @@ planeFight: $(obj)
 	g++ $(obj) -o $@ $(flags) $(LIB_PATH) $(LIBS) 
 
 src/main.o: src/main.cpp \
-            src/pfRemotePlayer.hpp src/pfGame.hpp src/pfUI.hpp src/pfLocale.hpp src/pfAI.hpp src/vtsFilter.hpp
+            src/pfRemotePlayer.hpp src/pfGame.hpp src/pfUI.hpp src/pfLocale.hpp src/pfAI.hpp src/pfConio.hpp
 	g++ -c $< -o $@ $(flags)
 
 src/pfGame.o: src/pfGame.cpp src/pfGame.hpp
 	g++ -c $< -o $@ $(flags)
 
-src/pfConsole.o: src/pfConsole.cpp src/pfConsole.hpp src/vtsFilter.hpp
+src/pfConsole.o: src/pfConsole.cpp src/pfConsole.hpp src/pfConio.hpp
 	g++ -c $< -o $@ $(flags)
 
-src/pfUI.o: src/pfUI.cpp src/pfUI.hpp src/vtsFilter.hpp
+src/pfUI.o: src/pfUI.cpp src/pfUI.hpp src/pfConio.hpp
 	g++ -c $< -o $@ $(flags)
 
 src/pfLocale.o: src/pfLocale.cpp src/pfUI.hpp src/pfLocale.hpp
@@ -32,7 +32,7 @@ src/pfLocale.o: src/pfLocale.cpp src/pfUI.hpp src/pfLocale.hpp
 src/pfAI.o: src/pfAI.cpp src/pfGame.hpp src/pfUI.hpp
 	g++ -c $< -o $@ $(flags)
 
-src/vtsFilter.o: src/vtsFilter.cpp src/vtsFilter.hpp
+src/pfConio.o: src/pfConio.cpp src/pfConio.hpp
 	g++ -c $< -o $@ $(flags)
 
 src/pfRemotePlayer.o: src/pfRemotePlayer.cpp src/pfRemotePlayer.hpp

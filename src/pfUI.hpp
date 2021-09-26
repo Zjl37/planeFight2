@@ -48,7 +48,7 @@ enum class PfPage {
 	error,
 };
 
-void refreshPage();
+void RefreshPage();
 void showErrorMsg(const std::string &t, PfPage rpage);
 void showErrorMsg(const std::string &t);
 void SetPage(PfPage x);

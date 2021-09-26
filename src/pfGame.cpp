@@ -285,7 +285,7 @@ void PfLocalPlayer::AttackResulted(PfAtkRes res) {
 		std::lock_guard<std::mutex> _lg(mtxCout);
 		UiShowAtkRes(res);
 	}
-	refreshPage();
+	RefreshPage();
 	if(res == PfAtkRes::destroy && game.nDestroyedOthers == curGame.n) {
 		if(auto o = other.lock()) {
 			o->MapRequested();
@@ -312,7 +312,7 @@ void PfLocalPlayer::BeingAttacked(short x, short y) {
 			}
 		}
 	}
-	refreshPage();
+	RefreshPage();
 }
 
 void PfLocalPlayer::OnOtherSurrender() {
