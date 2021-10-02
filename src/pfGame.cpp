@@ -245,7 +245,6 @@ PfLocalPlayer::PfLocalPlayer(const std::string &t): PfPlayer() {
 
 void PfLocalPlayer::NewGame(const pfGameInfo &gi, unsigned id, bool isFirst) {
 	PfPlayer::NewGame(gi, id, isFirst);
-	bf1.resize(curGame.w, curGame.h);
 	SetPage(PfPage::prepare);
 }
 

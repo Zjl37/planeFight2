@@ -271,6 +271,7 @@ void PfRemotePlayer::SockHandler() {
 					        uint16_t(game.gamerules.n),
 					        uint8_t(game.gamerules.cw | game.gamerules.cd << 1 | !game.isFirst << 2),
 					        uint32_t(game.id));
+					bf1.resize(game.gamerules.w, game.gamerules.h);
 					if(auto o = other.lock()) {
 						o->NewGame(game.gamerules, game.id, !game.isFirst);
 						const auto &oName = o->GetName();
@@ -304,6 +305,7 @@ void PfRemotePlayer::SockHandler() {
 				if(as == pos_server) {
 					curGame = {w, h, n, !!(st & 1), !!(st & 2)};
 					this->NewGame(curGame, id, st & 4);
+					bf1.resize(game.gamerules.w, game.gamerules.h);
 					if(auto o = other.lock()) {
 						o->NewGame(curGame, id, !(st & 4));
 						const auto &oName = o->GetName();

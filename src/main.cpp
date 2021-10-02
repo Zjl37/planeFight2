@@ -216,11 +216,11 @@ void p2Ready() {
 		player[0]->NewGame(curGame, gameId, isFirst);
 		player[1]->NewGame(curGame, gameId, !isFirst);
 
-		dynamic_cast<PfAI*>(&*player[1])->ArrangeReady(bf2);
-		dynamic_cast<PfLocalPlayer *>(&*player[0])->ArrangeReady(bf1);
+		static_cast<PfAI*>(&*player[1])->ArrangeReady(bf2);
+		static_cast<PfLocalPlayer *>(&*player[0])->ArrangeReady(bf1);
 	} else {
 		if(!(player[0]->GetGame().state & PfGame::me_ready)) {
-			dynamic_cast<PfLocalPlayer *>(&*player[0])->ArrangeReady(bf1);
+			static_cast<PfLocalPlayer *>(&*player[0])->ArrangeReady(bf1);
 		}
 	}
 }
