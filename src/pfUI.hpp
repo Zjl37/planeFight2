@@ -1,6 +1,5 @@
 #pragma once
 #include "pfCommon.hpp"
-#include "pfConsole.hpp"
 #include <iostream>
 #include <iomanip>
 #include <functional>
@@ -34,7 +33,7 @@ void DrawPlaneCw(int x, int y, int d, int bx, int by, int bw, int bh);
 void drawPark(int selDir, int y);
 void DrawBF(const pfBF &bf1, const pfBF &bf2, int x1, int y1, int x2, int y2);
 
-enum class PfPage {
+enum class PfPage_legacy {
 	welcome = 0,
 	main = 1,
 	prepare = 2,
@@ -46,6 +45,20 @@ enum class PfPage {
 	server_init = 42,
 	client_init = 51,
 	error,
+};
+
+enum class PfPage {
+	welcome = 0,
+	main = 1,
+	prepare = 2,
+	adjust_map = 3,
+	about = 4,
+	game = 5,
+	gameover = 6,
+	gamerule_setting_server = 7,
+	server_init = 8,
+	client_init = 9,
+	error = 10,
 };
 
 void RefreshPage();

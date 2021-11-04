@@ -3,24 +3,25 @@
 #include "pfLocale.hpp"
 #include "pfAI.hpp"
 #include "pfConio.hpp"
+#include "pfUiCtrl.hpp"
+#include "pfConsole.hpp"
 
 using namespace std;
 
 const int PF_NMARKER = 23;
 
 string marker[PF_NMARKER] = {
-	"\u2501", "\u2503", "\u254b", "\u2523", "\u252b", "\u2533", "\u253b",
-	"\u2500", "\u2502", "\u253c", "\u251c", "\u2524", "\u252c", "\u2534",
-	"\u2550", "\u2551", "\u256c", "\u2560", "\u2563", "\u2566", "\u2569",
-	"\uff1f", "\uff01"
+	"━", "┃", "╋", "┣", "┫", "┳", "┻",
+	"─", "│", "┼", "├", "┤", "┬", "┴",
+	"═", "║", "╬", "╠", "╣", "╦", "╩",
+	"？", "！"
 };
 
 string mapEdge[256] = {
-	"\u2500", "\u2501", "\u2502", "\u2503", "\u250c", "\u250f",
-	"\u2550", "\u2551", "\u2554", "\u2557", "\u255a", "\u255d",
-	"\u2510", "\u2514", "\u2518", "\u2513", "\u2517", "\u251b"
+	"─", "━", "│", "┃", "┌", "┏",
+	"═", "║", "╔", "╗", "╚", "╝",
+	"┐", "└", "┘", "┓", "┗", "┛"
 };
-int bdcOpt = 1;
 
 mt19937 rng(time(nullptr)); // random number generator by MT19937 algorithm
 
@@ -29,8 +30,8 @@ int p2npl;
 
 int tab[16], nue;
 pfLabel ue[128];
-extern std::string errMsg;
-std::string p1name;
+// extern std::string errMsg;
+// std::string p1name;
 pfBF bg, bf1;
 
 string sIP;
@@ -127,7 +128,7 @@ void drawUiElem() {
 		gotoXY(5, 7), cout << sIP;
 		break;
 	case PfPage::error:
-		banner(errMsg, scrH / 3, white, red);
+		// banner(errMsg, scrH / 3, white, red);
 		return;
 	default: break;
 	}
@@ -139,30 +140,22 @@ void GenerateBackground() {
 		bg.placeplane(rng() % bg.w, rng() % bg.h, rng() & 3, curGame.cw);
 }
 
-void p0InputOK() {
-	if(p1name.empty()) {
-		setDefaultColor();
-		RefreshPage();
-		return;
-	}
-	setDefaultColor();
-	NextPage(PfPage::main);
-}
-
 void StartLocalGame() {
-	player[0].reset(new PfLocalPlayer(p1name));
+	player[0].reset(new PfLocalPlayer(pfui::playername));
 	player[1].reset(new PfAI());
 	player[0]->other = player[1];
 	player[1]->other = player[0];
 	curGameType = pf_local_game;
+	pfui::p2IsNetworkGame = false;
 	isFirst = rng() & 1;
 	bf1.clear();
 	NextPage(PfPage::prepare);
 }
 
 void StartServer() {
-	player[0].reset(new PfLocalPlayer(p1name));
+	player[0].reset(new PfLocalPlayer(pfui::playername));
 	curGameType = pf_remote_game_server;
+	pfui::p2IsNetworkGame = true;
 	NextPage(PfPage::server_init);
 	PfServerInit();
 }
@@ -189,11 +182,12 @@ void StartClient() {
 		connecting = 1;
 	}
 	try {
-		player[0].reset(new PfLocalPlayer(p1name));
-		player[1] = PfCreateRemoteServer(sIP, *player[0]);
+		player[0].reset(new PfLocalPlayer(pfui::playername));
+		player[1] = PfCreateRemoteServer(pfui::ctrl::ipAddr, *player[0]);
 		player[0]->other = player[1];
 		player[1]->other = player[0];
 		curGameType = pf_remote_game_client;
+		pfui::p2IsNetworkGame = true;
 	} catch(const std::string &t) {
 		showErrorMsg(t);
 	} catch(const boost::system::system_error &e) {
@@ -203,13 +197,12 @@ void StartClient() {
 }
 
 void p2Ready() {
-	if(p2npl != curGame.n) return;
 	if(curGameType == pf_local_game) {
 		if(!curGame.n) return;
 		pfBF bf2(curGame.w, curGame.h);
 		bool tmp = bf2.AutoArrange();
 		if(tmp == false) {
-			RefreshPage();
+			// RefreshPage();
 			return;
 		}
 		unsigned gameId = rng();
@@ -271,33 +264,17 @@ void buildUiElem() {
 	ue[1] = pfLabel(tmp.str(), 0, 0, white, blue, 0, 0, false);
 	switch(stPage.top()) {
 	case PfPage::welcome: {
-		tmp.str("");
-		string t2 = TT("Welcome to planeFight Console Game!");
-		tmp << setw((scrW - t2.length()) / 2) << "" << left << setw(scrW - (scrW - t2.length()) / 2) << t2;
+		// tmp.str("");
+		// string t2 = TT("Welcome to planeFight Console Game!");
+		// tmp << setw((scrW - t2.length()) / 2) << "" << left << setw(scrW - (scrW - t2.length()) / 2) << t2;
 		
-		ue[2] = pfLabel(tmp.str(), 0, 5, white, pink, 0, 0, true);
-		ue[3] = pfLabel(TT(" Confirm "), 2, 10, black, yellow, black, darkYellow, false);
-		ue[3].clickFunc = p0InputOK;
-		ue[4] = pfLabel(TT("Enter your username: ").str() + p1name, 2, 8, dfc, dbc, 0, 0, false);
-		ue[5] = pfLabel(TT(" Exit "), ue[3].right() + 2, 10, white, red, white, darkRed, false);
-		ue[5].clickFunc = [] { pfExit(); };
-
-		// const int P1_NNLUE = 5;
-		// ue[P1_NNLUE + 1] = pfLabel(lf[0].langName, 2, 12, dfc, dbc, grey, black, false);
-		// ue[P1_NNLUE + 1].clickFunc = [] {
-		// 	pfLangRead(lf[0].dir.c_str()), refreshPage();
-		// };
-		// for(int i = 1; i < (int)lf.size(); i++) {
-		// 	if(ue[P1_NNLUE + i].right() + 2 + lf[i].langName.length() > scrW) {
-		// 		ue[P1_NNLUE + 1 + i] = pfLabel(lf[i].langName, 2, ue[P1_NNLUE + i].y + 1, dfc, dbc, grey, black, false);
-		// 	} else {
-		// 		ue[P1_NNLUE + 1 + i] = pfLabel(lf[i].langName, ue[P1_NNLUE + i].right() + 2, ue[P1_NNLUE + i].y, dfc, dbc, grey, black, false);
-		// 	}
-		// 	ue[P1_NNLUE + 1 + i].clickFunc = [i] { pfLangRead(lf[i].dir.c_str()), refreshPage(); };
-		// }
-		// nue = P1_NNLUE + lf.size();
-
-		nue = 5;
+		// ue[2] = pfLabel(tmp.str(), 0, 5, white, pink, 0, 0, true);
+		// ue[3] = pfLabel(TT(" Confirm "), 2, 10, black, yellow, black, darkYellow, false);
+		// ue[3].clickFunc = p0InputOK;
+		// ue[4] = pfLabel(TT("Enter your username: ").str() + p1name, 2, 8, dfc, dbc, 0, 0, false);
+		// ue[5] = pfLabel(TT(" Exit "), ue[3].right() + 2, 10, white, red, white, darkRed, false);
+		// ue[5].clickFunc = [] { pfExit(); };
+		// nue = 5;
 		break;
 	}
 	case PfPage::main: {
@@ -560,10 +537,10 @@ void buildUiElem() {
 }
 
 void RefreshPage() {
-	uptCursorState();
-	if(scrW < 70 || scrH < 28) return;
-	buildUiElem();
-	drawUiElem();
+	// uptCursorState();
+	// if(scrW < 70 || scrH < 28) return;
+	// buildUiElem();
+	// drawUiElem();
 }
 
 void ProcessMouseClick(int mx, int my) {
@@ -674,17 +651,17 @@ void KeyHandler(const string &s, const vector<int> &v) {
 		}
 	} else {
 		if(stPage.top() == PfPage::welcome) {
-			if(s == "\n") {
-				p1name = vtIn.ReadLine();
-				gotoXY(2, 8);
-				cout << TT("Enter your username: ") << p1name;
+			// if(s == "\n") {
+			// 	p1name = vtIn.ReadLine();
+			// 	gotoXY(2, 8);
+			// 	cout << TT("Enter your username: ") << p1name;
 
-				ue[3]._click();
-			} else if(s == "\x7f") {
-				gotoXY(2, 8);
-				ClearLineRight();
-				cout << TT("Enter your username: ") << vtIn.PeekLine();
-			}
+			// 	ue[3]._click();
+			// } else if(s == "\x7f") {
+			// 	gotoXY(2, 8);
+			// 	ClearLineRight();
+			// 	cout << TT("Enter your username: ") << vtIn.PeekLine();
+			// }
 		} else if(stPage.top() == PfPage::client_init) {
 			if(s == "\n") {
 				sIP = vtIn.ReadLine();
@@ -718,21 +695,6 @@ void processArg(int argc, char **argv) {
 			if(op == "-v") { // version
 				cout << pfUA << endl; // output version
 				exit(0); // exit
-			} else if(op == "-bdc") { // set code page
-				if(i == argc - 1) {
-					cout << "planefight: error: expected value after -cp option." << endl;
-					exit(233);
-				}
-				string val = argv[i + 1];
-				if(val == "full") { // -bdc full
-					bdcOpt = 0;
-				} else if(val == "pseudofull") { // -bdc pseudofull
-					bdcOpt = 1;
-				} else { // others
-					cout << "planefight: error: unknown value " << val << " for option " << op << "." << endl;
-					exit(233);
-				}
-				++i;
 			} else { // others
 				cout << "planefight: unknown option " << op << endl;
 				pause = 1;
@@ -762,12 +724,6 @@ void pfCmptAddBdcSp() {
 	}
 }
 
-void pfCompatibility() {
-	if(bdcOpt & 1) {
-		pfCmptAddBdcSp();
-	}
-}
-
 void PfAtExit() {
 	vtIn.WaitForHandlerThreads();
 	ConReset();
@@ -777,20 +733,14 @@ int main(int argc, char **argv) {
 	freopen("planefight.log", "w", stderr);
 
 	processArg(argc, argv); // parse command line arguments
-	ConInit(); // initialising console
-	atexit(PfAtExit);
+	// ConInit(); // initialising console
+	// atexit(PfAtExit);
 	PfLocaleInit("");
 
-	pfCompatibility();
-	GenerateBackground();
+	// GenerateBackground();
 	NextPage(PfPage::welcome);
 
-	VtEnableMouseTrackingAny();
-	vtIn.mouseHandler = MouseHandler;
-	vtIn.keyHandler = KeyHandler;
-	vtIn.resizeHandler = ResizeHandler;
-	vtIn.Work();
-	// TODO:
-	// window size event;
+	pfui::Build();
+	pfui::Loop();
 	return 0;
 }

@@ -24,19 +24,19 @@ enum class PfAtkRes {
 
 // Battle field aka map(?)
 struct pfBF {
-	// short x, y;
-	uint16_t w, h;
+	int w, h;
+	int nPlaced = 0;
 	mutable std::vector<std::string> ch;
 	std::vector<short> pl;
 	// TODO: the value and color of the attack result should be discriminated
 	std::vector<short> mk;
 
 	pfBF();
-	pfBF(uint16_t w, uint16_t h);
-	void resize(short, short);
+	pfBF(int w, int h);
+	void resize(int nw, int nh);
 	void clear();
 	void Draw(int, int, bool) const;
-	void basic_placeplane(short, short, short, bool);
-	bool placeplane(short, short, short, bool);
+	void basic_placeplane(int x, int y, short d, bool cw);
+	bool placeplane(int x, int y, short d, bool cw);
 	bool AutoArrange();
 };

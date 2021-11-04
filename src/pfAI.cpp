@@ -1,5 +1,6 @@
 #include "pfAI.hpp"
 #include "pfLocale.hpp"
+#include "pfConsole.hpp"
 #include <random>
 
 extern std::mt19937 rng;

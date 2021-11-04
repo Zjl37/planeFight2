@@ -1,5 +1,6 @@
 #include "pfGame.hpp"
 #include "pfLocale.hpp"
+#include "pfConsole.hpp"
 
 extern std::mt19937 rng;
 
@@ -7,16 +8,17 @@ pfGameInfo curGame{ 10, 10, 3, false, false };
 std::shared_ptr<PfPlayer> player[2];
 
 PfRePosCh plShape[4][10] = {
-	{ { 0, 0, "\u2503" }, { -2, 1, "\u2501" }, { -1, 1, "\u2501" }, { 0, 1, "\u254b" }, { 1, 1, "\u2501" }, { 2, 1, "\u2501" }, { 0, 2, "\u2503" }, { -1, 3, "\u2501" }, { 0, 3, "\u253b" }, { 1, 3, "\u2501" } },
-	{ { -3, -1, "\u2503" }, { -3, 0, "\u2523" }, { -3, 1, "\u2503" }, { -2, 0, "\u2501" }, { -1, -2, "\u2503" }, { -1, -1, "\u2503" }, { -1, 0, "\u254b" }, { -1, 1, "\u2503" }, { -1, 2, "\u2503" }, { 0, 0, "\u2501" } },
-	{ { -1, -3, "\u2501" }, { 0, -3, "\u2533" }, { 1, -3, "\u2501" }, { 0, -2, "\u2503" }, { -2, -1, "\u2501" }, { -1, -1, "\u2501" }, { 0, -1, "\u254b" }, { 1, -1, "\u2501" }, { 2, -1, "\u2501" }, { 0, 0, "\u2503" } },
-	{ { 3, -1, "\u2503" }, { 3, 0, "\u252b" }, { 3, 1, "\u2503" }, { 2, 0, "\u2501" }, { 1, -2, "\u2503" }, { 1, -1, "\u2503" }, { 1, 0, "\u254b" }, { 1, 1, "\u2503" }, { 1, 2, "\u2503" }, { 0, 0, "\u2501" } }
+	{{0, 0, "┃ "}, {-2, 1, "━━"}, {-1, 1, "━━"}, {0, 1, "╋━"}, {1, 1, "━━"}, {2, 1, "━ "}, {0, 2, "┃ "}, {-1, 3, "━━"}, {0, 3, "┻━"}, {1, 3, "━ "}},
+	{{-3, -1, "┃ "}, {-3, 0, "┣━"}, {-3, 1, "┃ "}, {-2, 0, "━━"}, {-1, -2, "┃ "}, {-1, -1, "┃ "}, {-1, 0, "╋━"}, {-1, 1, "┃ "}, {-1, 2, "┃ "}, {0, 0, "━ "}},
+	{{-1, -3, "━━"}, {0, -3, "┳━"}, {1, -3, "━ "}, {0, -2, "┃ "}, {-2, -1, "━━"}, {-1, -1, "━━"}, {0, -1, "╋━"}, {1, -1, "━━"}, {2, -1, "━ "}, {0, 0, "┃ "}},
+	{{3, -1, "┃ "}, {3, 0, "┫ "}, {3, 1, "┃ "}, {2, 0, "━━"}, {1, -2, "┃ "}, {1, -1, "┃ "}, {1, 0, "╋━"}, {1, 1, "┃ "}, {1, 2, "┃ "}, {0, 0, "━━"}}
 };
 
 pfBF::pfBF(): w(10), h(10), ch(1*w*h), pl(1*w*h), mk(1*w*h) {}
-pfBF::pfBF(uint16_t w, uint16_t h): w(w), h(h), ch(1*w*h), pl(1*w*h), mk(1*w*h) {}
-void pfBF::resize(short nw, short nh) {
+pfBF::pfBF(int w, int h): w(w), h(h), ch(1*w*h), pl(1*w*h), mk(1*w*h) {}
+void pfBF::resize(int nw, int nh) {
 	w = nw, h = nh;
+	nPlaced = 0;
 	ch.clear(), ch.resize(w * h);
 	pl.clear(), pl.resize(w * h);
 	mk.clear(), mk.resize(w * h);
@@ -60,8 +62,9 @@ void pfBF::Draw(int x, int y, bool forceClear) const {
 			}
 		}
 	}
+	std::cout << std::flush;
 }
-void pfBF::basic_placeplane(short x, short y, short d, bool cw) {
+void pfBF::basic_placeplane(int x, int y, short d, bool cw) {
 	for(int i = 0; i < 10; i++) {
 		short tx = x + plShape[d][i].dx, ty = y + plShape[d][i].dy;
 		if(cw) {
@@ -74,8 +77,9 @@ void pfBF::basic_placeplane(short x, short y, short d, bool cw) {
 		pl[ty * w + tx] = d | 4;
 	}
 	pl[y * w + x] |= 8;
+	++nPlaced;
 }
-bool pfBF::placeplane(short x, short y, short d, bool cw) {
+bool pfBF::placeplane(int x, int y, short d, bool cw) {
 	if(!cw)
 		for(int i = 0; i < 10; i++)
 			if(x + plShape[d][i].dx >= w || x + plShape[d][i].dx < 0 || y + plShape[d][i].dy >= h || y + plShape[d][i].dy < 0) return false;
@@ -93,15 +97,18 @@ bool pfBF::placeplane(short x, short y, short d, bool cw) {
 	return true;
 }
 bool pfBF::AutoArrange() {
-	int i = 0, ttry = 0;
+	nPlaced = 0;
+	int ttry = 0;
 	clear();
-	while(i < curGame.n && ttry < 10000) {
+	while(nPlaced < curGame.n && ttry < 10000) {
 		if(placeplane(rng() % w, rng() % h, rng() & 3, curGame.cw))
-			++i;
+			++nPlaced;
 		++ttry;
 	}
-	if(i < curGame.n)
-		return clear(), false;
+	if(nPlaced < curGame.n) {
+		clear();
+		return false;
+	}
 	return true;
 }
 
