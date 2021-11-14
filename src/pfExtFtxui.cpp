@@ -233,6 +233,7 @@ namespace ftxui::pfext { // planeFight's extension
 						if(e.mouse().button == Mouse::Left) {
 							if(player[0]->GetGame().isMyTurn() && bf.mk[bx + by * bf.w] == 0) {
 								player[0]->Attack(bx, by);
+								std::clog << "[i] in " << __PRETTY_FUNCTION__ << " event handler returns at " << std::chrono::system_clock::now().time_since_epoch().count() << std::endl;
 							}
 						}
 					}

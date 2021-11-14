@@ -2,6 +2,8 @@
 #include "pfLocale.hpp"
 #include "pfConsole.hpp"
 #include <random>
+#include <future>
+#include <thread>
 
 extern std::mt19937 rng;
 
@@ -87,13 +89,22 @@ void PfAI::ArrangeReady(const pfBF &ar) {
 void PfAI::BeingAttacked(short x, short y) {
 	PfPlayer::BeingAttacked(x, y);
 	if(!game.Over()) {
-		short ax, ay;
-		short ret = pfAIdecide(game.gamerules, othersBf.mk, ax, ay);
-		if(!ret) {
-			Surrender();
-			return;
-		}
-		Attack(ax, ay);
+		// asyncrhonously make a decision, so that the main thread can handle UI.
+		static std::future<void> fut;
+		if(fut.valid()) fut.wait();
+		fut = std::async(std::launch::async, [&]() {
+			using namespace std::chrono_literals;
+			
+			auto t0 = std::chrono::system_clock::now();
+			short ax, ay;
+			short ret = pfAIdecide(game.gamerules, othersBf.mk, ax, ay);
+			std::this_thread::sleep_until(t0 + 2s);
+			if(ret) {
+				Attack(ax, ay);
+			} else {
+				Surrender();
+			}
+		});
 	}
 }
 
@@ -111,13 +122,22 @@ void PfAI::AttackResulted(PfAtkRes res) {
 void PfAI::OnGameStart() {
 	PfPlayer::OnGameStart();
 	if(game.isFirst) {
-		short ax, ay;
-		short ret = pfAIdecide(game.gamerules, othersBf.mk, ax, ay);
-		if(!ret) {
-			Surrender();
-			return;
-		}
-		Attack(ax, ay);
+		// asyncrhonously make a decision, so that the main thread can handle UI.
+		static std::future<void> fut;
+		if(fut.valid()) fut.wait();
+		fut = std::async(std::launch::async, [&]() {
+			using namespace std::chrono_literals;
+			
+			auto t0 = std::chrono::system_clock::now();
+			short ax, ay;
+			short ret = pfAIdecide(game.gamerules, othersBf.mk, ax, ay);
+			std::this_thread::sleep_until(t0 + 2s);
+			if(ret) {
+				Attack(ax, ay);
+			} else {
+				Surrender();
+			}
+		});
 	}
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 #include "ftxui/component/screen_interactive.hpp"
 #include "ftxui/util/ref.hpp"
+#include "pfCommon.hpp"
 
 namespace pfui {
 
@@ -8,6 +9,24 @@ namespace pfui {
 	extern std::string playername;
 	extern ftxui::ScreenInteractive scr;
 	extern int p2IsNetworkGame;
+	extern bool p2ShowBanner;
+
+	struct AttackIndicatorInfo {
+		int x, y;
+		bool signDir;
+		enum {
+			none,
+			blink1,
+			blink2,
+			blink3,
+			blink4,
+			resulted
+		} state = none;
+		PfAtkRes res;
+
+		std::string MakeCoordStr() const;
+	};
+	extern AttackIndicatorInfo p5AttackInfo;
 
 	namespace ctrl {
 		extern std::string ipAddr;

@@ -271,7 +271,7 @@ void PfLocalPlayer::OnGameover() {
 
 void PfLocalPlayer::Attack(short x, short y) {
 	{
-		std::lock_guard<std::mutex> _lg(mtxCout);
+		// std::lock_guard<std::mutex> _lg(mtxCout);
 		BlinkCoord(x, y, 1);
 	}
 	lastAtk = {x, y};
@@ -288,7 +288,7 @@ void PfLocalPlayer::AttackResulted(PfAtkRes res) {
 		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = green;
 	}
 	{
-		std::lock_guard<std::mutex> _lg(mtxCout);
+		// std::lock_guard<std::mutex> _lg(mtxCout);
 		UiShowAtkRes(res);
 	}
 	RefreshPage();
@@ -301,12 +301,12 @@ void PfLocalPlayer::AttackResulted(PfAtkRes res) {
 
 void PfLocalPlayer::BeingAttacked(short x, short y) {
 	{
-		std::lock_guard<std::mutex> _lg(mtxCout);
+		// std::lock_guard<std::mutex> _lg(mtxCout);
 		BlinkCoord(x, y, 0);
 	}
 	PfPlayer::BeingAttacked(x, y);
 	{
-		std::lock_guard<std::mutex> _lg(mtxCout);
+		// std::lock_guard<std::mutex> _lg(mtxCout);
 		auto dummy = myBf.mk[x + y * myBf.w];
 		PfAtkRes res = dummy == darkRed ? PfAtkRes::destroy :
 		               dummy == red     ? PfAtkRes::hit :

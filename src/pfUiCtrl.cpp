@@ -31,6 +31,7 @@ namespace pfui {
 			StartLocalGame();
 		}
 		void P2Clear() {
+			if(player[0]->GetGame().state & PfGame::me_ready) return;
 			bf1.clear();
 		}
 		void P2Ready() {

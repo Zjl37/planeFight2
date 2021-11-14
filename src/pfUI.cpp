@@ -108,36 +108,6 @@ void box(short x, short y, short w, short h, short edge) {
 	}
 }
 
-void BlinkCoord(short ax, short ay, bool signDir) {
-	stringstream tmp1("");
-	if(signDir)
-		tmp1 << ">>>>  ";
-	else
-		tmp1 << "<<<<  ";
-	tmp1 << "(" << ax << "," << ay << ")";
-	if(signDir)
-		tmp1 << "  >>>>";
-	else
-		tmp1 << "  <<<<";
-	string tmp2 = tmp1.str();
-	setColor(lightGrey, dbc);
-	gotoXY((scrW - tmp2.length()) / 2, 9);
-	cout << tmp2 << flush;
-	this_thread::sleep_for(chrono::milliseconds(rng() % 250));
-	setColor(black, dbc);
-	gotoXY((scrW - tmp2.length()) / 2, 9);
-	cout << tmp2 << flush;
-	this_thread::sleep_for(chrono::milliseconds(rng() % 250));
-	setColor(grey, dbc);
-	gotoXY((scrW - tmp2.length()) / 2, 9);
-	cout << tmp2 << flush;
-	this_thread::sleep_for(chrono::milliseconds(rng() % 250));
-	setColor(white, dbc);
-	gotoXY((scrW - tmp2.length()) / 2, 9);
-	cout << tmp2 << flush;
-	this_thread::sleep_for(chrono::milliseconds(500 + rng() % 250));
-}
-
 void DrawPlane(int x, int y, int d) {
 	for(const auto &ps: plShape[d]) {
 		int tx = x + ps.dx * 2, ty = y + ps.dy;
@@ -222,6 +192,16 @@ namespace pfui {
 	ftxui::Component ui;
 
 	int p2IsNetworkGame;
+	bool p2ShowBanner;
+
+	std::string AttackIndicatorInfo::MakeCoordStr() const {
+		using namespace std::string_literals;
+		return (signDir ? ">>>>  "s : "<<<<  "s)
+		       + "(" + std::to_string(x) + "," + std::to_string(y) + ")"
+			   + (signDir ? "  >>>>" : "  <<<<");
+	}
+
+	AttackIndicatorInfo p5AttackInfo;
 
 	void Build() {
 		using namespace ftxui;
@@ -287,7 +267,10 @@ namespace pfui {
 			Maybe(Container::Horizontal({
 				Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
 				Container::Vertical({
-					pfext::FlatButton(TT("> Start a server").str(), []() { NextPage(PfPage::gamerule_setting_server); }),
+					pfext::FlatButton(TT("> Start a server").str(), []() {
+						isFirst = rng() & 1;
+						NextPage(PfPage::gamerule_setting_server);
+					}),
 					pfext::FlatButton(TT("> Join a game").str(), []() { NextPage(PfPage::client_init); }),
 				})
 			}), &p1ShowRgMenu),
@@ -298,7 +281,70 @@ namespace pfui {
 			})
 		});
 
+		auto p2BfRow = Container::Horizontal({
+			Container::Vertical({
+				Renderer([]() {
+					return text(player[0] ? player[0]->GetName() : "???");
+				}),
+				pfext::PfBattleFieldPrepare(bf1, curGame, ctrl::p2SelectedFacing),
+			}),
+			Renderer([]() { return filler(); }),
+			Container::Tab({
+				/* local game */
+				pfext::GameInfoInteractive(curGame, bf1),
+				/* network game */
+				Renderer([]() { return pfext::GameInfoStatic(curGame); })
+			}, &p2IsNetworkGame),
+		});
+
+		auto p2Banner = Renderer([]() {
+			return text(TT("Game starting...")) | center | size(HEIGHT, EQUAL, 3) | bgcolor(Color::Magenta) | clear_under | vcenter;
+		});
+
+		auto p2BtnReady = Button(TT("  I'm ready  ").str(), ctrl::P2Ready);
+		auto p2BtnClear = Button(TT(" CLEAR ").str(), ctrl::P2Clear);
+
 		static Box p3Box;
+
+		auto p5BfRow = Container::Horizontal({
+			Renderer([]() {
+				return vbox({
+					text(player[0] ? player[0]->GetName() : "???"),
+					pfext::PfBattleFieldStatic(player[0]->GetMyBF())
+				});
+			}),
+			Renderer([]() { return filler(); }),
+			Container::Vertical({
+				Renderer([]() {
+					return text(player[1] ? player[1]->GetName() : "???");
+				}),
+				pfext::PfBattleFieldGame(),
+			})
+		});
+
+		auto p5AttackIndicator = Renderer([]() {
+			return p5AttackInfo.state != AttackIndicatorInfo::none ?
+				vbox({
+					text(p5AttackInfo.MakeCoordStr()) | (
+						p5AttackInfo.state == AttackIndicatorInfo::blink1 ?
+						color(Color::Grey70) :
+						p5AttackInfo.state == AttackIndicatorInfo::blink2 ?
+						color(Color::Black) :
+						p5AttackInfo.state == AttackIndicatorInfo::blink3 ?
+						color(Color::Grey30) :
+						color(Color::White)
+					),
+					text(""),
+					p5AttackInfo.state == AttackIndicatorInfo::resulted ?
+						(p5AttackInfo.res == PfAtkRes::destroy ?
+							text(TT(" DESTROY ")) | bgcolor(Color::DarkRed) :
+							p5AttackInfo.res == PfAtkRes::hit ?
+							text(TT(" HIT ")) | bgcolor(Color::Red) :
+							text(TT(" VOID ")) | bgcolor(Color::Green)) | hcenter :
+						text(""),
+				}) | center :
+				filler();
+		});
 
 		auto p6BfRow = Container::Horizontal({
 			Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
@@ -345,36 +391,43 @@ namespace pfui {
 			}),
 
 			/* page 2 prepare */
-			// TODO: specification for local and network game
 			Container::Vertical({
 				Renderer([]() { return pfTitle; }),
-				btnBackLn(),
 				Container::Horizontal({
-					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
-					Container::Vertical({
-						Renderer([]() {
-							return text(player[0] ? player[0]->GetName() : "???");
-						}),
-						pfext::PfBattleFieldPrepare(bf1, curGame, ctrl::p2SelectedFacing),
-					}),
-					Renderer([]() { return filler(); }),
 					Container::Tab({
-						/* local game */
-						pfext::GameInfoInteractive(curGame, bf1),
-						/* network game */
-						Renderer([]() { return pfext::GameInfoStatic(curGame); })
+						pfext::FlatButton(TT("<<Back").str(), PrevPage, bgcolor(Color::Yellow)),
+						pfext::FlatButton(TT("<<Give up").str(), []() {
+							player[0]->Giveup();
+							PrevPage();
+						}, bgcolor(Color::Yellow)),
 					}, &p2IsNetworkGame),
+					Renderer([]() { return filler(); })
 				}),
-				Renderer([]() { return filler(); }),
 				Container::Horizontal({
 					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
-					pfext::Park(ctrl::p2SelectedFacing),
-					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
 					Container::Vertical({
-						Button(TT(" CLEAR ").str(), ctrl::P2Clear),
-						Button(TT(" READY ").str(), ctrl::P2Ready),
-					})
-				})
+						Renderer(p2BfRow, [=]() {
+							return p2ShowBanner ? dbox({
+								p2BfRow->Render(),
+								p2Banner->Render()
+							}) : p2BfRow->Render();
+						}),
+						Renderer([]() { return filler(); }),
+						Container::Horizontal({
+							pfext::Park(ctrl::p2SelectedFacing),
+							Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
+							Container::Vertical({
+								Renderer(p2BtnClear, [=]() {
+									return player[0]->GetGame().state & PfGame::me_ready ? emptyElement() : p2BtnClear->Render();
+								}),
+								Renderer(p2BtnReady, [=]() {
+									return bf1.nPlaced == curGame.n ? p2BtnReady->Render() : emptyElement();
+								})
+							})
+						})
+					}),
+					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
+				}),
 			}),
 
 			/* page 3 adjust map */
@@ -447,19 +500,11 @@ namespace pfui {
 				}),
 				Container::Horizontal({
 					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
-					// TODO: move this to a row, and add a dbox.
-					Renderer([]() {
-						return vbox({
-							text(player[0] ? player[0]->GetName() : "???"),
-							pfext::PfBattleFieldStatic(player[0]->GetMyBF())
-						});
-					}),
-					Renderer([]() { return filler(); }),
-					Container::Vertical({
-						Renderer([]() {
-							return text(player[1] ? player[1]->GetName() : "???");
-						}),
-						pfext::PfBattleFieldGame(),
+					Renderer(p5BfRow, [=]() {
+						return dbox({
+							p5BfRow->Render(),
+							p5AttackIndicator->Render()
+						}) | flex_grow;
 					}),
 					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
 				}),
@@ -487,7 +532,7 @@ namespace pfui {
 				})
 			}),
 
-			/* page 7 gamerule setting (serer) */
+			/* page 7 gamerule setting (server) */
 			Container::Vertical({
 				Renderer([]() { return pfTitle; }),
 				btnBackLn(),
@@ -647,11 +692,18 @@ void PrevPage() {
 // legacy UI 2
 
 void UiGameStart() {
-	banner(TT("Game starting..."), scrH / 3, white, pink);
-	/* TODO: replace banner */
-	this_thread::sleep_for(1s);
-	SetPage(PfPage::game);
-	pfui::scr.PostEvent(ftxui::Event::Custom);
+	// banner(TT("Game starting..."), scrH / 3, white, pink);
+	static std::future<void> fut;
+	if(fut.valid()) fut.wait();
+	fut = std::async(launch::async, []() {
+		pfui::p2ShowBanner = true;
+		pfui::scr.PostEvent(ftxui::Event::Custom);
+		this_thread::sleep_for(1s);
+
+		pfui::p2ShowBanner = false;
+		SetPage(PfPage::game);
+		pfui::scr.PostEvent(ftxui::Event::Custom);
+	});
 }
 
 void UiGameover() {
@@ -659,19 +711,44 @@ void UiGameover() {
 	pfui::scr.PostEvent(ftxui::Event::Custom);
 }
 
+std::promise<PfAtkRes> promP5Attack;
+
 void UiShowAtkRes(PfAtkRes res) {
-	if(res == PfAtkRes::empty) {
-		setColor(black, green);
-	} else if(res == PfAtkRes::hit) {
-		setColor(white, red);
-	} else if(res == PfAtkRes::destroy) {
-		setColor(white, darkRed);
-	}
-	const string tres = res == PfAtkRes::destroy ? TT(" DESTROY ") :
-						res == PfAtkRes::hit     ? TT(" HIT ") :
-                                                   TT(" VOID ");
-	gotoXY((scrW - tres.length()) / 2, 7);
-	cout << tres << flush;
-	this_thread::sleep_for(1s);
-	pfui::scr.PostEvent(ftxui::Event::Custom);
+	promP5Attack.set_value(res);
+}
+
+void BlinkCoord(short ax, short ay, bool signDir) {
+	pfui::p5AttackInfo.x = ax, pfui::p5AttackInfo.y = ay;
+	pfui::p5AttackInfo.signDir = signDir;
+
+	static std::future<void> fut;
+	if(fut.valid()) fut.wait();
+
+	promP5Attack = std::promise<PfAtkRes>();
+
+	fut = std::async(launch::async, []() {
+		pfui::p5AttackInfo.state = pfui::AttackIndicatorInfo::blink1;
+		pfui::scr.PostEvent(ftxui::Event::Custom);
+		this_thread::sleep_for(chrono::milliseconds(rng() % 250));
+
+		pfui::p5AttackInfo.state = pfui::AttackIndicatorInfo::blink2;
+		pfui::scr.PostEvent(ftxui::Event::Custom);
+		this_thread::sleep_for(chrono::milliseconds(rng() % 250));
+
+		pfui::p5AttackInfo.state = pfui::AttackIndicatorInfo::blink3;
+		pfui::scr.PostEvent(ftxui::Event::Custom);
+		this_thread::sleep_for(chrono::milliseconds(rng() % 250));
+
+		pfui::p5AttackInfo.state = pfui::AttackIndicatorInfo::blink4;
+		pfui::scr.PostEvent(ftxui::Event::Custom);
+		this_thread::sleep_for(chrono::milliseconds(500 + rng() % 250));
+
+		pfui::p5AttackInfo.res = promP5Attack.get_future().get();
+		pfui::p5AttackInfo.state = pfui::AttackIndicatorInfo::resulted;
+		pfui::scr.PostEvent(ftxui::Event::Custom);
+		this_thread::sleep_for(1s);
+		
+		pfui::p5AttackInfo.state = pfui::AttackIndicatorInfo::none;
+		pfui::scr.PostEvent(ftxui::Event::Custom);
+	});
 }
