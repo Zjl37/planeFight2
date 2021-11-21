@@ -101,8 +101,7 @@ bool pfBF::AutoArrange() {
 	int ttry = 0;
 	clear();
 	while(nPlaced < curGame.n && ttry < 10000) {
-		if(placeplane(rng() % w, rng() % h, rng() & 3, curGame.cw))
-			++nPlaced;
+		placeplane(rng() % w, rng() % h, rng() & 3, curGame.cw);
 		++ttry;
 	}
 	if(nPlaced < curGame.n) {
