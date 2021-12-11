@@ -35,7 +35,6 @@ struct pfBF {
 	pfBF(int w, int h);
 	void resize(int nw, int nh);
 	void clear();
-	void Draw(int, int, bool) const;
 	void basic_placeplane(int x, int y, short d, bool cw);
 	bool placeplane(int x, int y, short d, bool cw);
 	bool AutoArrange();

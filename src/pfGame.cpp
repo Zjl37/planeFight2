@@ -26,44 +26,6 @@ void pfBF::resize(int nw, int nh) {
 void pfBF::clear() {
 	resize(w, h);
 }
-void pfBF::Draw(int x, int y, bool forceClear) const {
-	int _lastFgc = dfc, _lastBgc = dbc;
-	setDefaultColor();
-	// NOTE: the performance of colored output is not as fast as non-colored ones.
-	// ref (on Windows): https://github.com/microsoft/terminal/issues/10362
-	// avoid frequently changing color to get better perf.
-	auto _uptColor = [&](int i, int j) {
-		short bgc = mk[i * w + j] ? mk[i * w + j] : 16;
-		if(_lastFgc != hcc[bgc] || _lastBgc != bgc) {
-			_lastFgc = hcc[bgc], _lastBgc = bgc;
-			setColor(hcc[bgc], bgc);
-		}
-	};
-	if(forceClear) {
-		for(short i = 0; i < h; i++) {
-			gotoY(y + i);
-			for(short j = 0; j < w; j++) {
-				gotoX(x + j * 2);
-				_uptColor(i, j);
-				if(ch[i * w + j].empty())
-					std::cout << "  ";
-				else
-					std::cout << ch[i * w + j];
-			}
-		}
-	} else {
-		for(short i = 0; i < h; i++) {
-			for(short j = 0; j < w; j++) {
-				if(!ch[i * w + j].empty()) {
-					gotoXY(x + j * 2, y + i);
-					_uptColor(i, j);
-					std::cout << ch[i * w + j];
-				}
-			}
-		}
-	}
-	std::cout << std::flush;
-}
 void pfBF::basic_placeplane(int x, int y, short d, bool cw) {
 	for(int i = 0; i < 10; i++) {
 		short tx = x + plShape[d][i].dx, ty = y + plShape[d][i].dy;

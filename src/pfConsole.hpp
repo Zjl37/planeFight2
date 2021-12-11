@@ -6,10 +6,8 @@
 
 extern std::mutex mtxCout;
 
-std::pair<int, int> getXY();
-int getX();
-int getY();
-void CurLeft1();
+// TODO: get rid of these
+
 void gotoX(int);
 void gotoY(int);
 void gotoXY(int, int);
@@ -36,24 +34,6 @@ void gotoXY(int, int);
 #define brightMagenta 13
 #define yellow 14
 #define white 15
-// #define dfc lightGrey
-// #define dbc black
 #define dfc 16
 #define dbc 16
 #endif // _ConsoleColor_
-
-void setDefaultColor();
-void setColor(int fgc, int bgc);
-void clear();
-void ClearLineRight();
-void showCursor_(bool f);
-void UseAltScrBuf();
-void UseMainScrBuf();
-
-#define showCursor() showCursor_(true)
-#define hideCursor() showCursor_(false)
-
-std::pair<int, int> GetConScrSize();
-
-void ConInit();
-void ConReset();

@@ -34,7 +34,6 @@ if(Boost_FOUND)
 		planeFight
 		src/main.cpp
 		src/pfAI.cpp
-		src/pfConio.cpp
 		src/pfConsole.cpp
 		src/pfGame.cpp
 		src/pfRemotePlayer.cpp
