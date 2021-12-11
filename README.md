@@ -1,36 +1,32 @@
 ![planeFight introduction image](https://i.loli.net/2020/08/29/GsaIE34g5zuV7BX.png)
 
-English | [简体中文](README_zh_Hans.md)
+English | [简体中文](README.zh-CN.md)
 
 **If you're looking for gamerules introduction, go to the [wiki page](https://github.com/Zjl37/planeFight2/wiki/Game-Introduction).**
 
-## PlaneFight Console Application
+## PlaneFight Tui Game
 
-PlaneFight is a general practice of C++ console programming, and this repo is also the very first one through which I learn GitHub.
+planeFight2 is a tui (terminal user interface) game and also my very first project. With modern terminals and [box drawing characters](https://unicode-table.com/en/blocks/box-drawing/), tui is considered the best way this game (the shape of the plane) presents.
 
-Currently, planeFight Console Game is based on Windows Console. It is heavily depended on **Win32 API** to implement mouse interaction and so. Besides playing against computer, we also supports multiplayer game in local network, which is implemented using **Winsock**.
+The program allows you to play with computer (a simple AI) or another player over local network. You can interact with both keyboard and mouse, thanks to the amazing [FTXUI](https://github.com/ArthurSonzogni/FTXUI) library.
 
-We are planning to make it cross-platform in the future by adopting technologies like VT sequence, but that is a long way to go.
+It is cross-platform, and is tested to run on Windows and Linux. (Will somebody test mac for me?) Note that for Windows [Legacy Console](https://go.microsoft.com/fwlink/?LinkId=871150) is not supported, so you will need at least Windows 10 as new as 1803.
 
-## How to play
+## Build Instruction
 
-1. Go to release page and download the latest version.
+Build with cmake. The C++ compiler should support C++17.
 
-2. Or download the source code and compile it yourself.
+[boost](https://www.boost.org/) is needed. Boost locale should be built first. If cmake cannot find boost, define environment variable `BOOST_ROOT`.
 
-To get the best experience, we recommend that you
+In cmake configuration process, cmake will clone the FTXUI repository from GitHub, so you don't need to manually download it.
 
-- run this program on latest version of Windows 10, as the program won't support [Legacy Console](https://go.microsoft.com/fwlink/?LinkId=871150). 
-
-- run this program in default console window (conhost), not in integrated console of some IDE / code editors, otherwise the program won't receive mouse event.
-
-- use a monospace font that shows [box drawing characters](https://unicode-table.com/en/blocks/box-drawing/) full-width.
+It is tested to build on Linux with GCC and Windows with MinGW64 GCC.
 
 ## Contribution
 
 You're welcomed to
 
 - Translate the game and all documents.
-	- All English translations were done by myself. Limited by my English proficiency, there may be grammar mistakes or improper / not idiomatic expressions. Any English translation suggestions is welcomed.
+	- All English translations were done by myself. Limited by my English proficiency, there may be mistakes or not authentic expressions. Any English translation suggestions is welcomed.
 
-- Maybe make a bot server (with a smart AI)?
+- Make another client or server that follows the same [network protocol](doc/networkProtocol.md).
