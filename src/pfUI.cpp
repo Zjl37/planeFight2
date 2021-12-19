@@ -5,7 +5,6 @@
 #include "pfExtFtxui.hpp"
 #include "ftxui/component/component.hpp"
 #include "ftxui/component/screen_interactive.hpp"
-#include "pfConsole.hpp"
 #include <future>
 #include <string>
 #include <thread>
@@ -16,7 +15,7 @@ extern std::string mapEdge[256];
 extern std::mt19937 rng;
 
 // legacy UI 1
-
+/* 
 void DrawPlane(int x, int y, int d) {
 	for(const auto &ps: plShape[d]) {
 		int tx = x + ps.dx * 2, ty = y + ps.dy;
@@ -46,6 +45,7 @@ void DrawPlaneCw(int x, int y, int d, int bx, int by, int bw, int bh) {
 	}
 }
 
+ */
 ///////////////////////////////////////////////////////////////////////////////
 
 extern bool isFirst;

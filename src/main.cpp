@@ -3,7 +3,6 @@
 #include "pfLocale.hpp"
 #include "pfAI.hpp"
 #include "pfUiCtrl.hpp"
-// #include "pfConsole.hpp"
 
 using namespace std;
 
@@ -26,7 +25,7 @@ mt19937 rng(time(nullptr)); // random number generator by MT19937 algorithm
 
 bool isFirst;
 int scrW, scrH;
-pfBF bg, bf1;
+PfBF bg, bf1;
 
 string sIP;
 
@@ -99,7 +98,7 @@ void StartClient() {
 void p2Ready() {
 	if(curGameType == pf_local_game) {
 		if(!curGame.n) return;
-		pfBF bf2(curGame.w, curGame.h);
+		PfBF bf2(curGame.w, curGame.h);
 		bool tmp = bf2.AutoArrange();
 		if(tmp == false) {
 			// RefreshPage();

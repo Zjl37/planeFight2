@@ -25,18 +25,18 @@ namespace ftxui::pfext { // planeFight's extension
 		auto btn = Button(label, on_click, btnNoBorder);
 		return Renderer(btn, [=]() { return btn->Render(); });
 	}
-	Element BasicPfBattleField(const pfBF &bf, Box *box) {
+	Element BasicPfBattleField(const PfBF &bf, Box *box) {
 		const int PFBF_CELL_WIDTH = 2;
 		Elements lines;
 		for(int i = 0; i < bf.h; i++) {
 			Elements cells;
 			for(int j = i*bf.w; j < (i+1)*bf.w; ++j) {
 				Decorator dec = size(WIDTH, EQUAL, PFBF_CELL_WIDTH);
-				if(bf.mk[j] == 10) {
+				if(bf.mk[j] == PfBF::empty) {
 					dec = dec | bgcolor(Color::Green);
-				} else if(bf.mk[j] == 12) {
+				} else if(bf.mk[j] == PfBF::hit) {
 					dec = dec | bgcolor(Color::Red);
-				} else if(bf.mk[j] == 4) {
+				} else if(bf.mk[j] == PfBF::destroy) {
 					dec = dec | bgcolor(Color::DarkRed);
 				}
 				cells.push_back(text(bf.ch[j]) | dec);
@@ -52,7 +52,7 @@ namespace ftxui::pfext { // planeFight's extension
 			vbox(lines) | dec
 		});
 	}
-	Element PfBattleFieldStatic(const pfBF &bf, Box *box) {
+	Element PfBattleFieldStatic(const PfBF &bf, Box *box) {
 		// cut tail zeros off and return the last digit.
 		auto SigDigit = [](unsigned x) {
 			if(x == 0) return x;
@@ -78,7 +78,7 @@ namespace ftxui::pfext { // planeFight's extension
 			})
 		});
 	}
-	Component PfBattleFieldPrepare(pfBF &bf, const pfGameInfo &gamerules, int &selectedFacing) {
+	Component PfBattleFieldPrepare(PfBF &bf, const pfGameInfo &gamerules, int &selectedFacing) {
 		bf.clear();
 		struct BfInteractInfo {
 			Box boxBf;
@@ -253,7 +253,7 @@ namespace ftxui::pfext { // planeFight's extension
 			}, &selectedFacing)
 		});
 	}
-	Component GameInfoInteractive(pfGameInfo &gamerules, pfBF &bf) {
+	Component GameInfoInteractive(pfGameInfo &gamerules, PfBF &bf) {
 		using namespace std::string_literals;
 
 		CheckboxOption chkboxToggleCwOpt;
@@ -334,7 +334,7 @@ namespace ftxui::pfext { // planeFight's extension
 		auto ii = std::make_shared<BfInteractInfo>();
 		return CatchEvent(
 			Renderer([&, ii](bool) {
-				const pfBF &bf = player[0]->GetOthersBF();
+				const PfBF &bf = player[0]->GetOthersBF();
 				if(ii->keyCtrl.enabled) {
 					return dbox({
 						PfBattleFieldStatic(bf, &ii->boxBf),
@@ -352,7 +352,7 @@ namespace ftxui::pfext { // planeFight's extension
 				return PfBattleFieldStatic(bf, &ii->boxBf);
 			}),
 			[&, ii](Event e) {
-				const pfBF &bf = player[0]->GetOthersBF();
+				const PfBF &bf = player[0]->GetOthersBF();
 				if(e.is_mouse()) {
 					if(!ii->boxBf.Contain(e.mouse().x, e.mouse().y)) return false;
 					int bx = (e.mouse().x - ii->boxBf.x_min) / 2, by = e.mouse().y - ii->boxBf.y_min;

@@ -1,20 +1,20 @@
 #include "pfAI.hpp"
 #include "pfLocale.hpp"
-#include "pfConsole.hpp"
 #include <random>
 #include <future>
 #include <thread>
 
 extern std::mt19937 rng;
 
-pfBF vbf;
+PfBF vbf;
 
-bool pfAIinit(const pfGameInfo &g, const std::vector<short> &mk) {
+
+bool pfAIinit(const pfGameInfo &g, const std::vector<PfBF::AttackRecord> &mk) {
 	vbf.clear();
 	int k = 0;
 	for(short i = 0; i < g.h; i++)
 		for(short j = 0; j < g.w; j++)
-			if(mk[j + i * g.w] == darkRed) {
+			if(mk[j + i * g.w] == PfBF::destroy) {
 				if(vbf.pl[j + i * g.w]) return false;
 				bool ret = 0;
 				char r = 0;
@@ -41,19 +41,19 @@ bool pfAIinit(const pfGameInfo &g, const std::vector<short> &mk) {
 	return true;
 }
 
-bool pfAIcheck(const pfGameInfo &g, const std::vector<short> &mk) {
+bool pfAIcheck(const pfGameInfo &g, const std::vector<PfBF::AttackRecord> &mk) {
 	for(short j = 0; j < g.h; j++)
 		for(short i = 0; i < g.w; i++) {
-			if(!g.cd && mk[i + j * g.w] == green && vbf.pl[i + j * g.w])
+			if(!g.cd && mk[i + j * g.w] == PfBF::empty && vbf.pl[i + j * g.w])
 				return false;
-			if(mk[i + j * g.w] == red && !vbf.pl[i + j * g.w])
+			if(mk[i + j * g.w] == PfBF::hit && !vbf.pl[i + j * g.w])
 				return false;
 		}
 	return true;
 }
 
 #define PFAI_MAXTRY 1000000
-bool pfAIdecide(const pfGameInfo &g, const std::vector<short> &mk, short &tgx, short &tgy) {
+bool pfAIdecide(const pfGameInfo &g, const std::vector<PfBF::AttackRecord> &mk, short &tgx, short &tgy) {
 	vbf.resize(g.w, g.h);
 	int ttt = 0;
 	do {
@@ -69,7 +69,7 @@ bool pfAIdecide(const pfGameInfo &g, const std::vector<short> &mk, short &tgx, s
 	std::vector<std::pair<int, int>> pos;
 	for(short i = 0; i < g.h; i++)
 		for(short j = 0; j < g.w; j++)
-			if(vbf.pl[j + i * g.w] & 8 && mk[j + i * g.w] != darkRed)
+			if(vbf.pl[j + i * g.w] & 8 && mk[j + i * g.w] != PfBF::destroy)
 				pos.push_back({j, i});
 	if(!pos.size()) return false;
 	int i = rng() % pos.size();
@@ -81,7 +81,7 @@ PfAI::PfAI(): PfPlayer() {
 	name = TT("AI");
 }
 
-void PfAI::ArrangeReady(const pfBF &ar) {
+void PfAI::ArrangeReady(const PfBF &ar) {
 	PfPlayer::ArrangeReady();
 	myBf = ar;
 }
@@ -111,11 +111,11 @@ void PfAI::BeingAttacked(short x, short y) {
 void PfAI::AttackResulted(PfAtkRes res) {
 	PfPlayer::AttackResulted(res);
 	if(res == PfAtkRes::destroy) {
-		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = darkRed;
+		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = PfBF::destroy;
 	} else if(res == PfAtkRes::hit) {
-		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = red;
+		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = PfBF::hit;
 	} else if(res == PfAtkRes::empty) {
-		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = green;
+		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = PfBF::empty;
 	}
 }
 

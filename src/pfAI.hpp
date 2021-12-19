@@ -14,5 +14,5 @@ class PfAI: public PfPlayer {
 
 	public:
 	PfAI();
-	void ArrangeReady(const pfBF &ar);
+	void ArrangeReady(const PfBF &ar);
 };

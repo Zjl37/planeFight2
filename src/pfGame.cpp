@@ -1,6 +1,5 @@
 #include "pfGame.hpp"
 #include "pfLocale.hpp"
-#include "pfConsole.hpp"
 
 extern std::mt19937 rng;
 
@@ -14,19 +13,19 @@ PfRePosCh plShape[4][10] = {
 	{{3, -1, "┃ "}, {3, 0, "┫ "}, {3, 1, "┃ "}, {2, 0, "━━"}, {1, -2, "┃ "}, {1, -1, "┃ "}, {1, 0, "╋━"}, {1, 1, "┃ "}, {1, 2, "┃ "}, {0, 0, "━━"}}
 };
 
-pfBF::pfBF(): w(10), h(10), ch(1*w*h), pl(1*w*h), mk(1*w*h) {}
-pfBF::pfBF(int w, int h): w(w), h(h), ch(1*w*h), pl(1*w*h), mk(1*w*h) {}
-void pfBF::resize(int nw, int nh) {
+PfBF::PfBF(): w(10), h(10), ch(1*w*h), pl(1*w*h), mk(1*w*h) {}
+PfBF::PfBF(int w, int h): w(w), h(h), ch(1*w*h), pl(1*w*h), mk(1*w*h) {}
+void PfBF::resize(int nw, int nh) {
 	w = nw, h = nh;
 	nPlaced = 0;
 	ch.clear(), ch.resize(w * h);
 	pl.clear(), pl.resize(w * h);
 	mk.clear(), mk.resize(w * h);
 }
-void pfBF::clear() {
+void PfBF::clear() {
 	resize(w, h);
 }
-void pfBF::basic_placeplane(int x, int y, short d, bool cw) {
+void PfBF::basic_placeplane(int x, int y, short d, bool cw) {
 	for(int i = 0; i < 10; i++) {
 		short tx = x + plShape[d][i].dx, ty = y + plShape[d][i].dy;
 		if(cw) {
@@ -41,7 +40,7 @@ void pfBF::basic_placeplane(int x, int y, short d, bool cw) {
 	pl[y * w + x] |= 8;
 	++nPlaced;
 }
-bool pfBF::placeplane(int x, int y, short d, bool cw) {
+bool PfBF::placeplane(int x, int y, short d, bool cw) {
 	if(!cw)
 		for(int i = 0; i < 10; i++)
 			if(x + plShape[d][i].dx >= w || x + plShape[d][i].dx < 0 || y + plShape[d][i].dy >= h || y + plShape[d][i].dy < 0) return false;
@@ -58,7 +57,7 @@ bool pfBF::placeplane(int x, int y, short d, bool cw) {
 	basic_placeplane(x, y, d, cw);
 	return true;
 }
-bool pfBF::AutoArrange() {
+bool PfBF::AutoArrange() {
 	nPlaced = 0;
 	int ttry = 0;
 	clear();
@@ -158,13 +157,13 @@ void PfPlayer::BeingAttacked(short x, short y) {
 				myBf.pl[tx + ty * w] |= 16;
 			}
 		}
-		myBf.mk[x + y * w] = darkRed;
+		myBf.mk[x + y * w] = PfBF::destroy;
 		res = PfAtkRes::destroy;
 	} else if(myBf.pl[x + y * w] & 4 && !(myBf.pl[x + y * w] & 16)) {
-		myBf.mk[x + y * w] = red;
+		myBf.mk[x + y * w] = PfBF::hit;
 		res = PfAtkRes::hit;
 	} else {
-		myBf.mk[x + y * w] = green;
+		myBf.mk[x + y * w] = PfBF::empty;
 		res = PfAtkRes::empty;
 	}
 	++game.turn;
@@ -200,10 +199,10 @@ void PfPlayer::SetOthersBF(const std::vector<short> &pl) {
 void PfPlayer::OnOtherGiveup() {}
 void PfPlayer::OnGameover() {}
 
-const pfBF &PfPlayer::GetMyBF() const {
+const PfBF &PfPlayer::GetMyBF() const {
 	return myBf;
 }
-const pfBF &PfPlayer::GetOthersBF() const {
+const PfBF &PfPlayer::GetOthersBF() const {
 	return othersBf;
 }
 
@@ -221,7 +220,7 @@ void PfLocalPlayer::OnGameStart() {
 	UiGameStart();
 }
 
-void PfLocalPlayer::ArrangeReady(const pfBF &ar) {
+void PfLocalPlayer::ArrangeReady(const PfBF &ar) {
 	myBf = ar;
 	PfPlayer::ArrangeReady();
 }
@@ -242,11 +241,11 @@ void PfLocalPlayer::Attack(short x, short y) {
 void PfLocalPlayer::AttackResulted(PfAtkRes res) {
 	PfPlayer::AttackResulted(res);
 	if(res == PfAtkRes::destroy) {
-		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = darkRed;
+		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = PfBF::destroy;
 	} else if(res == PfAtkRes::hit) {
-		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = red;
+		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = PfBF::hit;
 	} else if(res == PfAtkRes::empty) {
-		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = green;
+		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = PfBF::empty;
 	}
 	{
 		// std::lock_guard<std::mutex> _lg(mtxCout);
@@ -269,8 +268,8 @@ void PfLocalPlayer::BeingAttacked(short x, short y) {
 	{
 		// std::lock_guard<std::mutex> _lg(mtxCout);
 		auto dummy = myBf.mk[x + y * myBf.w];
-		PfAtkRes res = dummy == darkRed ? PfAtkRes::destroy :
-		               dummy == red     ? PfAtkRes::hit :
+		PfAtkRes res = dummy == PfBF::destroy ? PfAtkRes::destroy :
+		               dummy == PfBF::hit     ? PfAtkRes::hit :
                                           PfAtkRes::empty;
 		UiShowAtkRes(res);
 		if(game.nDestroyedMine == game.gamerules.n) {

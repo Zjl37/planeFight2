@@ -48,7 +48,7 @@ struct PfGame {
 class PfPlayer {
 	protected:
 	PfGame game;
-	pfBF myBf, othersBf;
+	PfBF myBf, othersBf;
 	std::string name;
 
 	virtual void OnGameStart();
@@ -77,8 +77,8 @@ class PfPlayer {
 	// Observer
 	const PfGame &GetGame() const;
 	const std::string &GetName() const;
-	const pfBF &GetMyBF() const;
-	const pfBF &GetOthersBF() const;
+	const PfBF &GetMyBF() const;
+	const PfBF &GetOthersBF() const;
 };
 
 class PfLocalPlayer: public PfPlayer {
@@ -99,9 +99,9 @@ class PfLocalPlayer: public PfPlayer {
 
 	public:
 	PfLocalPlayer(const std::string &name);
-	void ArrangeReady(const pfBF &ar);
+	void ArrangeReady(const PfBF &ar);
 };
 
 extern pfGameInfo curGame;
-extern pfBF bg, bf1;
+extern PfBF bg, bf1;
 extern std::shared_ptr<PfPlayer> player[2];

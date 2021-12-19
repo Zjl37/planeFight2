@@ -23,16 +23,22 @@ enum class PfAtkRes {
 };
 
 // Battle field aka map(?)
-struct pfBF {
+struct PfBF {
 	int w, h;
 	int nPlaced = 0;
 	mutable std::vector<std::string> ch;
 	std::vector<short> pl;
-	// TODO: the value and color of the attack result should be discriminated
-	std::vector<short> mk;
 
-	pfBF();
-	pfBF(int w, int h);
+	enum AttackRecord {
+		unknown = 0,
+		empty = 1,
+		hit = 2,
+		destroy = 3
+	};
+	std::vector<AttackRecord> mk;
+
+	PfBF();
+	PfBF(int w, int h);
 	void resize(int nw, int nh);
 	void clear();
 	void basic_placeplane(int x, int y, short d, bool cw);
