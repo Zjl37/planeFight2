@@ -82,22 +82,28 @@ namespace ftxui::pfext { // planeFight's extension
 		bf.clear();
 		struct BfInteractInfo {
 			Box boxBf;
+			bool focused;
 			struct {
-				bool enabled = false;
 				int x = 0, y = 0;
-			} keyCtrl;
+			} cur;
 		};
 		auto ii = std::make_shared<BfInteractInfo>();
 		return CatchEvent(
-			Renderer([&, ii](bool) {
-				if(ii->keyCtrl.enabled) {
+			Renderer([&, ii](bool focus) {
+				ii->focused = focus;
+				if(focus) {
 					return dbox({
 						PfBattleFieldStatic(bf, &ii->boxBf),
 						vbox({
-							filler() | size(HEIGHT, EQUAL, 2 + ii->keyCtrl.y),
+							filler() | size(HEIGHT, EQUAL, 2 + ii->cur.y),
 							hbox({
-								filler() | size(WIDTH, EQUAL, 4 + ii->keyCtrl.x * 2),
-								text("□") | color(Color::White),
+								filler() | size(WIDTH, EQUAL, 4 + ii->cur.x * 2),
+								// cursor
+								bf.pl[ii->cur.x + ii->cur.y * bf.w] & 8 ?
+									text("×") | bgcolor(Color::Red) :
+									bf.TestPlace(ii->cur.x, ii->cur.y, selectedFacing, gamerules.cw) ?
+									text("□") | color(Color::White) :
+									text("×") | color(Color::Red),
 							})
 						})
 					});
@@ -113,9 +119,8 @@ namespace ftxui::pfext { // planeFight's extension
 					} else if(e.mouse().button == Mouse::WheelDown) {
 						(selectedFacing += 3) %= 4;
 					} else if(e.mouse().button == Mouse::None) {
-						ii->keyCtrl.enabled = true;
-						ii->keyCtrl.x = bx;
-						ii->keyCtrl.y = by;
+						ii->cur.x = bx;
+						ii->cur.y = by;
 					} else if(e.mouse().motion == Mouse::Pressed) {
 						if(e.mouse().button == Mouse::Left && bf.nPlaced < gamerules.n) {
 							bf.placeplane(bx, by, selectedFacing, gamerules.cw);
@@ -123,68 +128,80 @@ namespace ftxui::pfext { // planeFight's extension
 					}
 					return true;
 				} else if(e.is_character()) {
-					if(ii->keyCtrl.enabled) {
-						if(e.character() == "+" || e.character() == "=" || e.character() == "]") {
-							++selectedFacing %= 4;
-						} else if(e.character() == "-" || e.character() == "[") {
-							(selectedFacing += 3) %= 4;
-						}
+					switch(e.character()[0]) {
+					case '+':
+					case '=':
+					case ']':
+						++selectedFacing %= 4;
+						break;
+					case '-':
+					case '[':
+						(selectedFacing += 3) %= 4;
+						break;
+					case 'h':
+						(ii->cur.x += bf.w - 1) %= bf.w;
+						break;
+					case 'j':
+						++ii->cur.y %= bf.h;
+						break;
+					case 'k':
+						(ii->cur.y += bf.h - 1) %= bf.h;
+						break;
+					case 'l':
+						++ii->cur.x %= bf.w;
+						break;
+					default:
+						return false;
 					}
+					return true;
 				} else {
 					if(e == e.ArrowUp) {
-						if(!ii->keyCtrl.enabled) {
-							ii->keyCtrl.enabled = 1;
-							return true;
-						}
-						if(ii->keyCtrl.y <= 0) {
-							ii->keyCtrl.y = 0;
-							ii->keyCtrl.enabled = false;
+						if(ii->cur.y <= 0) {
+							ii->cur.y = 0;
 							return false;
 						}
-						--ii->keyCtrl.y;
-						return true;
+						--ii->cur.y;
 					} else if(e == e.ArrowDown) {
-						if(!ii->keyCtrl.enabled) {
-							ii->keyCtrl.enabled = 1;
-							return true;
-						}
-						if(ii->keyCtrl.y >= bf.h - 1) {
-							ii->keyCtrl.y = bf.h - 1;
-							ii->keyCtrl.enabled = false;
+						if(ii->cur.y >= bf.h - 1) {
+							ii->cur.y = bf.h - 1;
 							return false;
 						}
-						++ii->keyCtrl.y;
-						return true;
+						++ii->cur.y;
 					} else if(e == e.ArrowLeft) {
-						if(!ii->keyCtrl.enabled) {
-							ii->keyCtrl.enabled = 1;
-							return true;
-						}
-						if(ii->keyCtrl.x <= 0) {
-							ii->keyCtrl.x = 0;
-							ii->keyCtrl.enabled = false;
+						if(ii->cur.x <= 0) {
+							ii->cur.x = 0;
 							return false;
 						}
-						--ii->keyCtrl.x;
-						return true;
+						--ii->cur.x;
 					} else if(e == e.ArrowRight) {
-						if(!ii->keyCtrl.enabled) {
-							ii->keyCtrl.enabled = 1;
-							return true;
-						}
-						if(ii->keyCtrl.x >= bf.w - 1) {
-							ii->keyCtrl.x = bf.w - 1;
-							ii->keyCtrl.enabled = false;
+						if(ii->cur.x >= bf.w - 1) {
+							ii->cur.x = bf.w - 1;
 							return false;
 						}
-						++ii->keyCtrl.x;
-						return true;
+						++ii->cur.x;
 					} else if(e == e.Return) {
-						if(ii->keyCtrl.enabled && bf.nPlaced < gamerules.n) {
-							int bx = ii->keyCtrl.x, by = ii->keyCtrl.y;
+						if(bf.nPlaced < gamerules.n) {
+							int bx = ii->cur.x, by = ii->cur.y;
 							bf.placeplane(bx, by, selectedFacing, gamerules.cw);
 						}
-					}
+					} else if(e.input() == "\x06") { // C-f
+						++ii->cur.x %= bf.w;
+					} else if(e.input() == "\x02") { // C-b
+						(ii->cur.x += bf.w - 1) %= bf.w;
+					} else if(e.input() == "\x0e") { // C-n
+						++ii->cur.y %= bf.h;
+					} else if(e.input() == "\x10") { // C-p
+						(ii->cur.y += bf.h - 1) %= bf.h;
+					} else if(e.input() == "\x01") { // C-a
+						ii->cur.x = 0;
+					} else if(e.input() == "\x05") { // C-e
+						ii->cur.x = bf.w - 1;
+					} else if(e.input() == "\x1b<") { // M-<
+						ii->cur.y = 0;
+					} else if(e.input() == "\x1b>") { // M->
+						ii->cur.y = bf.h - 1;
+					} else return false;
+					return true;
 				}
 				return false;
 			}
@@ -319,10 +336,10 @@ namespace ftxui::pfext { // planeFight's extension
 	Component PfBattleFieldGame() {
 		struct BfInteractInfo {
 			Box boxBf;
+			bool focused;
 			struct {
-				bool enabled = false;
 				int x = 0, y = 0;
-			} keyCtrl;
+			} cur;
 
 			// BfInteractInfo() {
 			// 	std::clog<<"BfInteractInfo constructed."<<std::endl;
@@ -333,15 +350,16 @@ namespace ftxui::pfext { // planeFight's extension
 		};
 		auto ii = std::make_shared<BfInteractInfo>();
 		return CatchEvent(
-			Renderer([&, ii](bool) {
+			Renderer([&, ii](bool focus) {
 				const PfBF &bf = player[0]->GetOthersBF();
-				if(ii->keyCtrl.enabled) {
+				ii->focused = focus;
+				if(focus) {
 					return dbox({
 						PfBattleFieldStatic(bf, &ii->boxBf),
 						vbox({
-							filler() | size(HEIGHT, EQUAL, 2 + ii->keyCtrl.y),
+							filler() | size(HEIGHT, EQUAL, 2 + ii->cur.y),
 							hbox({
-								filler() | size(WIDTH, EQUAL, 3 + ii->keyCtrl.x * 2),
+								filler() | size(WIDTH, EQUAL, 3 + ii->cur.x * 2),
 								text(">") | color(Color::White),
 								filler() | size(WIDTH, EQUAL, 2),
 								text("<") | color(Color::White)
@@ -353,6 +371,13 @@ namespace ftxui::pfext { // planeFight's extension
 			}),
 			[&, ii](Event e) {
 				const PfBF &bf = player[0]->GetOthersBF();
+				auto AdvanceRight = [&bf, &ii]() {
+					++ii->cur.x %= bf.w;
+				};
+				auto AdvanceDown = [&bf, &ii]() {
+					++ii->cur.y %= bf.h;
+				};
+
 				if(e.is_mouse()) {
 					if(!ii->boxBf.Contain(e.mouse().x, e.mouse().y)) return false;
 					int bx = (e.mouse().x - ii->boxBf.x_min) / 2, by = e.mouse().y - ii->boxBf.y_min;
@@ -364,84 +389,112 @@ namespace ftxui::pfext { // planeFight's extension
 							}
 						}
 					} else if(e.mouse().button == Mouse::None) {
-						ii->keyCtrl.enabled = true;
-						ii->keyCtrl.x = bx;
-						ii->keyCtrl.y = by;
+						ii->cur.x = bx;
+						ii->cur.y = by;
 					}
 					return true;
 				} else if(e.is_character()) {
-					if(ii->keyCtrl.enabled) {
-						if(e.character() == " ") {
-							ii->keyCtrl.enabled = false;
-						} else if(e.character() == "-") {
-							bf.ch[ii->keyCtrl.x + ii->keyCtrl.y * bf.w] = "─";
-						} else if(e.character() == "|") {
-							bf.ch[ii->keyCtrl.x + ii->keyCtrl.y * bf.w] = "│";
-						} else if(e.character() == "+") {
-							bf.ch[ii->keyCtrl.x + ii->keyCtrl.y * bf.w] = "┼";
-						}
-						return true;
+					auto &ch = bf.ch[ii->cur.x + ii->cur.y * bf.w];
+					switch(e.character()[0]) {
+					case '-':
+						ch = ch == ""   ?                 "─"  :
+						     ch == "─"  ? AdvanceRight(), "──" :
+							 ch == "──" ? AdvanceRight(), ""   :
+							 ch == "│"  ?                 "┤"  :
+							 ch == "┤"  ? AdvanceRight(), "┼─" :
+							 ch == "┼─" ?                 "├─" :
+							 ch == "├─" ? AdvanceRight(), "│"  :
+							 "──";
+						break;
+					case '|':
+						ch = ch == ""   ? AdvanceDown(), "│"  :
+						     ch == "│"  ? AdvanceDown(), ""   :
+						     ch == "──" ?                "┴─" :
+						     ch == "┴─" ? AdvanceDown(), "┼─" :
+						     ch == "┼─" ?                "┬─" :
+						     ch == "┬─" ? AdvanceDown(), "──" :
+							 "│";
+						break;
+					case '+':
+						ch = ch == "┼─" ? "" : "┼─";
+						break;
+					case 'T':
+						ch = ch == "┬─" ? "┤"  :
+					         ch == "┤"  ? "┴─" :
+					         ch == "┴─" ? "├─" :
+					         "┬─";
+						break;
+					case 't':
+						ch = ch == "├─" ? "┴─" :
+					         ch == "┴─" ? "┤"  :
+					         ch == "┤"  ? "┬─" :
+					         "├─";
+						break;
+					case 'h':
+						(ii->cur.x += bf.w - 1) %= bf.w;
+						break;
+					case 'j':
+						AdvanceDown();
+						break;
+					case 'k':
+						(ii->cur.y += bf.h - 1) %= bf.h;
+						break;
+					case 'l':
+						AdvanceRight();
+						break;
+					default:
+						return false;
 					}
+					return true;
 				} else {
 					if(e == e.ArrowUp) {
-						if(!ii->keyCtrl.enabled) {
-							ii->keyCtrl.enabled = 1;
-							return true;
-						}
-						if(ii->keyCtrl.y <= 0) {
-							ii->keyCtrl.y = 0;
-							ii->keyCtrl.enabled = false;
+						if(ii->cur.y <= 0) {
+							ii->cur.y = 0;
 							return false;
 						}
-						--ii->keyCtrl.y;
-						return true;
+						--ii->cur.y;
 					} else if(e == e.ArrowDown) {
-						if(!ii->keyCtrl.enabled) {
-							ii->keyCtrl.enabled = 1;
-							return true;
-						}
-						if(ii->keyCtrl.y >= bf.h - 1) {
-							ii->keyCtrl.y = bf.h - 1;
-							ii->keyCtrl.enabled = false;
+						if(ii->cur.y >= bf.h - 1) {
+							ii->cur.y = bf.h - 1;
 							return false;
 						}
-						++ii->keyCtrl.y;
-						return true;
+						++ii->cur.y;
 					} else if(e == e.ArrowLeft) {
-						if(!ii->keyCtrl.enabled) {
-							ii->keyCtrl.enabled = 1;
-							return true;
-						}
-						if(ii->keyCtrl.x <= 0) {
-							ii->keyCtrl.x = 0;
-							ii->keyCtrl.enabled = false;
+						if(ii->cur.x <= 0) {
+							ii->cur.x = 0;
 							return false;
 						}
-						--ii->keyCtrl.x;
-						return true;
+						--ii->cur.x;
 					} else if(e == e.ArrowRight) {
-						if(!ii->keyCtrl.enabled) {
-							ii->keyCtrl.enabled = 1;
-							return true;
-						}
-						if(ii->keyCtrl.x >= bf.w - 1) {
-							ii->keyCtrl.x = bf.w - 1;
-							ii->keyCtrl.enabled = false;
+						if(ii->cur.x >= bf.w - 1) {
+							ii->cur.x = bf.w - 1;
 							return false;
 						}
-						++ii->keyCtrl.x;
-						return true;
+						++ii->cur.x;
 					} else if(e == e.Return) {
-						if(ii->keyCtrl.enabled) {
-							if(player[0]->GetGame().isMyTurn() && bf.mk[ii->keyCtrl.x + ii->keyCtrl.y * bf.w] == 0) {
-								player[0]->Attack(ii->keyCtrl.x, ii->keyCtrl.y);
-							}
+						if(player[0]->GetGame().isMyTurn() && bf.mk[ii->cur.x + ii->cur.y * bf.w] == 0) {
+							player[0]->Attack(ii->cur.x, ii->cur.y);
 						}
 					} else if(e == e.Backspace || e == e.Delete) {
-						if(ii->keyCtrl.enabled) {
-							bf.ch[ii->keyCtrl.x + ii->keyCtrl.y * bf.w] = "";
-						}
-					}
+						bf.ch[ii->cur.x + ii->cur.y * bf.w] = "";
+					} else if(e.input() == "\x06") { // C-f
+						AdvanceRight();
+					} else if(e.input() == "\x02") { // C-b
+						(ii->cur.x += bf.w - 1) %= bf.w;
+					} else if(e.input() == "\x0e") { // C-n
+						AdvanceDown();
+					} else if(e.input() == "\x10") { // C-p
+						(ii->cur.y += bf.h - 1) %= bf.h;
+					} else if(e.input() == "\x01") { // C-a
+						ii->cur.x = 0;
+					} else if(e.input() == "\x05") { // C-e
+						ii->cur.x = bf.w - 1;
+					} else if(e.input() == "\x1b<") { // M-<
+						ii->cur.y = 0;
+					} else if(e.input() == "\x1b>") { // M->
+						ii->cur.y = bf.h - 1;
+					} else return false;
+					return true;
 				}
 				return false;
 			}

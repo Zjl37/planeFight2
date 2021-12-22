@@ -40,7 +40,7 @@ void PfBF::basic_placeplane(int x, int y, short d, bool cw) {
 	pl[y * w + x] |= 8;
 	++nPlaced;
 }
-bool PfBF::placeplane(int x, int y, short d, bool cw) {
+bool PfBF::TestPlace(int x, int y, short d, bool cw) {
 	if(!cw)
 		for(int i = 0; i < 10; i++)
 			if(x + plShape[d][i].dx >= w || x + plShape[d][i].dx < 0 || y + plShape[d][i].dy >= h || y + plShape[d][i].dy < 0) return false;
@@ -54,6 +54,10 @@ bool PfBF::placeplane(int x, int y, short d, bool cw) {
 		}
 		if(pl[ty * w + tx]) return false;
 	}
+	return true;
+}
+bool PfBF::placeplane(int x, int y, short d, bool cw) {
+	if(!TestPlace(x, y, d, cw)) return false;
 	basic_placeplane(x, y, d, cw);
 	return true;
 }
