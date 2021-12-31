@@ -6,21 +6,6 @@
 
 using namespace std;
 
-const int PF_NMARKER = 23;
-
-string marker[PF_NMARKER] = {
-	"━", "┃", "╋", "┣", "┫", "┳", "┻",
-	"─", "│", "┼", "├", "┤", "┬", "┴",
-	"═", "║", "╬", "╠", "╣", "╦", "╩",
-	"？", "！"
-};
-
-string mapEdge[256] = {
-	"─", "━", "│", "┃", "┌", "┏",
-	"═", "║", "╔", "╗", "╚", "╝",
-	"┐", "└", "┘", "┓", "┗", "┛"
-};
-
 mt19937 rng(time(nullptr)); // random number generator by MT19937 algorithm
 
 bool isFirst;

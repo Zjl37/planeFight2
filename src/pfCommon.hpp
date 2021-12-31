@@ -44,5 +44,6 @@ struct PfBF {
 	void basic_placeplane(int x, int y, short d, bool cw);
 	bool TestPlace(int x, int y, short d, bool cw);
 	bool placeplane(int x, int y, short d, bool cw);
+	void RemovePlane(int x, int y);
 	bool AutoArrange();
 };

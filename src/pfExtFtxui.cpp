@@ -180,8 +180,10 @@ namespace ftxui::pfext { // planeFight's extension
 						}
 						++ii->cur.x;
 					} else if(e == e.Return) {
-						if(bf.nPlaced < gamerules.n) {
-							int bx = ii->cur.x, by = ii->cur.y;
+						int bx = ii->cur.x, by = ii->cur.y;
+						if(bf.pl[ii->cur.x + ii->cur.y * bf.w] & 8) {
+							bf.RemovePlane(bx, by);
+						} else if(bf.nPlaced < gamerules.n) {
 							bf.placeplane(bx, by, selectedFacing, gamerules.cw);
 						}
 					} else if(e.input() == "\x06") { // C-f

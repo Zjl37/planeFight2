@@ -61,6 +61,17 @@ bool PfBF::placeplane(int x, int y, short d, bool cw) {
 	basic_placeplane(x, y, d, cw);
 	return true;
 }
+void PfBF::RemovePlane(int x, int y) {
+	if(pl[x + y * w] & 8) {
+		int d = pl[x + y * w] & 3;
+		for(auto &[dx, dy, _]: plShape[d]) {
+			auto tx = (x + dx + w) % w, ty = (y + dy + h) % h;
+			ch[ty * w + tx] = "";
+			pl[ty * w + tx] = 0;
+		}
+		--nPlaced;
+	}
+}
 bool PfBF::AutoArrange() {
 	nPlaced = 0;
 	int ttry = 0;

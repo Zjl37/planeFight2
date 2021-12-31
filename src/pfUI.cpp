@@ -11,45 +11,8 @@
 
 using namespace std;
 
-extern std::string mapEdge[256];
 extern std::mt19937 rng;
-
-// legacy UI 1
-/* 
-void DrawPlane(int x, int y, int d) {
-	for(const auto &ps: plShape[d]) {
-		int tx = x + ps.dx * 2, ty = y + ps.dy;
-		gotoXY(tx, ty);
-		cout << ps.ch;
-	}
-}
-void DrawPlane(int x, int y, int d, int bx, int by, int bw, int bh) {
-	for(const auto &ps: plShape[d])
-		if(x + ps.dx * 2 >= bx + bw * 2 || x + ps.dx * 2 < bx || y + ps.dy >= by + bh || y + ps.dy < by)
-			return;
-	for(const auto &ps: plShape[d]) {
-		int tx = x + ps.dx * 2, ty = y + ps.dy;
-		gotoXY(tx, ty);
-		cout << ps.ch;
-	}
-}
-void DrawPlaneCw(int x, int y, int d, int bx, int by, int bw, int bh) {
-	for(const auto &ps: plShape[d]) {
-		int tx = x + ps.dx * 2, ty = y + ps.dy;
-		if(tx < bx) tx += bw * 2;
-		if(tx >= bx + bw * 2) tx -= bw * 2;
-		if(ty < by) ty += bh * 2;
-		if(ty >= by + bh) ty -= bh;
-		gotoXY(tx, ty);
-		cout << ps.ch;
-	}
-}
-
- */
-///////////////////////////////////////////////////////////////////////////////
-
 extern bool isFirst;
-
 namespace pfui {
 
 	ftxui::ScreenInteractive scr = ftxui::ScreenInteractive::Fullscreen();
@@ -168,6 +131,23 @@ namespace pfui {
 		auto p2BtnReady = Button(TT("  I'm ready  ").str(), ctrl::P2Ready);
 		auto p2BtnClear = Button(TT(" CLEAR ").str(), ctrl::P2Clear);
 
+		auto p2Content = Container::Vertical({
+			p2BfRow,
+			Renderer([]() { return filler(); }),
+			Container::Horizontal({
+				pfext::Park(ctrl::p2SelectedFacing),
+				Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
+				Container::Vertical({
+					Renderer(p2BtnClear, [=]() {
+						return player[0]->GetGame().state & PfGame::me_ready ? emptyElement() : p2BtnClear->Render();
+					}),
+					Renderer(p2BtnReady, [=]() {
+						return bf1.nPlaced == curGame.n ? p2BtnReady->Render() : emptyElement();
+					})
+				})
+			})
+		});
+
 		static Box p3Box;
 
 		auto p5BfRow = Container::Horizontal({
@@ -267,30 +247,21 @@ namespace pfui {
 					}, &p2IsNetworkGame),
 					Renderer([]() { return filler(); })
 				}),
-				Container::Horizontal({
-					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
-					Container::Vertical({
-						Renderer(p2BfRow, [=]() {
-							return p2ShowBanner ? dbox({
-								p2BfRow->Render(),
-								p2Banner->Render()
-							}) : p2BfRow->Render();
-						}),
-						Renderer([]() { return filler(); }),
-						Container::Horizontal({
-							pfext::Park(ctrl::p2SelectedFacing),
-							Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
-							Container::Vertical({
-								Renderer(p2BtnClear, [=]() {
-									return player[0]->GetGame().state & PfGame::me_ready ? emptyElement() : p2BtnClear->Render();
-								}),
-								Renderer(p2BtnReady, [=]() {
-									return bf1.nPlaced == curGame.n ? p2BtnReady->Render() : emptyElement();
-								})
-							})
+				Renderer(p2Content, [=]() {
+					auto &&contentPadded = hbox({
+						filler() | size(WIDTH, EQUAL, 4),
+						p2Content->Render() | flex_grow,
+						filler() | size(WIDTH, EQUAL, 4),
+					});
+					return p2ShowBanner ? dbox({
+						contentPadded,
+						vbox({
+							filler(),
+							p2Banner->Render(),
+							filler(),
+							filler(),
 						})
-					}),
-					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
+					}) : contentPadded;
 				}),
 			}),
 
@@ -339,8 +310,7 @@ namespace pfui {
 				Renderer([]() { return pfTitle; }),
 				btnBackLn(),
 				Renderer([]() {
-					// ftxui doesn't support multi-paragraph text with word wrap currently.
-					// use a fixed width of 80 characters instead.
+					// TODO: use paragraph in the future
 					return vbox(
 						pfext::splitlines(TT(
 							"    For an introduction to the gamerules, please visit\n"
@@ -362,15 +332,15 @@ namespace pfui {
 					pfext::FlatButton(TT("<<Surrender").str(), ctrl::P5Surrender, bgcolor(Color::Yellow)),
 					Renderer([]() { return filler(); })
 				}),
-				Container::Horizontal({
-					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
-					Renderer(p5BfRow, [=]() {
-						return dbox({
-							p5BfRow->Render(),
-							p5AttackIndicator->Render()
-						}) | flex_grow;
-					}),
-					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
+				Renderer(p5BfRow, [=]() {
+					return dbox({
+						hbox({
+							filler() | size(WIDTH, EQUAL, 4),
+							p5BfRow->Render() | flex_grow,
+							filler() | size(WIDTH, EQUAL, 4),
+						}),
+						p5AttackIndicator->Render()
+					}) | flex_grow;
 				}),
 			}),
 
