@@ -19,8 +19,8 @@
  */
 
 #include "pfExtFtxui.hpp"
-#include "pfUiCtrl.hpp"
-#include "pfUI.hpp"
+#include "uiCtrl.hpp"
+#include "ui.hpp"
 #include "pfLocale.hpp"
 #include "ftxui/component/component.hpp"
 #include "ftxui/component/event.hpp"

@@ -18,10 +18,10 @@
  *
  */
 
-#include "pfUiCtrl.hpp"
-#include "pfUI.hpp"
-#include "pfGame.hpp"
-#include "pfAI.hpp"
+#include "uiCtrl.hpp"
+#include "ui.hpp"
+#include "game.hpp"
+#include "ai.hpp"
 
 extern std::mt19937 rng;
 

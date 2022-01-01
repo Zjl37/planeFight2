@@ -20,8 +20,8 @@
  */
 
 #pragma once
-#include "pfGame.hpp"
-#include "pfUI.hpp"
+#include "game.hpp"
+#include "ui.hpp"
 bool pfAIdecide(const pfGameInfo &g, const std::vector<short> &mk, short &tgx, short &tgy);
 
 class PfAI: public PfPlayer {

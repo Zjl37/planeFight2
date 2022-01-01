@@ -33,12 +33,12 @@ if(Boost_FOUND)
 	add_executable(
 		planeFight
 		src/main.cpp
-		src/pfAI.cpp
-		src/pfGame.cpp
-		src/pfRemotePlayer.cpp
-		src/pfUI.cpp
+		src/ai.cpp
+		src/game.cpp
+		src/remotePlayer.cpp
+		src/ui.cpp
 		src/pfLocale.cpp
-		src/pfUiCtrl.cpp
+		src/uiCtrl.cpp
 		src/pfExtFtxui.cpp
 	)
 	target_link_libraries(

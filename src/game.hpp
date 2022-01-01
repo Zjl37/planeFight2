@@ -20,8 +20,8 @@
  */
 
 #pragma once
-#include "pfCommon.hpp"
-#include "pfUI.hpp"
+#include "common.hpp"
+#include "ui.hpp"
 #include <memory>
 #include <random>
 #include <string>

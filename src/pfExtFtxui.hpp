@@ -18,7 +18,7 @@
  *
  */
 
-#include "pfGame.hpp"
+#include "game.hpp"
 #include "ftxui/component/component.hpp"
 
 namespace ftxui::pfext {

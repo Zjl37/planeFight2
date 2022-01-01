@@ -18,7 +18,7 @@
  *
  */
 
-#include "pfRemotePlayer.hpp"
+#include "remotePlayer.hpp"
 #include "boost/asio.hpp"
 #include "pfLocale.hpp"
 #include <string>

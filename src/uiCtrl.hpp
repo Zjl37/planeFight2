@@ -21,7 +21,7 @@
 #pragma once
 #include "ftxui/component/screen_interactive.hpp"
 #include "ftxui/util/ref.hpp"
-#include "pfCommon.hpp"
+#include "common.hpp"
 
 namespace pfui {
 

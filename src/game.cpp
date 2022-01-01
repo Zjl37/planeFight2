@@ -19,7 +19,7 @@
  *
  */
 
-#include "pfGame.hpp"
+#include "game.hpp"
 #include "pfLocale.hpp"
 
 extern std::mt19937 rng;

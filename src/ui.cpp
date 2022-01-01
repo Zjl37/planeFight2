@@ -19,9 +19,9 @@
  *
  */
 
-#include "pfUI.hpp"
-#include "pfGame.hpp"
-#include "pfUiCtrl.hpp"
+#include "ui.hpp"
+#include "game.hpp"
+#include "uiCtrl.hpp"
 #include "pfLocale.hpp"
 #include "pfExtFtxui.hpp"
 #include "ftxui/component/component.hpp"

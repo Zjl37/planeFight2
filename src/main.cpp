@@ -20,10 +20,10 @@
  */
 
 #include <ctime>
-#include "pfRemotePlayer.hpp"
+#include "remotePlayer.hpp"
 #include "pfLocale.hpp"
-#include "pfAI.hpp"
-#include "pfUiCtrl.hpp"
+#include "ai.hpp"
+#include "uiCtrl.hpp"
 
 using namespace std;
 

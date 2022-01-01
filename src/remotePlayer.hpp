@@ -21,7 +21,7 @@
 #pragma once
 #include "boost/asio/ip/tcp.hpp"
 #include "boost/asio/streambuf.hpp"
-#include "pfGame.hpp"
+#include "game.hpp"
 #include <thread>
 
 namespace asio = boost::asio;

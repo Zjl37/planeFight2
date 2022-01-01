@@ -19,7 +19,7 @@
  *
  */
 
-#include "pfAI.hpp"
+#include "ai.hpp"
 #include "pfLocale.hpp"
 #include <random>
 #include <future>
