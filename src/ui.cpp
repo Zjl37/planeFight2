@@ -1,5 +1,5 @@
 /**
- * Copyright © 2020-2021 Zjl37 <2693911885@qq.com>
+ * Copyright © 2020-2022 Zjl37 <2693911885@qq.com>
  * Copyright © 2021 qwqAutomaton
  *
  * This file is part of Zjl37/planeFight2.
@@ -64,7 +64,7 @@ namespace pfui {
 			pfext::FlatButton(TT(" Exit ").str(), scr.ExitLoopClosure(), bgcolor(Color::Red)),
 		});
 
-		static auto pfTitle = text(TT(" PlaneFight - Console Game")) | bgcolor(Color::Blue);
+		static auto pfTitle = text(TT(" PlaneFight TUI Game")) | bgcolor(Color::Blue);
 
 		/* clang-format off */
 
@@ -80,7 +80,7 @@ namespace pfui {
 				return vbox({
 					pfTitle | clear_under,
 					filler() | size(HEIGHT, EQUAL, 3),
-					text(TT("Welcome to planeFight Console Game!")) | center | size(HEIGHT, GREATER_THAN, 3)
+					text(TT("Welcome to planeFight TUI Game!")) | center | size(HEIGHT, GREATER_THAN, 3)
 						| bgcolor(Color::Purple) | clear_under,
 					filler() | size(HEIGHT, EQUAL, 1),
 				});
@@ -238,6 +238,11 @@ namespace pfui {
 		auto p9InputOpt = InputOption();
 		p9InputOpt.on_enter = ctrl::P9InputOK;
 
+		auto p9Content = Container::Vertical({
+			Renderer([]() { return text(TT("Server IP address:")); }),
+			Input(&ctrl::ipAddr, "", p9InputOpt)
+		});
+
 		ui = Container::Tab({
 			/* page 0 welcome */
 			Renderer(p0Fg, [=]() {
@@ -301,24 +306,44 @@ namespace pfui {
 				Container::Horizontal({
 					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
 					CatchEvent(
-						Renderer([]() {
+						Renderer([](bool) {
 							return vbox({
 								text(TT("Map size: ").str() + to_string(curGame.h) + "x" + to_string(curGame.w)),
 								hbox(
 									filler() | size(WIDTH, EQUAL, 1),
 									filler() | size(WIDTH, EQUAL, curGame.w*2) | size(HEIGHT, EQUAL, curGame.h) | reflect(p3Box)
-								) | borderDouble
+								) | borderDouble,
 							});
 						}),
 						[](Event e) {
-							if(e.is_mouse() && e.mouse().motion == Mouse::Pressed && e.mouse().button == Mouse::Left) {
-								if(e.mouse().x >= p3Box.x_min && e.mouse().y >= p3Box.y_min) {
-									int bx = (e.mouse().x - p3Box.x_min) / 2 + 1, by = e.mouse().y - p3Box.y_min + 1;
-									if(bx >= 5 && by >= 5) {
-										curGame.w = bx, curGame.h = by;
+							if(e.is_mouse()) {
+								if(e.mouse().motion == Mouse::Pressed && e.mouse().button == Mouse::Left)
+									if(e.mouse().x >= p3Box.x_min && e.mouse().y >= p3Box.y_min) {
+										int bx = (e.mouse().x - p3Box.x_min) / 2 + 1, by = e.mouse().y - p3Box.y_min + 1;
+										if(bx >= 5 && by >= 5) {
+											curGame.w = bx, curGame.h = by;
+										}
+										return true;
 									}
-									return true;
+							} else if(e.is_character()) {
+								switch(e.character()[0]) {
+								case '^':
+									if(curGame.h > 5) --curGame.h;
+									break;
+								case 'V':
+								case 'v':
+									++curGame.h;
+									break;
+								case '<':
+									if(curGame.w > 5) --curGame.w;
+									break;
+								case '>':
+									++curGame.w;
+									break;
+								default:
+									return false;
 								}
+								return true;
 							}
 							return false;
 						}
@@ -360,7 +385,12 @@ namespace pfui {
 							p5BfRow->Render() | flex_grow,
 							filler() | size(WIDTH, EQUAL, 4),
 						}),
-						p5AttackIndicator->Render()
+						vbox({
+							filler(),
+							p5AttackIndicator->Render(),
+							filler(),
+							filler(),
+						})
 					}) | flex_grow;
 				}),
 			}),
@@ -464,12 +494,12 @@ namespace pfui {
 					pfext::FlatButton(TT("<<Back").str(), ctrl::P9ClientStop, bgcolor(Color::Yellow)),
 					Renderer([]() { return filler(); })
 				}),
-				Container::Horizontal({
-					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
-					Container::Vertical({
-						Renderer([]() { return text(TT("Server IP address:")); }),
-						Input(&ctrl::ipAddr, "", p9InputOpt)
-					}),
+				Renderer(p9Content, [=]() {
+					return hbox({
+						filler() | size(WIDTH, EQUAL, 4),
+						p9Content->Render(),
+						filler() | size(WIDTH, EQUAL, 4), 
+					});
 				})
 			}),
 

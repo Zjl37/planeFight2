@@ -1,5 +1,5 @@
 /**
- * Copyright © 2021 Zjl37 <2693911885@qq.com>
+ * Copyright © 2021-2022 Zjl37 <2693911885@qq.com>
  *
  * This file is part of Zjl37/planeFight2.
  *
@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#define pfUA "planeFight console application 2.6 (Zjl37/planefight2)"
+#define pfUA "planeFight TUI game 2.6 (Zjl37/planeFight2)"
 
 // A structure to describe the shape of a "plane", storing a short string at
 // a relative position to "plane head".

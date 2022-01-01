@@ -30,8 +30,7 @@ using namespace std;
 mt19937 rng(time(nullptr)); // random number generator by MT19937 algorithm
 
 bool isFirst;
-int scrW, scrH;
-PfBF bg, bf1;
+PfBF bf1;
 
 string sIP;
 
@@ -42,13 +41,6 @@ enum {
 	pf_remote_game_client,
 	pf_remote_game_server,
 } curGameType;
-
-// TODO: determine screen size in FTXUI
-void GenerateBackground() {
-	bg.resize(scrW / 2, scrH);
-	for(int i = 0; i < (int)bg.w * bg.h / 25; i++)
-		bg.placeplane(rng() % bg.w, rng() % bg.h, rng() & 3, curGame.cw);
-}
 
 void StartLocalGame() {
 	player[0].reset(new PfLocalPlayer(pfui::playername));
@@ -141,12 +133,6 @@ void RefreshPage() {
 	pfui::scr.PostEvent(ftxui::Event::Custom);
 }
 
-void ResizeHandler(std::pair<int, int> size) {
-	std::tie(scrW, scrH) = size;
-	GenerateBackground();
-	RefreshPage();
-}
-
 // parse command line arguments
 void processArg(int argc, char **argv) {
 	if(argc < 2) // no arguments
@@ -186,7 +172,6 @@ int main(int argc, char **argv) {
 	// atexit(PfAtExit);
 	PfLocaleInit("");
 
-	// GenerateBackground();
 	NextPage(PfPage::welcome);
 
 	pfui::Build();

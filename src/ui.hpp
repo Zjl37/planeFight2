@@ -25,12 +25,6 @@
 #include <functional>
 #include <stack>
 
-extern int scrW, scrH;
-
-void DrawPlane(int x, int y, int d);
-void DrawPlane(int x, int y, int d, int bx, int by, int bw, int bh);
-void DrawPlaneCw(int x, int y, int d, int bx, int by, int bw, int bh);
-
 enum class PfPage {
 	welcome = 0,
 	main = 1,

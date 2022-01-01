@@ -124,5 +124,5 @@ class PfLocalPlayer: public PfPlayer {
 };
 
 extern pfGameInfo curGame;
-extern PfBF bg, bf1;
+extern PfBF bf1;
 extern std::shared_ptr<PfPlayer> player[2];

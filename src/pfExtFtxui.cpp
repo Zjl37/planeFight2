@@ -1,5 +1,5 @@
 /**
- * Copyright © 2021 Zjl37 <2693911885@qq.com>
+ * Copyright © 2021-2022 Zjl37 <2693911885@qq.com>
  *
  * This file is part of Zjl37/planeFight2.
  *
@@ -131,6 +131,14 @@ namespace ftxui::pfext { // planeFight's extension
 				return PfBattleFieldStatic(bf, &ii->boxBf);
 			}),
 			[&, ii](Event e) {
+				auto click = [&](int bx, int by) {
+					if(bf.pl[bx + by * bf.w] & 8) {
+						bf.RemovePlane(bx, by);
+					} else if(bf.nPlaced < gamerules.n) {
+						bf.placeplane(bx, by, selectedFacing, gamerules.cw);
+					}
+				};
+
 				if(e.is_mouse()) {
 					if(!ii->boxBf.Contain(e.mouse().x, e.mouse().y)) return false;
 					int bx = (e.mouse().x - ii->boxBf.x_min) / 2, by = e.mouse().y - ii->boxBf.y_min;
@@ -142,9 +150,7 @@ namespace ftxui::pfext { // planeFight's extension
 						ii->cur.x = bx;
 						ii->cur.y = by;
 					} else if(e.mouse().motion == Mouse::Pressed) {
-						if(e.mouse().button == Mouse::Left && bf.nPlaced < gamerules.n) {
-							bf.placeplane(bx, by, selectedFacing, gamerules.cw);
-						}
+						click(ii->cur.x, ii->cur.y);
 					}
 					return true;
 				} else if(e.is_character()) {
@@ -200,12 +206,7 @@ namespace ftxui::pfext { // planeFight's extension
 						}
 						++ii->cur.x;
 					} else if(e == e.Return) {
-						int bx = ii->cur.x, by = ii->cur.y;
-						if(bf.pl[ii->cur.x + ii->cur.y * bf.w] & 8) {
-							bf.RemovePlane(bx, by);
-						} else if(bf.nPlaced < gamerules.n) {
-							bf.placeplane(bx, by, selectedFacing, gamerules.cw);
-						}
+						click(ii->cur.x, ii->cur.y);
 					} else if(e.input() == "\x06") { // C-f
 						++ii->cur.x %= bf.w;
 					} else if(e.input() == "\x02") { // C-b
@@ -230,12 +231,23 @@ namespace ftxui::pfext { // planeFight's extension
 		);
 	}
 	Element BackgroundWithScatteredPlane() {
+		// Use in a renderer to respond to screen size change.
+		// This intends to be as large as the screen size.
+		static PfBF bg(0, 0);
+
 		if(pfui::scr.dimx() > 2*bg.w+1 || pfui::scr.dimy() > bg.h) {
-			bg.resize(pfui::scr.dimx()/2, pfui::scr.dimy());
+			int nx = bg.w, ny = bg.h;
+			if(bg.w == 0) {
+				nx = pfui::scr.dimx()/2, ny = pfui::scr.dimy();
+			} else {
+				if(pfui::scr.dimx() > 2*bg.w+1) nx *= 2;
+				if(pfui::scr.dimy() > bg.h) ny *= 2;
+			}
+			bg.resize(nx, ny);
 			for(int i = 0; i < (int)bg.w * bg.h / 25; i++)
 				bg.placeplane(rng() % bg.w, rng() % bg.h, rng() & 3, false);
 		}
-		return BasicPfBattleField(bg);
+		return BasicPfBattleField(bg) | frame;
 	}
 	Component Park(int &selectedFacing) {
 		return Container::Horizontal({
