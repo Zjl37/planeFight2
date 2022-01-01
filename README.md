@@ -24,6 +24,8 @@ It is tested to build on Linux with GCC and Windows with MinGW64 GCC.
 
 ## Contribution
 
+This program is **free software** licensed under GNU GPL version 3 or later.
+
 You're welcomed to
 
 - Translate the game and all documents.
