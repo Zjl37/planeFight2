@@ -1,5 +1,5 @@
 /**
- * Copyright © 2021 Zjl37 <2693911885@qq.com>
+ * Copyright © 2021-2022 Zjl37 <2693911885@qq.com>
  *
  * This file is part of Zjl37/planeFight2.
  *
@@ -26,12 +26,12 @@ namespace ftxui::pfext {
 	Component FlatButton(ConstStringRef label, std::function<void()> on_click);
 	Element BasicPfBattleField(const PfBF &bf, Box *box = nullptr);
 	Element PfBattleFieldStatic(const PfBF &bf, Box *box = nullptr);
-	Component PfBattleFieldPrepare(PfBF &bf, const pfGameInfo &gamerules, int &selectedFacing);
+	Component PfBattleFieldPrepare(PfBF &bf, const PfGameInfo &gamerules, int &selectedFacing);
 	Element BackgroundWithScatteredPlane();
 	Component Park(int &selectedFacing);
-	Component GameInfoInteractive(pfGameInfo &gamerules, PfBF &bf);
+	Component GameInfoInteractive(PfGameInfo &gamerules, PfBF &bf);
 	Elements splitlines(const std::string &t);
 	Component PfBattleFieldGame();
 	Component FirstPlayerToggle(bool &state);
-	Element GameInfoStatic(const pfGameInfo &gamerules);
+	Element GameInfoStatic(const PfGameInfo &gamerules);
 }

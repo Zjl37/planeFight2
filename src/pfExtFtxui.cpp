@@ -31,8 +31,6 @@
 
 extern std::mt19937 rng;
 
-extern bool isFirst;
-
 /* clang-format off */
 namespace ftxui::pfext { // planeFight's extension
 	Component FlatButton(ConstStringRef label, std::function<void()> on_click, Decorator dec) {
@@ -98,7 +96,7 @@ namespace ftxui::pfext { // planeFight's extension
 			})
 		});
 	}
-	Component PfBattleFieldPrepare(PfBF &bf, const pfGameInfo &gamerules, int &selectedFacing) {
+	Component PfBattleFieldPrepare(PfBF &bf, const PfGameInfo &gamerules, int &selectedFacing) {
 		bf.clear();
 		struct BfInteractInfo {
 			Box boxBf;
@@ -304,7 +302,7 @@ namespace ftxui::pfext { // planeFight's extension
 			}, &selectedFacing)
 		});
 	}
-	Component GameInfoInteractive(pfGameInfo &gamerules, PfBF &bf) {
+	Component GameInfoInteractive(PfGameInfo &gamerules, PfBF &bf) {
 		using namespace std::string_literals;
 
 		CheckboxOption chkboxToggleCwOpt;
@@ -344,18 +342,18 @@ namespace ftxui::pfext { // planeFight's extension
 					bgcolor(Color::Yellow)
 				)
 			}),
-			pfext::FirstPlayerToggle(isFirst),
+			pfext::FirstPlayerToggle(gamerules.isFirst),
 		});
 		return Renderer(component, [=]() { return component->Render() | border; });
 	}
-	Element GameInfoStatic(const pfGameInfo &gamerules) {
+	Element GameInfoStatic(const PfGameInfo &gamerules) {
 		return vbox({
 			text(TT("You are going to play with ").str() + (player[1] ? player[1]->GetName() : "???")),
 			text(TT("Number of planes: ").str() + std::to_string(gamerules.n)),
 			text(gamerules.cw ? TT("✓ Cross-border mode enabled").str() : ""),
 			text(gamerules.cd ? TT("✓ Completely-destroy enabled").str() : ""),
 			text(TT("Map size: ").str() + std::to_string(gamerules.h) + "x" + std::to_string(gamerules.w)),
-			text(isFirst ? TT("I goes first") : TT("The other player goes first")),
+			text(gamerules.isFirst ? TT("I goes first") : TT("The other player goes first")),
 		});
 	}
 	Elements splitlines(const std::string &t) {
@@ -553,6 +551,7 @@ namespace ftxui::pfext { // planeFight's extension
 		};
 		auto ti = std::make_shared<ToggleInfo>(state);
 		return Renderer(ti->toggle, [=]() {
+			ti->selected = ti->isFirst;
 			return ti->toggle->Render();
 		});
 		// the ToggleInfo will be destroyed when the Renderer is destroyed.

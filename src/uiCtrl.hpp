@@ -1,5 +1,5 @@
 /**
- * Copyright © 2021 Zjl37 <2693911885@qq.com>
+ * Copyright © 2021-2022 Zjl37 <2693911885@qq.com>
  *
  * This file is part of Zjl37/planeFight2.
  *
@@ -61,7 +61,7 @@ namespace pfui {
 		void P7StartServer();
 		void P8ServerStop();
 		void P9ClientStop();
-		void P9InputOK();
+		void P9StartClient();
 	}
 
 	void Build();

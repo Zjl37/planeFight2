@@ -1,5 +1,5 @@
 /**
- * Copyright © 2021 Zjl37 <2693911885@qq.com>
+ * Copyright © 2021-2022 Zjl37 <2693911885@qq.com>
  * Copyright © 2021 qwqAutomaton
  *
  * This file is part of Zjl37/planeFight2.
@@ -22,7 +22,7 @@
 #pragma once
 #include "game.hpp"
 #include "ui.hpp"
-bool pfAIdecide(const pfGameInfo &g, const std::vector<short> &mk, short &tgx, short &tgy);
+bool pfAIdecide(const PfGameInfo &g, const std::vector<short> &mk, short &tgx, short &tgy);
 
 class PfAI: public PfPlayer {
 	struct {

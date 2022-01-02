@@ -1,5 +1,5 @@
 /**
- * Copyright © 2021 Zjl37 <2693911885@qq.com>
+ * Copyright © 2021-2022 Zjl37 <2693911885@qq.com>
  *
  * This file is part of Zjl37/planeFight2.
  *
@@ -20,18 +20,12 @@
 
 #include "uiCtrl.hpp"
 #include "ui.hpp"
-#include "game.hpp"
+#include "remotePlayer.hpp"
+#include "pfLocale.hpp"
 #include "ai.hpp"
+#include <boost/system/system_error.hpp>
 
 extern std::mt19937 rng;
-
-void StartLocalGame();
-void p2Ready();
-void StartServer();
-void PfServerStop();
-void PfStopConnect();
-void StartClient();
-// TODO: move more implementation here
 
 namespace pfui {
 
@@ -43,12 +37,26 @@ namespace pfui {
 		std::string errMsg;
 		int p2SelectedFacing;
 
+		enum {
+			pf_local_game,
+			pf_remote_game_client,
+			pf_remote_game_server,
+		} curGameType;
+
 		void P0InputOK() {
 			if(playername.empty()) return;
 			NextPage(PfPage::main);
 		}
 		void P1PlayLocal() {
-			StartLocalGame();
+			player[0].reset(new PfLocalPlayer(pfui::playername));
+			player[1].reset(new PfAI());
+			player[0]->other = player[1];
+			player[1]->other = player[0];
+			curGameType = pf_local_game;
+			pfui::p2IsNetworkGame = false;
+			curGame.isFirst = rng() & 1;
+			bf1.clear();
+			NextPage(PfPage::prepare);
 		}
 		void P2Clear() {
 			if(player[0]->GetGame().state & PfGame::me_ready) return;
@@ -56,13 +64,34 @@ namespace pfui {
 		}
 		void P2Ready() {
 			if(bf1.nPlaced != curGame.n) return;
-			p2Ready();
+			if(curGameType == pf_local_game) {
+				if(!curGame.n) return;
+				PfBF bf2(curGame.w, curGame.h);
+				bool tmp = bf2.AutoArrange();
+				if(tmp == false) {
+					// RefreshPage();
+					return;
+				}
+				unsigned gameId = rng();
+				player[0]->NewGame(curGame, gameId);
+				player[1]->NewGame(InvertIsFirst(curGame), gameId);
+				static_cast<PfAI*>(&*player[1])->ArrangeReady(bf2);
+				static_cast<PfLocalPlayer *>(&*player[0])->ArrangeReady(bf1);
+			} else {
+				if(!(player[0]->GetGame().state & PfGame::me_ready)) {
+					static_cast<PfLocalPlayer *>(&*player[0])->ArrangeReady(bf1);
+				}
+			}
 		}
 		void P5Surrender() {
 			player[0]->Surrender();
 		}
 		void P7StartServer() {
-			StartServer();
+			player[0].reset(new PfLocalPlayer(pfui::playername));
+			curGameType = pf_remote_game_server;
+			pfui::p2IsNetworkGame = true;
+			NextPage(PfPage::server_init);
+			PfServerInit();
 		}
 		void P8ServerStop() {
 			player[1].reset();
@@ -74,8 +103,26 @@ namespace pfui {
 			PrevPage();
 			PfStopConnect();
 		}
-		void P9InputOK() {
-			StartClient();
+		void P9StartClient() {
+			static bool connecting = 0;
+			if(connecting) {
+				return;
+			} else {
+				connecting = 1;
+			}
+			try {
+				player[0].reset(new PfLocalPlayer(pfui::playername));
+				player[1] = PfCreateRemoteServer(pfui::ctrl::ipAddr, *player[0]);
+				player[0]->other = player[1];
+				player[1]->other = player[0];
+				curGameType = pf_remote_game_client;
+				pfui::p2IsNetworkGame = true;
+			} catch(const std::string &t) {
+				showErrorMsg(t);
+			} catch(const boost::system::system_error &e) {
+				showErrorMsg(TT("Error: Cannot connect to server. Please check if the IP is correct and if the server is running."));
+			}
+			connecting = 0;
 		}
 	}
 }

@@ -1,5 +1,5 @@
 /**
- * Copyright © 2020-2021 Zjl37 <2693911885@qq.com>
+ * Copyright © 2020-2022 Zjl37 <2693911885@qq.com>
  * Copyright © 2021 qwqAutomaton
  *
  * This file is part of Zjl37/planeFight2.
@@ -30,7 +30,7 @@ extern std::mt19937 rng;
 PfBF vbf;
 
 
-bool pfAIinit(const pfGameInfo &g, const std::vector<PfBF::AttackRecord> &mk) {
+bool pfAIinit(const PfGameInfo &g, const std::vector<PfBF::AttackRecord> &mk) {
 	vbf.clear();
 	int k = 0;
 	for(short i = 0; i < g.h; i++)
@@ -62,7 +62,7 @@ bool pfAIinit(const pfGameInfo &g, const std::vector<PfBF::AttackRecord> &mk) {
 	return true;
 }
 
-bool pfAIcheck(const pfGameInfo &g, const std::vector<PfBF::AttackRecord> &mk) {
+bool pfAIcheck(const PfGameInfo &g, const std::vector<PfBF::AttackRecord> &mk) {
 	for(short j = 0; j < g.h; j++)
 		for(short i = 0; i < g.w; i++) {
 			if(!g.cd && mk[i + j * g.w] == PfBF::empty && vbf.pl[i + j * g.w])
@@ -74,7 +74,7 @@ bool pfAIcheck(const pfGameInfo &g, const std::vector<PfBF::AttackRecord> &mk) {
 }
 
 #define PFAI_MAXTRY 1000000
-bool pfAIdecide(const pfGameInfo &g, const std::vector<PfBF::AttackRecord> &mk, short &tgx, short &tgy) {
+bool pfAIdecide(const PfGameInfo &g, const std::vector<PfBF::AttackRecord> &mk, short &tgx, short &tgy) {
 	vbf.resize(g.w, g.h);
 	int ttt = 0;
 	do {
@@ -142,7 +142,7 @@ void PfAI::AttackResulted(PfAtkRes res) {
 
 void PfAI::OnGameStart() {
 	PfPlayer::OnGameStart();
-	if(game.isFirst) {
+	if(game.gamerules.isFirst) {
 		// asyncrhonously make a decision, so that the main thread can handle UI.
 		static std::future<void> fut;
 		if(fut.valid()) fut.wait();

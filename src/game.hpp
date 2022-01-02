@@ -1,5 +1,5 @@
 /**
- * Copyright © 2020-2021 Zjl37 <2693911885@qq.com>
+ * Copyright © 2020-2022 Zjl37 <2693911885@qq.com>
  * Copyright © 2021 qwqAutomaton
  *
  * This file is part of Zjl37/planeFight2.
@@ -26,26 +26,18 @@
 #include <random>
 #include <string>
 
-// High contrast color
-const short hcc[17] = { 7, 15, 15, 15, 15, 15, 15, 0, 15, 15, 0, 0, 15, 0, 0, 0, 16 };
-
-struct pfGameInfo_legacy {
-	short w, h, n, d;
-	// w,h: map size; n: number of planes; d: difficulty
-	bool cw, cd; // cw: enable cross-border mode, cd: enable completely-destroy
-};
-
-struct pfGameInfo {
+struct PfGameInfo {
 	// w,h: map size; n: number of planes
 	uint16_t w, h, n;
 	// cw: enable cross-border mode; cd: enable completely-destroy
-	bool cw, cd;
+	bool cw, cd, isFirst;
 };
+
+PfGameInfo InvertIsFirst(const PfGameInfo &gi);
 
 struct PfGame {
 	unsigned id;
-	pfGameInfo gamerules;
-	bool isFirst;
+	PfGameInfo gamerules;
 	int turn;
 	int nDestroyedOthers, nDestroyedMine;
 
@@ -59,7 +51,7 @@ struct PfGame {
 	unsigned state;
 
 	PfGame();
-	PfGame(pfGameInfo, unsigned id, bool);
+	PfGame(PfGameInfo, unsigned id);
 
 	public:
 	bool isMyTurn() const;
@@ -79,7 +71,7 @@ class PfPlayer {
 	std::weak_ptr<PfPlayer> other;
 
 	// Actions
-	virtual void NewGame(const pfGameInfo &, unsigned id, bool isFirst);
+	virtual void NewGame(const PfGameInfo &, unsigned id);
 	void ArrangeReady();
 	void Giveup();
 	virtual void Attack(short, short);
@@ -107,7 +99,7 @@ class PfLocalPlayer: public PfPlayer {
 		int x, y;
 	} lastAtk;
 
-	void NewGame(const pfGameInfo &, unsigned id, bool isFirst);
+	void NewGame(const PfGameInfo &, unsigned id);
 	void OnGameStart();
 	void OnGameover();
 	void OnOtherGiveup();
@@ -123,6 +115,6 @@ class PfLocalPlayer: public PfPlayer {
 	void ArrangeReady(const PfBF &ar);
 };
 
-extern pfGameInfo curGame;
+extern PfGameInfo curGame;
 extern PfBF bf1;
 extern std::shared_ptr<PfPlayer> player[2];

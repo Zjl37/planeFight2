@@ -1,5 +1,5 @@
 /**
- * Copyright © 2021 Zjl37 <2693911885@qq.com>
+ * Copyright © 2021-2022 Zjl37 <2693911885@qq.com>
  * Copyright © 2021 qwqAutomaton
  *
  * This file is part of Zjl37/planeFight2.
@@ -24,7 +24,7 @@
 
 extern std::mt19937 rng;
 
-pfGameInfo curGame{ 10, 10, 3, false, false };
+PfGameInfo curGame{ 10, 10, 3, false, false, false };
 std::shared_ptr<PfPlayer> player[2];
 
 PfRePosCh plShape[4][10] = {
@@ -108,11 +108,15 @@ bool PfBF::AutoArrange() {
 	return true;
 }
 
+PfGameInfo InvertIsFirst(const PfGameInfo &gi) {
+	return {gi.w, gi.h, gi.n, gi.cw, gi.cd, !gi.isFirst};
+}
+
 PfGame::PfGame(): state(0) {}
-PfGame::PfGame(pfGameInfo gi, unsigned id, bool ff): id(id), gamerules(gi), isFirst(ff), state(0) {}
+PfGame::PfGame(PfGameInfo gi, unsigned id): id(id), gamerules(gi), state(0) {}
 
 bool PfGame::isMyTurn() const {
-	return (turn & 1) ^ 1 ^ isFirst;
+	return (turn & 1) ^ 1 ^ gamerules.isFirst;
 }
 
 bool PfGame::Over() const {
@@ -123,8 +127,8 @@ const PfGame &PfPlayer::GetGame() const {
 	return game;
 }
 
-void PfPlayer::NewGame(const pfGameInfo &gi, unsigned id, bool isFirst) {
-	game = {gi, id, isFirst};
+void PfPlayer::NewGame(const PfGameInfo &gi, unsigned id) {
+	game = {gi, id};
 	game.nDestroyedOthers = game.nDestroyedMine = 0;
 	othersBf.resize(gi.w, gi.h);
 }
@@ -246,8 +250,8 @@ PfLocalPlayer::PfLocalPlayer(const std::string &t): PfPlayer() {
 	name = t;
 }
 
-void PfLocalPlayer::NewGame(const pfGameInfo &gi, unsigned id, bool isFirst) {
-	PfPlayer::NewGame(gi, id, isFirst);
+void PfLocalPlayer::NewGame(const PfGameInfo &gi, unsigned id) {
+	PfPlayer::NewGame(gi, id);
 	SetPage(PfPage::prepare);
 }
 
@@ -266,10 +270,7 @@ void PfLocalPlayer::OnGameover() {
 }
 
 void PfLocalPlayer::Attack(short x, short y) {
-	{
-		// std::lock_guard<std::mutex> _lg(mtxCout);
-		BlinkCoord(x, y, 1);
-	}
+	BlinkCoord(x, y, 1);
 	lastAtk = {x, y};
 	PfPlayer::Attack(x, y);
 }
@@ -283,10 +284,7 @@ void PfLocalPlayer::AttackResulted(PfAtkRes res) {
 	} else if(res == PfAtkRes::empty) {
 		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = PfBF::empty;
 	}
-	{
-		// std::lock_guard<std::mutex> _lg(mtxCout);
-		UiShowAtkRes(res);
-	}
+	UiShowAtkRes(res);
 	RefreshPage();
 	if(res == PfAtkRes::destroy && game.nDestroyedOthers == curGame.n) {
 		if(auto o = other.lock()) {
@@ -296,22 +294,16 @@ void PfLocalPlayer::AttackResulted(PfAtkRes res) {
 }
 
 void PfLocalPlayer::BeingAttacked(short x, short y) {
-	{
-		// std::lock_guard<std::mutex> _lg(mtxCout);
-		BlinkCoord(x, y, 0);
-	}
+	BlinkCoord(x, y, 0);
 	PfPlayer::BeingAttacked(x, y);
-	{
-		// std::lock_guard<std::mutex> _lg(mtxCout);
-		auto dummy = myBf.mk[x + y * myBf.w];
-		PfAtkRes res = dummy == PfBF::destroy ? PfAtkRes::destroy :
-		               dummy == PfBF::hit     ? PfAtkRes::hit :
-                                          PfAtkRes::empty;
-		UiShowAtkRes(res);
-		if(game.nDestroyedMine == game.gamerules.n) {
-			if(auto o = other.lock()) {
-				o->MapRequested();
-			}
+	auto dummy = myBf.mk[x + y * myBf.w];
+	PfAtkRes res = dummy == PfBF::destroy ? PfAtkRes::destroy :
+				   dummy == PfBF::hit     ? PfAtkRes::hit :
+                                            PfAtkRes::empty;
+	UiShowAtkRes(res);
+	if(game.nDestroyedMine == game.gamerules.n) {
+		if(auto o = other.lock()) {
+			o->MapRequested();
 		}
 	}
 	RefreshPage();

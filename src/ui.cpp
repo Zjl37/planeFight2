@@ -33,7 +33,6 @@
 using namespace std;
 
 extern std::mt19937 rng;
-extern bool isFirst;
 namespace pfui {
 
 	ftxui::ScreenInteractive scr = ftxui::ScreenInteractive::Fullscreen();
@@ -116,7 +115,7 @@ namespace pfui {
 				Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
 				Container::Vertical({
 					pfext::FlatButton(TT("> Start a server").str(), []() {
-						isFirst = rng() & 1;
+						curGame.isFirst = rng() & 1;
 						NextPage(PfPage::gamerule_setting_server);
 					}),
 					pfext::FlatButton(TT("> Join a game").str(), []() { NextPage(PfPage::client_init); }),
@@ -236,7 +235,7 @@ namespace pfui {
 		#endif
 
 		auto p9InputOpt = InputOption();
-		p9InputOpt.on_enter = ctrl::P9InputOK;
+		p9InputOpt.on_enter = ctrl::P9StartClient;
 
 		auto p9Content = Container::Vertical({
 			Renderer([]() { return text(TT("Server IP address:")); }),
@@ -456,7 +455,7 @@ namespace pfui {
 							)
 						}),
 						Renderer([]() { return text(""); }),
-						pfext::FirstPlayerToggle(isFirst),
+						pfext::FirstPlayerToggle(curGame.isFirst),
 						Renderer([]() { return text(""); }),
 						Container::Horizontal({
 							Button(TT("  START  ").str(), ctrl::P7StartServer),
@@ -497,7 +496,7 @@ namespace pfui {
 				Renderer(p9Content, [=]() {
 					return hbox({
 						filler() | size(WIDTH, EQUAL, 4),
-						p9Content->Render(),
+						p9Content->Render() | xflex_grow,
 						filler() | size(WIDTH, EQUAL, 4), 
 					});
 				})

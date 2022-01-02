@@ -1,5 +1,5 @@
 /**
- * Copyright © 2021 Zjl37 <2693911885@qq.com>
+ * Copyright © 2021-2022 Zjl37 <2693911885@qq.com>
  *
  * This file is part of Zjl37/planeFight2.
  *
@@ -94,8 +94,7 @@ std::shared_ptr<PfRemotePlayer> PfCreateRemoteClient(tcp::socket &&sockClient, c
 		}
 	} while(!hdLn.empty());
 
-	extern bool isFirst;
-	p->NewGame(curGame, rng(), !isFirst);
+	p->NewGame(InvertIsFirst(curGame), rng());
 	p->tSock = std::thread(&PfRemotePlayer::SockHandler, &*p);
 	return p;
 }
@@ -289,11 +288,12 @@ void PfRemotePlayer::SockHandler() {
 					        uint16_t(game.gamerules.w),
 					        uint16_t(game.gamerules.h),
 					        uint16_t(game.gamerules.n),
-					        uint8_t(game.gamerules.cw | game.gamerules.cd << 1 | !game.isFirst << 2),
+					        uint8_t(game.gamerules.cw | game.gamerules.cd << 1 | !game.gamerules.isFirst << 2),
 					        uint32_t(game.id));
 					bf1.resize(game.gamerules.w, game.gamerules.h);
 					if(auto o = other.lock()) {
-						o->NewGame(game.gamerules, game.id, !game.isFirst);
+						o->NewGame(InvertIsFirst(game.gamerules), game.id);
+						
 						const auto &oName = o->GetName();
 						ToBytes(os, uint32_t(oName.length()), PfNwPacket::name);
 						os.write(oName.c_str(), oName.length());
@@ -323,17 +323,16 @@ void PfRemotePlayer::SockHandler() {
 					is.ignore(len - 11);
 				}
 				if(as == pos_server) {
-					curGame = {w, h, n, !!(st & 1), !!(st & 2)};
-					this->NewGame(curGame, id, st & 4);
+					curGame = {w, h, n, !!(st & 1), !!(st & 2), !!(st & 4)};
+					this->NewGame(curGame, id);
 					bf1.resize(game.gamerules.w, game.gamerules.h);
+					curGame.isFirst = !(st & 4);
 					if(auto o = other.lock()) {
-						o->NewGame(curGame, id, !(st & 4));
+						o->NewGame(curGame, id);
 						const auto &oName = o->GetName();
 						ToBytes(os, uint32_t(oName.length()), PfNwPacket::name);
 						os.write(oName.c_str(), oName.length());
 					}
-					extern bool isFirst;
-					isFirst = !(st & 4);
 				} else {
 					std::clog << "[!] in " << __PRETTY_FUNCTION__ << ":\nUnexpected Game-info packet received from client.\n";
 				}
