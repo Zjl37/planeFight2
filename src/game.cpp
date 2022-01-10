@@ -25,7 +25,8 @@
 extern std::mt19937 rng;
 
 PfGameInfo curGame{ 10, 10, 3, false, false, false };
-std::shared_ptr<PfPlayer> player[2];
+std::shared_ptr<PfLocalPlayer> player0;
+std::shared_ptr<PfPlayer> player1;
 
 PfRePosCh plShape[4][10] = {
 	{{0, 0, "┃ "}, {-2, 1, "━━"}, {-1, 1, "━━"}, {0, 1, "╋━"}, {1, 1, "━━"}, {2, 1, "━ "}, {0, 2, "┃ "}, {-1, 3, "━━"}, {0, 3, "┻━"}, {1, 3, "━ "}},

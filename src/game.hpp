@@ -99,22 +99,23 @@ class PfLocalPlayer: public PfPlayer {
 		int x, y;
 	} lastAtk;
 
-	void NewGame(const PfGameInfo &, unsigned id);
 	void OnGameStart();
 	void OnGameover();
 	void OnOtherGiveup();
 	void OnOtherSurrender();
-	void Attack(short, short);
 	void AttackResulted(PfAtkRes);
 	void BeingAttacked(short x, short y);
-	void Surrender();
 	void SetOthersBF(const std::vector<short> &pl);
 
 	public:
 	PfLocalPlayer(const std::string &name);
+	void NewGame(const PfGameInfo &, unsigned id);
+	void Attack(short, short);
 	void ArrangeReady(const PfBF &ar);
+	void Surrender();
 };
 
 extern PfGameInfo curGame;
 extern PfBF bf1;
-extern std::shared_ptr<PfPlayer> player[2];
+extern std::shared_ptr<PfLocalPlayer> player0;
+extern std::shared_ptr<PfPlayer> player1;

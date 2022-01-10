@@ -312,7 +312,7 @@ namespace ftxui::pfext { // planeFight's extension
 
 		auto component = Container::Vertical({
 			Renderer([&]() {
-				return text(TT("You are going to play with ").str() + (player[1] ? player[1]->GetName() : "???"));
+				return text(TT("You are going to play with ").str() + (player1 ? player1->GetName() : "???"));
 			}),
 			
 			Container::Horizontal({
@@ -348,7 +348,7 @@ namespace ftxui::pfext { // planeFight's extension
 	}
 	Element GameInfoStatic(const PfGameInfo &gamerules) {
 		return vbox({
-			text(TT("You are going to play with ").str() + (player[1] ? player[1]->GetName() : "???")),
+			text(TT("You are going to play with ").str() + (player1 ? player1->GetName() : "???")),
 			text(TT("Number of planes: ").str() + std::to_string(gamerules.n)),
 			text(gamerules.cw ? TT("✓ Cross-border mode enabled").str() : ""),
 			text(gamerules.cd ? TT("✓ Completely-destroy enabled").str() : ""),
@@ -383,7 +383,7 @@ namespace ftxui::pfext { // planeFight's extension
 		auto ii = std::make_shared<BfInteractInfo>();
 		return CatchEvent(
 			Renderer([&, ii](bool focus) {
-				const PfBF &bf = player[0]->GetOthersBF();
+				const PfBF &bf = player0->GetOthersBF();
 				ii->focused = focus;
 				if(focus) {
 					return dbox({
@@ -402,7 +402,7 @@ namespace ftxui::pfext { // planeFight's extension
 				return PfBattleFieldStatic(bf, &ii->boxBf);
 			}),
 			[&, ii](Event e) {
-				const PfBF &bf = player[0]->GetOthersBF();
+				const PfBF &bf = player0->GetOthersBF();
 				auto AdvanceRight = [&bf, &ii]() {
 					++ii->cur.x %= bf.w;
 				};
@@ -415,8 +415,8 @@ namespace ftxui::pfext { // planeFight's extension
 					int bx = (e.mouse().x - ii->boxBf.x_min) / 2, by = e.mouse().y - ii->boxBf.y_min;
 					if(e.mouse().button == Mouse::Left) {
 						if(e.mouse().motion == Mouse::Pressed) {
-							if(player[0]->GetGame().isMyTurn() && bf.mk[bx + by * bf.w] == 0) {
-								player[0]->Attack(bx, by);
+							if(player0->GetGame().isMyTurn() && bf.mk[bx + by * bf.w] == 0) {
+								player0->Attack(bx, by);
 								// std::clog << "[i] in " << __PRETTY_FUNCTION__ << " event handler returns at " << std::chrono::system_clock::now().time_since_epoch().count() << std::endl;
 							}
 						}
@@ -504,8 +504,8 @@ namespace ftxui::pfext { // planeFight's extension
 						}
 						++ii->cur.x;
 					} else if(e == e.Return) {
-						if(player[0]->GetGame().isMyTurn() && bf.mk[ii->cur.x + ii->cur.y * bf.w] == 0) {
-							player[0]->Attack(ii->cur.x, ii->cur.y);
+						if(player0->GetGame().isMyTurn() && bf.mk[ii->cur.x + ii->cur.y * bf.w] == 0) {
+							player0->Attack(ii->cur.x, ii->cur.y);
 						}
 					} else if(e == e.Backspace || e == e.Delete) {
 						bf.ch[ii->cur.x + ii->cur.y * bf.w] = "";

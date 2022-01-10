@@ -48,10 +48,10 @@ namespace pfui {
 			NextPage(PfPage::main);
 		}
 		void P1PlayLocal() {
-			player[0].reset(new PfLocalPlayer(pfui::playername));
-			player[1].reset(new PfAI());
-			player[0]->other = player[1];
-			player[1]->other = player[0];
+			player0.reset(new PfLocalPlayer(pfui::playername));
+			player1.reset(new PfAI());
+			player0->other = player1;
+			player1->other = player0;
 			curGameType = pf_local_game;
 			pfui::p2IsNetworkGame = false;
 			curGame.isFirst = rng() & 1;
@@ -59,7 +59,7 @@ namespace pfui {
 			NextPage(PfPage::prepare);
 		}
 		void P2Clear() {
-			if(player[0]->GetGame().state & PfGame::me_ready) return;
+			if(player0->GetGame().state & PfGame::me_ready) return;
 			bf1.clear();
 		}
 		void P2Ready() {
@@ -73,33 +73,33 @@ namespace pfui {
 					return;
 				}
 				unsigned gameId = rng();
-				player[0]->NewGame(curGame, gameId);
-				player[1]->NewGame(InvertIsFirst(curGame), gameId);
-				static_cast<PfAI*>(&*player[1])->ArrangeReady(bf2);
-				static_cast<PfLocalPlayer *>(&*player[0])->ArrangeReady(bf1);
+				player0->NewGame(curGame, gameId);
+				player1->NewGame(InvertIsFirst(curGame), gameId);
+				static_cast<PfAI*>(&*player1)->ArrangeReady(bf2);
+				player0->ArrangeReady(bf1);
 			} else {
-				if(!(player[0]->GetGame().state & PfGame::me_ready)) {
-					static_cast<PfLocalPlayer *>(&*player[0])->ArrangeReady(bf1);
+				if(!(player0->GetGame().state & PfGame::me_ready)) {
+					player0->ArrangeReady(bf1);
 				}
 			}
 		}
 		void P5Surrender() {
-			player[0]->Surrender();
+			player0->Surrender();
 		}
 		void P7StartServer() {
-			player[0].reset(new PfLocalPlayer(pfui::playername));
+			player0.reset(new PfLocalPlayer(pfui::playername));
 			curGameType = pf_remote_game_server;
 			pfui::p2IsNetworkGame = true;
 			NextPage(PfPage::server_init);
 			PfServerInit();
 		}
 		void P8ServerStop() {
-			player[1].reset();
+			player1.reset();
 			PrevPage();
 			PfServerStop();
 		}
 		void P9ClientStop() {
-			player[1].reset();
+			player1.reset();
 			PrevPage();
 			PfStopConnect();
 		}
@@ -111,10 +111,10 @@ namespace pfui {
 				connecting = 1;
 			}
 			try {
-				player[0].reset(new PfLocalPlayer(pfui::playername));
-				player[1] = PfCreateRemoteServer(pfui::ctrl::ipAddr, *player[0]);
-				player[0]->other = player[1];
-				player[1]->other = player[0];
+				player0.reset(new PfLocalPlayer(pfui::playername));
+				player1 = PfCreateRemoteServer(pfui::ctrl::ipAddr);
+				player0->other = player1;
+				player1->other = player0;
 				curGameType = pf_remote_game_client;
 				pfui::p2IsNetworkGame = true;
 			} catch(const std::string &t) {

@@ -80,5 +80,7 @@ int main(int argc, char **argv) {
 
 	pfui::Build();
 	pfui::Loop();
+
+	PfServerStop(); // join tServer
 	return 0;
 }

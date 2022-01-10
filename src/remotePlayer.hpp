@@ -59,8 +59,8 @@ class PfRemotePlayer: public PfPlayer {
 	public:
 	PfRemotePlayer();
 	~PfRemotePlayer();
-	friend std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP, const PfPlayer &opponent);
-	friend std::shared_ptr<PfRemotePlayer> PfCreateRemoteClient(asio::ip::tcp::socket &&, const PfPlayer &opponent);
+	friend std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP);
+	friend std::shared_ptr<PfRemotePlayer> PfCreateRemoteClient(asio::ip::tcp::socket &&);
 };
 
-std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP, const PfPlayer &opponent);
+std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP);

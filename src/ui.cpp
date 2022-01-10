@@ -131,7 +131,7 @@ namespace pfui {
 		auto p2BfRow = Container::Horizontal({
 			Container::Vertical({
 				Renderer([]() {
-					return text(player[0] ? player[0]->GetName() : "???");
+					return text(player0 ? player0->GetName() : "???");
 				}),
 				pfext::PfBattleFieldPrepare(bf1, curGame, ctrl::p2SelectedFacing),
 			}),
@@ -159,7 +159,7 @@ namespace pfui {
 				Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
 				Container::Vertical({
 					Renderer(p2BtnClear, [=]() {
-						return player[0]->GetGame().state & PfGame::me_ready ? emptyElement() : p2BtnClear->Render();
+						return player0->GetGame().state & PfGame::me_ready ? emptyElement() : p2BtnClear->Render();
 					}),
 					Renderer(p2BtnReady, [=]() {
 						return bf1.nPlaced == curGame.n ? p2BtnReady->Render() : emptyElement();
@@ -173,14 +173,14 @@ namespace pfui {
 		auto p5BfRow = Container::Horizontal({
 			Renderer([]() {
 				return vbox({
-					text(player[0] ? player[0]->GetName() : "???"),
-					pfext::PfBattleFieldStatic(player[0]->GetMyBF())
+					text(player0 ? player0->GetName() : "???"),
+					pfext::PfBattleFieldStatic(player0->GetMyBF())
 				});
 			}),
 			Renderer([]() { return filler(); }),
 			Container::Vertical({
 				Renderer([]() {
-					return text(player[1] ? player[1]->GetName() : "???");
+					return text(player1 ? player1->GetName() : "???");
 				}),
 				pfext::PfBattleFieldGame(),
 			})
@@ -214,15 +214,15 @@ namespace pfui {
 			Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
 			Renderer([]() {
 				return vbox({
-					text(player[0] ? player[0]->GetName() : "???"),
-					pfext::PfBattleFieldStatic(player[0]->GetMyBF())
+					text(player0 ? player0->GetName() : "???"),
+					pfext::PfBattleFieldStatic(player0->GetMyBF())
 				});
 			}),
 			Renderer([]() { return filler(); }),
 			Renderer([]() {
 				return vbox({
-					text(player[1] ? player[1]->GetName() : "???"),
-					pfext::PfBattleFieldStatic(player[0]->GetOthersBF())
+					text(player1 ? player1->GetName() : "???"),
+					pfext::PfBattleFieldStatic(player0->GetOthersBF())
 				});
 			}),
 			Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
@@ -266,7 +266,7 @@ namespace pfui {
 					Container::Tab({
 						pfext::FlatButton(TT("<<Back").str(), PrevPage, bgcolor(Color::Yellow)),
 						pfext::FlatButton(TT("<<Give up").str(), []() {
-							player[0]->Giveup();
+							player0->Giveup();
 							PrevPage();
 						}, bgcolor(Color::Yellow)),
 					}, &p2IsNetworkGame),
@@ -402,13 +402,13 @@ namespace pfui {
 					return dbox({
 						p6BfRow->Render(),
 						border({
-							(player[0]->GetGame().state & PfGame::other_surrender                       ?
+							(player0->GetGame().state & PfGame::other_surrender                       ?
 								text(TT(" The other player surrendered. ")) | bgcolor(Color::DarkGreen) :
-								player[0]->GetGame().state & PfGame::me_surrender                       ?
+								player0->GetGame().state & PfGame::me_surrender                       ?
 								text(TT(" You surrendered. ")) | bgcolor(Color::DarkRed)                :
-								player[0]->GetGame().nDestroyedMine == curGame.n                        ?
+								player0->GetGame().nDestroyedMine == curGame.n                        ?
 								text(TT(" You lose. ")) | bgcolor(Color::Red)                           :
-								player[0]->GetGame().nDestroyedOthers == curGame.n                      ?
+								player0->GetGame().nDestroyedOthers == curGame.n                      ?
 								text(TT(" You won! ")) | bgcolor(Color::Green)                          :
 								text(TT(" Gameover. ")) | bgcolor(Color::Blue))
 						}) | center

@@ -61,7 +61,7 @@ void PfCheckReqLn(std::istream &is) {
 	}
 }
 
-std::shared_ptr<PfRemotePlayer> PfCreateRemoteClient(tcp::socket &&sockClient, const PfPlayer &o) {
+std::shared_ptr<PfRemotePlayer> PfCreateRemoteClient(tcp::socket &&sockClient) {
 	auto p = std::make_shared<PfRemotePlayer>();
 	p->as = p->pos_client;
 	auto &sock = p->sock = std::move(sockClient);
@@ -110,9 +110,9 @@ void PfServerAccept(const boost::system::error_code &ec) {
 	}
 	try {
 		acceptor.close();
-		player[1] = PfCreateRemoteClient(std::move(sockClient), *player[0]);
-		player[0]->other = player[1];
-		player[1]->other = player[0];
+		player1 = PfCreateRemoteClient(std::move(sockClient));
+		player0->other = player1;
+		player1->other = player0;
 	} catch(const boost::system::system_error &e) {
 		std::clog << "in " << __PRETTY_FUNCTION__ << " network error (system error): " << e.what() << std::endl;
 		showErrorMsg(TT("Error: Cannot accept client."), PfPage::gamerule_setting_server);
@@ -217,7 +217,7 @@ void FromBytes(std::istream &is, PfNwPacket &x) {
 	FromBytes(is, *reinterpret_cast<uint32_t *>(&x));
 }
 
-std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP, const PfPlayer &o) {
+std::shared_ptr<PfRemotePlayer> PfCreateRemoteServer(std::string sIP) {
 	auto p = std::make_shared<PfRemotePlayer>();
 	p->as = p->pos_server;
 
@@ -329,9 +329,11 @@ void PfRemotePlayer::SockHandler() {
 					curGame.isFirst = !(st & 4);
 					if(auto o = other.lock()) {
 						o->NewGame(curGame, id);
+
 						const auto &oName = o->GetName();
 						ToBytes(os, uint32_t(oName.length()), PfNwPacket::name);
 						os.write(oName.c_str(), oName.length());
+						asio::write(sock, sendbuf);
 					}
 				} else {
 					std::clog << "[!] in " << __PRETTY_FUNCTION__ << ":\nUnexpected Game-info packet received from client.\n";
@@ -522,6 +524,7 @@ void PfRemotePlayer::SetOthersBF(const std::vector<short> &pl) {
 PfRemotePlayer::~PfRemotePlayer() {
 	expectDisconnect = 1;
 	try {
+		sock.shutdown(sock.shutdown_both);
 		sock.close();
 		if(tSock.joinable()) tSock.join();
 	} catch(const std::exception &e) {
