@@ -68,7 +68,7 @@ class PfPlayer {
 
 	public:
 	PfPlayer() = default;
-	std::weak_ptr<PfPlayer> other;
+	virtual ~PfPlayer() = default;
 
 	// Actions
 	virtual void NewGame(const PfGameInfo &, unsigned id);
@@ -88,13 +88,16 @@ class PfPlayer {
 	virtual void OnGameover();
 
 	// Observer
-	const PfGame &GetGame() const;
 	const std::string &GetName() const;
-	const PfBF &GetMyBF() const;
-	const PfBF &GetOthersBF() const;
 };
 
-class PfLocalPlayer: public PfPlayer {
+class PfLocalPlayer {
+	friend class PfPlayer;
+	friend class PfRemotePlayer;
+
+	PfGame game;
+	PfBF myBf, othersBf;
+	std::string name;
 	struct {
 		int x, y;
 	} lastAtk;
@@ -110,9 +113,16 @@ class PfLocalPlayer: public PfPlayer {
 	public:
 	PfLocalPlayer(const std::string &name);
 	void NewGame(const PfGameInfo &, unsigned id);
+	void Giveup();
+	void OnOtherReady();
 	void Attack(short, short);
 	void ArrangeReady(const PfBF &ar);
 	void Surrender();
+
+	const PfGame &GetGame() const;
+	const std::string &GetName() const;
+	const PfBF &GetMyBF() const;
+	const PfBF &GetOthersBF() const;
 };
 
 extern PfGameInfo curGame;

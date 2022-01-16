@@ -28,10 +28,11 @@ class PfAI: public PfPlayer {
 	struct {
 		int x, y;
 	} lastAtk;
-	void OnGameStart();
-	void Attack(short x, short y);
-	void BeingAttacked(short, short);
-	void AttackResulted(PfAtkRes res);
+	void OnGameStart() override;
+	void OnOtherReady() override;
+	void Attack(short x, short y) override;
+	void BeingAttacked(short, short) override;
+	void AttackResulted(PfAtkRes res) override;
 
 	public:
 	PfAI();

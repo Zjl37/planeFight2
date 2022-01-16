@@ -162,6 +162,17 @@ void PfAI::OnGameStart() {
 	}
 }
 
+void PfAI::OnOtherReady() {
+	PfPlayer::OnOtherReady();
+
+	PfBF bf2(curGame.w, curGame.h);
+	if(!bf2.AutoArrange()) {
+		Giveup();
+		return;
+	}
+	ArrangeReady(bf2);
+}
+
 void PfAI::Attack(short x, short y) {
 	lastAtk = {x, y};
 	PfPlayer::Attack(x, y);

@@ -124,10 +124,6 @@ bool PfGame::Over() const {
 	return state & me_surrender || state & other_surrender || nDestroyedMine == gamerules.n || nDestroyedOthers == gamerules.n;
 }
 
-const PfGame &PfPlayer::GetGame() const {
-	return game;
-}
-
 void PfPlayer::NewGame(const PfGameInfo &gi, unsigned id) {
 	game = {gi, id};
 	game.nDestroyedOthers = game.nDestroyedMine = 0;
@@ -143,9 +139,7 @@ void PfPlayer::ArrangeReady() {
 	if((game.state & game.ready) == game.ready) {
 		OnGameStart();
 	}
-	if(auto o = other.lock()) {
-		o->OnOtherReady();
-	}
+	player0->OnOtherReady();
 }
 
 void PfPlayer::OnOtherReady() {
@@ -156,17 +150,13 @@ void PfPlayer::OnOtherReady() {
 }
 
 void PfPlayer::Giveup() {
-	if(auto o = other.lock()) {
-		o->OnOtherGiveup();
-	}
+	player0->OnOtherGiveup();
 }
 
 void PfPlayer::Surrender() {
 	game.state |= game.me_surrender;
 	OnGameover();
-	if(auto o = other.lock()) {
-		o->OnOtherSurrender();
-	}
+	player0->OnOtherSurrender();
 }
 
 void PfPlayer::OnOtherSurrender() {
@@ -175,9 +165,7 @@ void PfPlayer::OnOtherSurrender() {
 }
 
 void PfPlayer::Attack(short x, short y) {
-	if(auto o = other.lock()) {
-		o->BeingAttacked(x, y);
-	}
+	player0->BeingAttacked(x, y);
 }
 
 void PfPlayer::BeingAttacked(short x, short y) {
@@ -208,9 +196,7 @@ void PfPlayer::BeingAttacked(short x, short y) {
 		res = PfAtkRes::empty;
 	}
 	++game.turn;
-	if(auto o = other.lock()) {
-		o->AttackResulted(res);
-	}
+	player0->AttackResulted(res);
 	if(res == PfAtkRes::destroy) {
 		++game.nDestroyedMine;
 	}
@@ -228,9 +214,7 @@ const std::string &PfPlayer::GetName() const {
 }
 
 void PfPlayer::MapRequested() {
-	if(auto o = other.lock()) {
-		o->SetOthersBF(myBf.pl);
-	}
+	player0->SetOthersBF(myBf.pl);
 }
 
 void PfPlayer::SetOthersBF(const std::vector<short> &pl) {
@@ -240,30 +224,40 @@ void PfPlayer::SetOthersBF(const std::vector<short> &pl) {
 void PfPlayer::OnOtherGiveup() {}
 void PfPlayer::OnGameover() {}
 
-const PfBF &PfPlayer::GetMyBF() const {
-	return myBf;
-}
-const PfBF &PfPlayer::GetOthersBF() const {
-	return othersBf;
-}
-
-PfLocalPlayer::PfLocalPlayer(const std::string &t): PfPlayer() {
+PfLocalPlayer::PfLocalPlayer(const std::string &t) {
 	name = t;
 }
 
 void PfLocalPlayer::NewGame(const PfGameInfo &gi, unsigned id) {
-	PfPlayer::NewGame(gi, id);
+	game = {gi, id};
+	game.nDestroyedOthers = game.nDestroyedMine = 0;
+	othersBf.resize(gi.w, gi.h);
 	SetPage(PfPage::prepare);
 }
 
+void PfLocalPlayer::Giveup() {
+	player1->OnOtherGiveup();
+}
+
 void PfLocalPlayer::OnGameStart() {
-	PfPlayer::OnGameStart();
+	game.turn = 1;
 	UiGameStart();
 }
 
 void PfLocalPlayer::ArrangeReady(const PfBF &ar) {
 	myBf = ar;
-	PfPlayer::ArrangeReady();
+	game.state |= game.me_ready;
+	if((game.state & game.ready) == game.ready) {
+		OnGameStart();
+	}
+	player1->OnOtherReady();
+}
+
+void PfLocalPlayer::OnOtherReady() {
+	game.state |= game.other_ready;
+	if((game.state & game.ready) == game.ready) {
+		OnGameStart();
+	}
 }
 
 void PfLocalPlayer::OnGameover() {
@@ -273,12 +267,13 @@ void PfLocalPlayer::OnGameover() {
 void PfLocalPlayer::Attack(short x, short y) {
 	BlinkCoord(x, y, 1);
 	lastAtk = {x, y};
-	PfPlayer::Attack(x, y);
+	player1->BeingAttacked(x, y);
 }
 
 void PfLocalPlayer::AttackResulted(PfAtkRes res) {
-	PfPlayer::AttackResulted(res);
+	++game.turn;
 	if(res == PfAtkRes::destroy) {
+		++game.nDestroyedOthers;
 		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = PfBF::destroy;
 	} else if(res == PfAtkRes::hit) {
 		othersBf.mk[lastAtk.x + lastAtk.y * curGame.w] = PfBF::hit;
@@ -288,33 +283,55 @@ void PfLocalPlayer::AttackResulted(PfAtkRes res) {
 	UiShowAtkRes(res);
 	RefreshPage();
 	if(res == PfAtkRes::destroy && game.nDestroyedOthers == curGame.n) {
-		if(auto o = other.lock()) {
-			o->MapRequested();
-		}
+		player1->MapRequested();
 	}
 }
 
 void PfLocalPlayer::BeingAttacked(short x, short y) {
 	BlinkCoord(x, y, 0);
-	PfPlayer::BeingAttacked(x, y);
-	auto dummy = myBf.mk[x + y * myBf.w];
-	PfAtkRes res = dummy == PfBF::destroy ? PfAtkRes::destroy :
-				   dummy == PfBF::hit     ? PfAtkRes::hit :
-                                            PfAtkRes::empty;
+
+	PfAtkRes res;
+	const auto &w = myBf.w, &h = myBf.h;
+	if(myBf.pl[x + y * w] & 8) {
+		if(curGame.cd) {
+			short d = myBf.pl[x + y * w] & 3;
+			for(int i = 0; i < 10; i++) {
+				short tx = x + plShape[d][i].dx, ty = y + plShape[d][i].dy;
+				if(curGame.cw) {
+					if(tx < 0) tx += w;
+					if(tx >= w) tx -= w;
+					if(ty < 0) ty += h;
+					if(ty >= h) ty -= h;
+				}
+				myBf.pl[tx + ty * w] |= 16;
+			}
+		}
+		myBf.mk[x + y * w] = PfBF::destroy;
+		res = PfAtkRes::destroy;
+	} else if(myBf.pl[x + y * w] & 4 && !(myBf.pl[x + y * w] & 16)) {
+		myBf.mk[x + y * w] = PfBF::hit;
+		res = PfAtkRes::hit;
+	} else {
+		myBf.mk[x + y * w] = PfBF::empty;
+		res = PfAtkRes::empty;
+	}
+	++game.turn;
+	player1->AttackResulted(res);
+	if(res == PfAtkRes::destroy) {
+		++game.nDestroyedMine;
+	}
+
 	UiShowAtkRes(res);
 	if(game.nDestroyedMine == game.gamerules.n) {
-		if(auto o = other.lock()) {
-			o->MapRequested();
-		}
+		player1->MapRequested();
 	}
 	RefreshPage();
 }
 
 void PfLocalPlayer::OnOtherSurrender() {
-	if(auto o = other.lock()) {
-		o->MapRequested();
-	}
-	PfPlayer::OnOtherSurrender();
+	player1->MapRequested();
+	game.state |= game.other_surrender;
+	OnGameover();
 }
 
 void PfLocalPlayer::OnOtherGiveup() {
@@ -322,20 +339,33 @@ void PfLocalPlayer::OnOtherGiveup() {
 }
 
 void PfLocalPlayer::Surrender() {
-	if(auto o = other.lock()) {
-		o->MapRequested();
-	}
-	PfPlayer::Surrender();
+	player1->MapRequested();
+	game.state |= game.me_surrender;
+	OnGameover();
+	player1->OnOtherSurrender();
 }
 
 void PfLocalPlayer::SetOthersBF(const std::vector<short> &pl) {
-	PfPlayer::SetOthersBF(pl);
+	othersBf.pl = pl;
 	for(int i = 0; i < othersBf.h; i++)
 		for(int j = 0; j < othersBf.w; j++)
 			if(othersBf.pl[j + i * othersBf.w] & 8) {
-				othersBf.basic_placeplane(j, i, othersBf.pl[j + i * GetGame().gamerules.w] & 3, GetGame().gamerules.cw);
+				othersBf.basic_placeplane(j, i, othersBf.pl[j + i * game.gamerules.w] & 3, game.gamerules.cw);
 			}
 	if(game.Over()) {
 		SetPage(PfPage::gameover);
 	}
+}
+
+const PfGame &PfLocalPlayer::GetGame() const {
+	return game;
+}
+const std::string &PfLocalPlayer::GetName() const {
+	return name;
+}
+const PfBF &PfLocalPlayer::GetMyBF() const {
+	return myBf;
+}
+const PfBF &PfLocalPlayer::GetOthersBF() const {
+	return othersBf;
 }

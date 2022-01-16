@@ -50,8 +50,6 @@ namespace pfui {
 		void P1PlayLocal() {
 			player0.reset(new PfLocalPlayer(pfui::playername));
 			player1.reset(new PfAI());
-			player0->other = player1;
-			player1->other = player0;
 			curGameType = pf_local_game;
 			pfui::p2IsNetworkGame = false;
 			curGame.isFirst = rng() & 1;
@@ -66,16 +64,9 @@ namespace pfui {
 			if(bf1.nPlaced != curGame.n) return;
 			if(curGameType == pf_local_game) {
 				if(!curGame.n) return;
-				PfBF bf2(curGame.w, curGame.h);
-				bool tmp = bf2.AutoArrange();
-				if(tmp == false) {
-					// RefreshPage();
-					return;
-				}
 				unsigned gameId = rng();
 				player0->NewGame(curGame, gameId);
 				player1->NewGame(InvertIsFirst(curGame), gameId);
-				static_cast<PfAI*>(&*player1)->ArrangeReady(bf2);
 				player0->ArrangeReady(bf1);
 			} else {
 				if(!(player0->GetGame().state & PfGame::me_ready)) {
@@ -113,8 +104,6 @@ namespace pfui {
 			try {
 				player0.reset(new PfLocalPlayer(pfui::playername));
 				player1 = PfCreateRemoteServer(pfui::ctrl::ipAddr);
-				player0->other = player1;
-				player1->other = player0;
 				curGameType = pf_remote_game_client;
 				pfui::p2IsNetworkGame = true;
 			} catch(const std::string &t) {

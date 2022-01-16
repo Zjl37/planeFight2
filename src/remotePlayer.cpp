@@ -111,8 +111,6 @@ void PfServerAccept(const boost::system::error_code &ec) {
 	try {
 		acceptor.close();
 		player1 = PfCreateRemoteClient(std::move(sockClient));
-		player0->other = player1;
-		player1->other = player0;
 	} catch(const boost::system::system_error &e) {
 		std::clog << "in " << __PRETTY_FUNCTION__ << " network error (system error): " << e.what() << std::endl;
 		showErrorMsg(TT("Error: Cannot accept client."), PfPage::gamerule_setting_server);
@@ -291,13 +289,11 @@ void PfRemotePlayer::SockHandler() {
 					        uint8_t(game.gamerules.cw | game.gamerules.cd << 1 | !game.gamerules.isFirst << 2),
 					        uint32_t(game.id));
 					bf1.resize(game.gamerules.w, game.gamerules.h);
-					if(auto o = other.lock()) {
-						o->NewGame(InvertIsFirst(game.gamerules), game.id);
-						
-						const auto &oName = o->GetName();
-						ToBytes(os, uint32_t(oName.length()), PfNwPacket::name);
-						os.write(oName.c_str(), oName.length());
-					}
+					player0->NewGame(InvertIsFirst(game.gamerules), game.id);
+					
+					const auto &oName = player0->name;
+					ToBytes(os, uint32_t(oName.length()), PfNwPacket::name);
+					os.write(oName.c_str(), oName.length());
 					asio::write(sock, sendbuf);
 				} else {
 					std::clog << "[!] in " << __PRETTY_FUNCTION__ << ":\nUnexpected Join packet received from server.\n";
@@ -327,14 +323,12 @@ void PfRemotePlayer::SockHandler() {
 					this->NewGame(curGame, id);
 					bf1.resize(game.gamerules.w, game.gamerules.h);
 					curGame.isFirst = !(st & 4);
-					if(auto o = other.lock()) {
-						o->NewGame(curGame, id);
+					player0->NewGame(curGame, id);
 
-						const auto &oName = o->GetName();
-						ToBytes(os, uint32_t(oName.length()), PfNwPacket::name);
-						os.write(oName.c_str(), oName.length());
-						asio::write(sock, sendbuf);
-					}
+					const auto &oName = player0->name;
+					ToBytes(os, uint32_t(oName.length()), PfNwPacket::name);
+					os.write(oName.c_str(), oName.length());
+					asio::write(sock, sendbuf);
 				} else {
 					std::clog << "[!] in " << __PRETTY_FUNCTION__ << ":\nUnexpected Game-info packet received from client.\n";
 				}
@@ -380,9 +374,7 @@ void PfRemotePlayer::SockHandler() {
 				FromBytes(is, res);
 
 				++game.turn;
-				if(auto o = other.lock()) {
-					o->AttackResulted(PfAtkRes(res));
-				}
+				player0->AttackResulted(PfAtkRes(res));
 				if(PfAtkRes(res) == PfAtkRes::destroy) {
 					++game.nDestroyedMine;
 				}
@@ -396,9 +388,7 @@ void PfRemotePlayer::SockHandler() {
 					FromBytes(is, x, y, dir);
 					myBf.basic_placeplane(x, y, dir, true);
 				}
-				if(auto o = other.lock()) {
-					o->SetOthersBF(myBf.pl);
-				}
+				player0->SetOthersBF(myBf.pl);
 				othersMapReceived = 1;
 				if(game.Over()) {
 					expectDisconnect = 1;
@@ -498,9 +488,7 @@ void PfRemotePlayer::AttackResulted(PfAtkRes res) {
 }
 
 void PfRemotePlayer::MapRequested() {
-	if(auto o = other.lock()) {
-		o->MapRequested();
-	}
+	SetOthersBF(player0->myBf.pl);
 }
 
 void PfRemotePlayer::SetOthersBF(const std::vector<short> &pl) {
@@ -522,9 +510,13 @@ void PfRemotePlayer::SetOthersBF(const std::vector<short> &pl) {
 }
 
 PfRemotePlayer::~PfRemotePlayer() {
+	std::clog << "PfRemotePlayer @" << this << " destructed" << std::endl;
 	expectDisconnect = 1;
 	try {
-		sock.shutdown(sock.shutdown_both);
+		try {
+			sock.shutdown(sock.shutdown_both);
+		} catch(...) {
+		}
 		sock.close();
 		if(tSock.joinable()) tSock.join();
 	} catch(const std::exception &e) {
