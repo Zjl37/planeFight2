@@ -18,6 +18,8 @@
  *
  */
 
+#pragma once
+
 #include "game.hpp"
 #include "ftxui/component/component.hpp"
 

@@ -40,6 +40,7 @@ namespace pfui {
 
 	int p2IsNetworkGame;
 	bool p2ShowBanner;
+	int p4SelectedTabs;
 
 	std::string AttackIndicatorInfo::MakeCoordStr() const {
 		using namespace std::string_literals;
@@ -109,19 +110,19 @@ namespace pfui {
 					filler() | size(HEIGHT, EQUAL, 1),
 				});
 			}),
-			Button(TT(" ※ Play against computer").str(), ctrl::P1PlayLocal),
-			Button(TT(" ※ Multiplayer game").str(), []() { p1ShowRgMenu = !p1ShowRgMenu; }),
-			Maybe(Container::Horizontal({
-				Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
-				Container::Vertical({
-					pfext::FlatButton(TT("> Start a server").str(), []() {
+			Button(TT("  Play against computer").str(), ctrl::P1PlayLocal),
+			Collapsible(
+				" Multiplayer game",
+				Container::Horizontal({
+					Button(TT(" Start a server ").str(), []() {
 						curGame.isFirst = rng() & 1;
 						NextPage(PfPage::gamerule_setting_server);
 					}),
-					pfext::FlatButton(TT("> Join a game").str(), []() { NextPage(PfPage::client_init); }),
-				})
-			}), &p1ShowRgMenu),
-			Button(TT(" ※ Gamerules / About").str(), []() { NextPage(PfPage::about); }),
+					Button(TT(" Join a game ").str(), []() { NextPage(PfPage::client_init); }),
+				}),
+				&p1ShowRgMenu
+			),
+			Button(TT("  Gamerules / About").str(), []() { NextPage(PfPage::about); }),
 			Container::Horizontal({
 				Button(TT("  Exit  ").str(), scr.ExitLoopClosure()),
 				Button(TT("  Back  ").str(), PrevPage)
@@ -169,6 +170,31 @@ namespace pfui {
 		});
 
 		static Box p3Box;
+
+		static std::vector<std::string> p4Tabs;
+		p4Tabs = {
+			TT(" Copyright and License "),
+			TT(" About FTXUI "),
+		};
+
+		auto p4TabContent = Container::Vertical({
+			Toggle(&p4Tabs, &p4SelectedTabs),
+			Renderer([]() {
+				return (p4SelectedTabs == 0 ?
+					vbox({
+						paragraph("Copyright © 2020-2022 Zjl37 and planeFight2 contributors"),
+						text(""),
+						paragraph(TT("This program is free software licensed under GNU GPL v3 or later.")),
+						text(""),
+						paragraph(TT("The source code of this program is hosted on GitHub: <https://github.com/Zjl37/planeFight2>."))
+					}) :
+					vbox({
+						paragraph(TT("This program uses FTXUI, a simple C++ library for terminal based user interface.")),
+						text(""),
+						paragraph(TT("Please visit <https://github.com/ArthurSonzogni/FTXUI> for more information."))
+					})) | border;
+			})
+		});
 
 		auto p5BfRow = Container::Horizontal({
 			Renderer([]() {
@@ -354,19 +380,22 @@ namespace pfui {
 			Container::Vertical({
 				Renderer([]() { return pfTitle; }),
 				btnBackLn(),
-				Renderer([]() {
-					// TODO: use paragraph in the future
-					return vbox(
-						pfext::splitlines(TT(
-							"    For an introduction to the gamerules, please visit\n"
-							"<https://github.com/Zjl37/planeFight2/wiki/Game-Introduction>."
-						).str()),
-						text(""),
-						pfext::splitlines(TT(
-							"    The source code of this program is hosted on GitHub. For more information,\n"
-							"see <https://github.com/Zjl37/planeFight2>."
-						).str())
-					) | size(WIDTH, LESS_THAN, 80) | hcenter;
+
+				Container::Vertical({
+					Renderer([]() {
+						return vbox(
+							paragraph(TT("planeFight TUI game ").str() + pfVersion),
+							text(""),
+							paragraph(TT(
+								"For an introduction to the gamerules, please visit "
+								"<https://github.com/Zjl37/planeFight2/wiki/Game-Introduction>."
+							)),
+							text("")
+						) | size(WIDTH, EQUAL, 80) | hcenter;
+					}),
+					Renderer(p4TabContent, [=]() {
+						return p4TabContent->Render() | size(WIDTH, EQUAL, 100) | hcenter;
+					})
 				}),
 			}),
 

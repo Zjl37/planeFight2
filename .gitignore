@@ -9,4 +9,6 @@ tmp/
 dev-*
 *.mo
 planeFight
-build/*
+build/
+*.kdev4
+.kdev4

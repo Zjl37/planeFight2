@@ -540,8 +540,8 @@ namespace ftxui::pfext { // planeFight's extension
 		struct ToggleInfo {
 			int selected;
 			bool &isFirst;
-			ToggleOption opt;
-			Component toggle = Toggle(&entries, &selected, &opt);
+			RadioboxOption opt;
+			Component radiobox = Radiobox(&entries, &selected, &opt);
 
 			ToggleInfo(bool &isFirst): selected(isFirst), isFirst(isFirst) {
 				opt.on_change = [&]() {
@@ -550,9 +550,9 @@ namespace ftxui::pfext { // planeFight's extension
 			}
 		};
 		auto ti = std::make_shared<ToggleInfo>(state);
-		return Renderer(ti->toggle, [=]() {
+		return Renderer(ti->radiobox, [=]() {
 			ti->selected = ti->isFirst;
-			return ti->toggle->Render();
+			return ti->radiobox->Render();
 		});
 		// the ToggleInfo will be destroyed when the Renderer is destroyed.
 	}
