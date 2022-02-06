@@ -1,0 +1,333 @@
+# PlaneFight Console Application translation template file
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: planeFight console application 2.6 (Zjl37/planefight2)\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-02-06 22:14+0800\n"
+"PO-Revision-Date: 2021-09-20 18:56+0800\n"
+"Last-Translator: <EMAIL@ADDRESS>\n"
+"Language-Team: English\n"
+"Language: en_US\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Language: en_US\n"
+"X-Source-Language: C\n"
+
+#: src/ai.cpp:102
+msgid "AI"
+msgstr "AI"
+
+#: src/game.cpp:338
+msgid "The other player gave up this game."
+msgstr "The other player gave up this game."
+
+#: src/pfExtFtxui.cpp:315 src/pfExtFtxui.cpp:351
+msgid "You are going to play with "
+msgstr "You are going to play with "
+
+#: src/pfExtFtxui.cpp:319 src/ui.cpp:458
+msgid "－"
+msgstr "－"
+
+#: src/pfExtFtxui.cpp:324 src/pfExtFtxui.cpp:352 src/ui.cpp:462
+msgid "Number of planes: "
+msgstr "Number of planes: "
+
+#: src/pfExtFtxui.cpp:326 src/ui.cpp:464
+msgid "＋"
+msgstr "＋"
+
+#: src/pfExtFtxui.cpp:330 src/ui.cpp:469
+msgid "Enable cross-border mode"
+msgstr "Enable cross-border mode"
+
+#: src/pfExtFtxui.cpp:331 src/ui.cpp:471
+msgid "Enable completely destroy"
+msgstr "Enable completely destroy"
+
+#: src/pfExtFtxui.cpp:334 src/pfExtFtxui.cpp:355 src/ui.cpp:336 src/ui.cpp:475
+msgid "Map size: "
+msgstr "Map size: "
+
+#: src/pfExtFtxui.cpp:340 src/ui.cpp:481
+msgid "[adjust]"
+msgstr "[adjust]"
+
+#: src/pfExtFtxui.cpp:353
+msgid "✓ Cross-border mode enabled"
+msgstr "✓ Cross-border mode enabled"
+
+#: src/pfExtFtxui.cpp:354
+msgid "✓ Completely-destroy enabled"
+msgstr "✓ Completely-destroy enabled"
+
+#: src/pfExtFtxui.cpp:356 src/pfExtFtxui.cpp:538
+msgid "I goes first"
+msgstr "I go first"
+
+#: src/pfExtFtxui.cpp:356 src/pfExtFtxui.cpp:537
+msgid "The other player goes first"
+msgstr "The other player goes first"
+
+#: src/remotePlayer.cpp:46 src/remotePlayer.cpp:51 src/remotePlayer.cpp:362
+#: src/remotePlayer.cpp:371 src/remotePlayer.cpp:399
+msgid "Error: Bad game message sent from the other player."
+msgstr "Error: Bad game message sent from the other player."
+
+#: src/remotePlayer.cpp:59
+msgid "Error: Client version incompatible, which is "
+msgstr "Error: Client version incompatible, which is "
+
+#: src/remotePlayer.cpp:107 src/remotePlayer.cpp:116 src/remotePlayer.cpp:119
+msgid "Error: Cannot accept client."
+msgstr "Error: Cannot accept client."
+
+#: src/remotePlayer.cpp:137
+msgid "Error: Cannot create a server."
+msgstr "Error: Cannot create a server."
+
+#: src/remotePlayer.cpp:409
+msgid "Failed to receive message: connection lost."
+msgstr "Failed to receive message: connection lost."
+
+#: src/remotePlayer.cpp:428 src/remotePlayer.cpp:453 src/remotePlayer.cpp:470
+#: src/remotePlayer.cpp:486 src/remotePlayer.cpp:508
+msgid "Failed to send message: connection lost."
+msgstr "Failed to send message: connection lost."
+
+#: src/ui.cpp:62
+msgid " Confirm "
+msgstr " Confirm "
+
+#: src/ui.cpp:64
+msgid " Exit "
+msgstr " Exit "
+
+#: src/ui.cpp:67
+msgid " PlaneFight TUI Game"
+msgstr " PlaneFight TUI Game"
+
+#: src/ui.cpp:73 src/ui.cpp:293 src/ui.cpp:323 src/ui.cpp:501 src/ui.cpp:522
+msgid "<<Back"
+msgstr "<<Back"
+
+#: src/ui.cpp:83
+msgid "Welcome to planeFight TUI Game!"
+msgstr "Welcome to planeFight TUI Game!"
+
+#: src/ui.cpp:90
+msgid "Enter your username: "
+msgstr "Enter your username: "
+
+#: src/ui.cpp:113
+msgid "  Play against computer"
+msgstr "  Play against computer"
+
+#: src/ui.cpp:115
+msgid " Multiplayer game"
+msgstr " Multiplayer game"
+
+#: src/ui.cpp:117
+msgid " Start a server "
+msgstr " Start a server "
+
+#: src/ui.cpp:121
+msgid " Join a game "
+msgstr " Join a game "
+
+#: src/ui.cpp:125
+msgid "  Gamerules / About"
+msgstr "  Gamerules / About"
+
+#: src/ui.cpp:127
+msgid "  Exit  "
+msgstr "  Exit  "
+
+#: src/ui.cpp:128
+msgid "  Back  "
+msgstr "  Back  "
+
+#: src/ui.cpp:149
+msgid "Game starting..."
+msgstr "Game starting..."
+
+#: src/ui.cpp:152
+msgid "  I'm ready  "
+msgstr "  I'm ready  "
+
+#: src/ui.cpp:153
+msgid " CLEAR "
+msgstr " CLEAR "
+
+#: src/ui.cpp:176
+msgid " Copyright and License "
+msgstr " Copyright and License "
+
+#: src/ui.cpp:177
+msgid " About FTXUI "
+msgstr " About FTXUI "
+
+#: src/ui.cpp:187
+msgid "This program is free software licensed under GNU GPL v3 or later."
+msgstr "This program is free software licensed under GNU GPL v3 or later."
+
+#: src/ui.cpp:189
+msgid ""
+"The source code of this program is hosted on GitHub: <https://github.com/"
+"Zjl37/planeFight2>."
+msgstr ""
+"The source code of this program is hosted on GitHub: <https://github.com/"
+"Zjl37/planeFight2>."
+
+#: src/ui.cpp:192
+msgid ""
+"This program uses FTXUI, a simple C++ library for terminal based user "
+"interface."
+msgstr ""
+"This program uses FTXUI, a simple C++ library for terminal based user "
+"interface."
+
+#: src/ui.cpp:194
+msgid ""
+"Please visit <https://github.com/ArthurSonzogni/FTXUI> for more information."
+msgstr ""
+"Please visit <https://github.com/ArthurSonzogni/FTXUI> for more information."
+
+#: src/ui.cpp:230
+msgid " DESTROY "
+msgstr " DESTROY "
+
+#: src/ui.cpp:232
+msgid " HIT "
+msgstr " HIT "
+
+#: src/ui.cpp:233
+msgid " VOID "
+msgstr " VOID "
+
+#: src/ui.cpp:258
+msgid ""
+"Run ipconfig in command line to check your IP address and tell your friend."
+msgstr ""
+"Run ipconfig in command line to check your IP address and tell your friend."
+
+#: src/ui.cpp:260
+msgid ""
+"Run ifconfig in command line to check your IP address and tell your friend."
+msgstr ""
+"Run “ip addr” or other commands in command line to check your IP address and "
+"tell your friend."
+
+#: src/ui.cpp:267
+msgid "Server IP address:"
+msgstr "Server IP address:"
+
+#: src/ui.cpp:294
+msgid "<<Give up"
+msgstr "<<Give up"
+
+#: src/ui.cpp:387
+msgid "planeFight TUI game "
+msgstr "planeFight TUI game "
+
+#: src/ui.cpp:390
+msgid ""
+"For an introduction to the gamerules, please visit <https://github.com/Zjl37/"
+"planeFight2/wiki/Game-Introduction>."
+msgstr ""
+"For an introduction to the gamerules, please visit <https://github.com/Zjl37/"
+"planeFight2/wiki/Game-Introduction>."
+
+#: src/ui.cpp:406
+msgid "<<Surrender"
+msgstr "<<Surrender"
+
+#: src/ui.cpp:435
+msgid " The other player surrendered. "
+msgstr " The other player surrendered. "
+
+#: src/ui.cpp:437
+msgid " You surrendered. "
+msgstr " You surrendered. "
+
+#: src/ui.cpp:439
+msgid " You lose. "
+msgstr " You lose. "
+
+#: src/ui.cpp:441
+msgid " You won! "
+msgstr " You won! "
+
+#: src/ui.cpp:442
+msgid " Gameover. "
+msgstr " Gameover. "
+
+#: src/ui.cpp:455
+msgid "Please set gamerules before starting a server."
+msgstr "Please set gamerules before starting a server."
+
+#: src/ui.cpp:490
+msgid "  START  "
+msgstr "  START  "
+
+#: src/ui.cpp:510
+msgid "Waiting for a player to join in..."
+msgstr "Waiting for a player to join in..."
+
+#: src/uiCtrl.cpp:112
+msgid ""
+"Error: Cannot connect to server. Please check if the IP is correct and if "
+"the server is running."
+msgstr ""
+"Error: Cannot connect to server. Please check if the IP is correct and if "
+"the server is running."
+
+#~ msgid "  Language  "
+#~ msgstr "  Language  "
+
+#~ msgid " PARK "
+#~ msgstr " PARK "
+
+#~ msgid " GAMERULES "
+#~ msgstr " GAMERULES "
+
+#~ msgid "  PLAY  "
+#~ msgstr "  PLAY  "
+
+#~ msgid "□ Enable cross-border mode"
+#~ msgstr "□ Enable cross-border mode"
+
+#~ msgid "□ Enable completely-destroy"
+#~ msgstr "□ Enable completely-destroy"
+
+#~ msgid "The other player is ready."
+#~ msgstr "The other player is ready."
+
+#~ msgid " Visit GitHub repo "
+#~ msgstr " Visit GitHub repo "
+
+#~ msgid " ATTACK "
+#~ msgstr " ATTACK "
+
+#~ msgid " MARK "
+#~ msgstr " MARK "
+
+#~ msgid " ERASE "
+#~ msgstr " ERASE "
+
+#~ msgid " Back to main page "
+#~ msgstr " Back to main page "
+
+#~ msgid "[i] Waiting for connections from client..."
+#~ msgstr "[i] Waiting for connections from client..."
+
+#~ msgid ""
+#~ "Cannot place here: planes cannot overlap nor be placed out of border."
+#~ msgstr ""
+#~ "Cannot place here: planes cannot overlap nor be placed out of border."
+
+#~ msgid "Cannot place here: planes cannot overlap."
+#~ msgstr "Cannot place here: planes cannot overlap."

@@ -112,7 +112,7 @@ namespace pfui {
 			}),
 			Button(TT("  Play against computer").str(), ctrl::P1PlayLocal),
 			Collapsible(
-				" Multiplayer game",
+				TT(" Multiplayer game").str(),
 				Container::Horizontal({
 					Button(TT(" Start a server ").str(), []() {
 						curGame.isFirst = rng() & 1;

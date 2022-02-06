@@ -1,0 +1,325 @@
+# PlaneFight Console Application translation template file
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: planeFight console application 2.6 (Zjl37/planefight2)\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2022-02-06 22:14+0800\n"
+"PO-Revision-Date: 2021-09-20 17:56+0800\n"
+"Last-Translator: Zjl37 <2693911885@qq.com>\n"
+"Language-Team: Chinese (simplified)\n"
+"Language: zh_CN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"X-Language: zh_CN\n"
+"X-Source-Language: C\n"
+
+#: src/ai.cpp:102
+msgid "AI"
+msgstr "AI"
+
+#: src/game.cpp:338
+msgid "The other player gave up this game."
+msgstr "对方放弃了本局游戏。"
+
+#: src/pfExtFtxui.cpp:315 src/pfExtFtxui.cpp:351
+msgid "You are going to play with "
+msgstr "你的对手是 "
+
+#: src/pfExtFtxui.cpp:319 src/ui.cpp:458
+msgid "－"
+msgstr "－"
+
+#: src/pfExtFtxui.cpp:324 src/pfExtFtxui.cpp:352 src/ui.cpp:462
+msgid "Number of planes: "
+msgstr "飞机数量："
+
+#: src/pfExtFtxui.cpp:326 src/ui.cpp:464
+msgid "＋"
+msgstr "＋"
+
+#: src/pfExtFtxui.cpp:330 src/ui.cpp:469
+msgid "Enable cross-border mode"
+msgstr "启用贪吃蛇模式"
+
+#: src/pfExtFtxui.cpp:331 src/ui.cpp:471
+msgid "Enable completely destroy"
+msgstr "启用完全摧毁"
+
+#: src/pfExtFtxui.cpp:334 src/pfExtFtxui.cpp:355 src/ui.cpp:336 src/ui.cpp:475
+msgid "Map size: "
+msgstr "地图大小："
+
+#: src/pfExtFtxui.cpp:340 src/ui.cpp:481
+msgid "[adjust]"
+msgstr "[调整]"
+
+#: src/pfExtFtxui.cpp:353
+msgid "✓ Cross-border mode enabled"
+msgstr "✓ 贪吃蛇模式已开启"
+
+#: src/pfExtFtxui.cpp:354
+msgid "✓ Completely-destroy enabled"
+msgstr "✓ 完全摧毁已开启"
+
+#: src/pfExtFtxui.cpp:356 src/pfExtFtxui.cpp:538
+msgid "I goes first"
+msgstr "我先手"
+
+#: src/pfExtFtxui.cpp:356 src/pfExtFtxui.cpp:537
+msgid "The other player goes first"
+msgstr "对方先手"
+
+#: src/remotePlayer.cpp:46 src/remotePlayer.cpp:51 src/remotePlayer.cpp:362
+#: src/remotePlayer.cpp:371 src/remotePlayer.cpp:399
+msgid "Error: Bad game message sent from the other player."
+msgstr "错误：对方发送了错误的游戏信息。"
+
+#: src/remotePlayer.cpp:59
+msgid "Error: Client version incompatible, which is "
+msgstr "错误：客户端的游戏版本不兼容，为 "
+
+#: src/remotePlayer.cpp:107 src/remotePlayer.cpp:116 src/remotePlayer.cpp:119
+msgid "Error: Cannot accept client."
+msgstr "错误：无法接受客户端请求。"
+
+#: src/remotePlayer.cpp:137
+msgid "Error: Cannot create a server."
+msgstr "错误：无法创建服务器。"
+
+#: src/remotePlayer.cpp:409
+msgid "Failed to receive message: connection lost."
+msgstr "接收数据时出现错误：连接已断开。"
+
+#: src/remotePlayer.cpp:428 src/remotePlayer.cpp:453 src/remotePlayer.cpp:470
+#: src/remotePlayer.cpp:486 src/remotePlayer.cpp:508
+msgid "Failed to send message: connection lost."
+msgstr "发送数据时出现错误：连接已断开。"
+
+#: src/ui.cpp:62
+msgid " Confirm "
+msgstr " 确定 "
+
+#: src/ui.cpp:64
+msgid " Exit "
+msgstr " 退出 "
+
+#: src/ui.cpp:67
+msgid " PlaneFight TUI Game"
+msgstr " 打飞机 TUI 游戏"
+
+#: src/ui.cpp:73 src/ui.cpp:293 src/ui.cpp:323 src/ui.cpp:501 src/ui.cpp:522
+msgid "<<Back"
+msgstr "<<返回"
+
+#: src/ui.cpp:83
+msgid "Welcome to planeFight TUI Game!"
+msgstr "欢迎来到打飞机 TUI 游戏！"
+
+#: src/ui.cpp:90
+msgid "Enter your username: "
+msgstr "请输入用户名："
+
+#: src/ui.cpp:113
+msgid "  Play against computer"
+msgstr "  人机对战"
+
+#: src/ui.cpp:115
+msgid " Multiplayer game"
+msgstr "  远程联机"
+
+#: src/ui.cpp:117
+msgid " Start a server "
+msgstr " 发起一场游戏 "
+
+#: src/ui.cpp:121
+msgid " Join a game "
+msgstr " 加入一场游戏 "
+
+#: src/ui.cpp:125
+msgid "  Gamerules / About"
+msgstr "  游戏玩法／关于"
+
+#: src/ui.cpp:127
+msgid "  Exit  "
+msgstr "  退出  "
+
+#: src/ui.cpp:128
+msgid "  Back  "
+msgstr "  返回  "
+
+#: src/ui.cpp:149
+msgid "Game starting..."
+msgstr "战斗已打响！"
+
+#: src/ui.cpp:152
+msgid "  I'm ready  "
+msgstr "  准备好了  "
+
+#: src/ui.cpp:153
+msgid " CLEAR "
+msgstr " 清除 "
+
+#: src/ui.cpp:176
+msgid " Copyright and License "
+msgstr " 版权与许可 "
+
+#: src/ui.cpp:177
+msgid " About FTXUI "
+msgstr " 关于 FTXUI "
+
+#: src/ui.cpp:187
+msgid "This program is free software licensed under GNU GPL v3 or later."
+msgstr "本程序是自由软件，以 GNU 通用公共许可证第三版或更高版本许可。"
+
+#: src/ui.cpp:189
+msgid ""
+"The source code of this program is hosted on GitHub: <https://github.com/"
+"Zjl37/planeFight2>."
+msgstr "本项目的源代码托管在 GitHub 上：<https://github.com/Zjl37/planeFight2>"
+
+#: src/ui.cpp:192
+msgid ""
+"This program uses FTXUI, a simple C++ library for terminal based user "
+"interface."
+msgstr ""
+"本程序使用了 FTXUI。FTXUI 是一个的简易的 C++ 库，用来创建基于终端的字符用户界"
+"面。"
+
+#: src/ui.cpp:194
+msgid ""
+"Please visit <https://github.com/ArthurSonzogni/FTXUI> for more information."
+msgstr "请访问<https://github.com/ArthurSonzogni/FTXUI>来了解更多信息。"
+
+#: src/ui.cpp:230
+msgid " DESTROY "
+msgstr " 击毁 "
+
+#: src/ui.cpp:232
+msgid " HIT "
+msgstr " 中 "
+
+#: src/ui.cpp:233
+msgid " VOID "
+msgstr " 空 "
+
+#: src/ui.cpp:258
+msgid ""
+"Run ipconfig in command line to check your IP address and tell your friend."
+msgstr "在命令行中运行 ipconfig，查看本机的 IP 地址，并告诉你的好友。"
+
+#: src/ui.cpp:260
+msgid ""
+"Run ifconfig in command line to check your IP address and tell your friend."
+msgstr ""
+"在命令行中运行“ip addr”或其他命令，查看本机的 IP 地址，并告诉你的好友。"
+
+#: src/ui.cpp:267
+msgid "Server IP address:"
+msgstr "请输入服务器地址："
+
+#: src/ui.cpp:294
+msgid "<<Give up"
+msgstr "<<放弃"
+
+#: src/ui.cpp:387
+msgid "planeFight TUI game "
+msgstr "打飞机 TUI 游戏"
+
+#: src/ui.cpp:390
+msgid ""
+"For an introduction to the gamerules, please visit <https://github.com/Zjl37/"
+"planeFight2/wiki/Game-Introduction>."
+msgstr ""
+"有关游戏规则的介绍，请见<https://github.com/Zjl37/planeFight2/wiki/Game-"
+"Introduction>。"
+
+#: src/ui.cpp:406
+msgid "<<Surrender"
+msgstr "<<认输"
+
+#: src/ui.cpp:435
+msgid " The other player surrendered. "
+msgstr " 对方认输，游戏结束。 "
+
+#: src/ui.cpp:437
+msgid " You surrendered. "
+msgstr " 你已认输，游戏结束。 "
+
+#: src/ui.cpp:439
+msgid " You lose. "
+msgstr " 你失败了。 "
+
+#: src/ui.cpp:441
+msgid " You won! "
+msgstr "   胜利   "
+
+#: src/ui.cpp:442
+msgid " Gameover. "
+msgstr " 游戏结束。 "
+
+#: src/ui.cpp:455
+msgid "Please set gamerules before starting a server."
+msgstr "启动服务器前，先设置游戏规则。"
+
+#: src/ui.cpp:490
+msgid "  START  "
+msgstr "  开始  "
+
+#: src/ui.cpp:510
+msgid "Waiting for a player to join in..."
+msgstr "等待对方连接……"
+
+#: src/uiCtrl.cpp:112
+msgid ""
+"Error: Cannot connect to server. Please check if the IP is correct and if "
+"the server is running."
+msgstr "错误：无法连接到服务器。请检查 IP 地址是否正确以及服务器是否启动。"
+
+#~ msgid " PARK "
+#~ msgstr " 布置 "
+
+#~ msgid " GAMERULES "
+#~ msgstr " 游戏设置 "
+
+#~ msgid " PREFERENCES "
+#~ msgstr " 偏好设置 "
+
+#~ msgid "  PLAY  "
+#~ msgstr "  开始  "
+
+#~ msgid "□ Enable cross-border mode"
+#~ msgstr "□ 启用贪吃蛇模式"
+
+#~ msgid "□ Enable completely-destroy"
+#~ msgstr "□ 启用完全摧毁"
+
+#~ msgid "The other player is ready."
+#~ msgstr "对方已准备完毕。"
+
+#~ msgid " Visit GitHub repo "
+#~ msgstr " 访问 GitHub 仓库 "
+
+#~ msgid " ATTACK "
+#~ msgstr " 攻击 "
+
+#~ msgid " MARK "
+#~ msgstr " 标记 "
+
+#~ msgid " ERASE "
+#~ msgstr " 擦除 "
+
+#~ msgid " Back to main page "
+#~ msgstr "   返回   "
+
+#~ msgid "[i] Waiting for connections from client..."
+#~ msgstr "[i] 等待客户端连接……"
+
+#~ msgid ""
+#~ "Cannot place here: planes cannot overlap nor be placed out of border."
+#~ msgstr "不能在此处放置飞机：飞机不能重叠，且不能超出边界。"
+
+#~ msgid "Cannot place here: planes cannot overlap."
+#~ msgstr "不能在此处放置飞机：飞机不能重叠。"

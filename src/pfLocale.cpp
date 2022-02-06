@@ -24,7 +24,7 @@
 void PfLocaleInit(const std::string id) {
 	boost::locale::generator gen;
 
-	gen.add_messages_path("./lang");
+	gen.add_messages_path("./locale");
 	gen.add_messages_domain("messages");
 	std::locale::global(gen(id));
 	std::cout.imbue(std::locale());
