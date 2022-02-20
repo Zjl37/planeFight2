@@ -257,6 +257,8 @@ void PfLocalPlayer::OnOtherReady() {
 	game.state |= game.other_ready;
 	if((game.state & game.ready) == game.ready) {
 		OnGameStart();
+	} else {
+		RefreshPage();
 	}
 }
 

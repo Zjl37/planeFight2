@@ -20,6 +20,7 @@
  */
 
 #include "ui.hpp"
+#include "ftxui/dom/elements.hpp"
 #include "game.hpp"
 #include "uiCtrl.hpp"
 #include "pfLocale.hpp"
@@ -404,7 +405,8 @@ namespace pfui {
 				Renderer([]() { return pfTitle; }),
 				Container::Horizontal({
 					pfext::FlatButton(TT("<<Surrender").str(), ctrl::P5Surrender, bgcolor(Color::Yellow)),
-					Renderer([]() { return filler(); })
+					Renderer([]() { return filler(); }),
+					pfext::TurnStatus(),
 				}),
 				Renderer(p5BfRow, [=]() {
 					return dbox({

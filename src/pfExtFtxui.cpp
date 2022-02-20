@@ -250,13 +250,13 @@ namespace ftxui::pfext { // planeFight's extension
 	Component Park(int &selectedFacing) {
 		return Container::Horizontal({
 			Container::Vertical({
-				Renderer([]() { return text("Facing") | bold; }),
+				Renderer([]() { return text(TT("Facing")) | bold; }),
 				Container::Vertical(
 					{
-						MenuEntry("up"),
-						MenuEntry("right"),
-						MenuEntry("down"),
-						MenuEntry("left"),
+						MenuEntry(TT("up").str()),
+						MenuEntry(TT("right").str()),
+						MenuEntry(TT("down").str()),
+						MenuEntry(TT("left").str()),
 					},
 					&selectedFacing
 				),
@@ -349,6 +349,7 @@ namespace ftxui::pfext { // planeFight's extension
 	Element GameInfoStatic(const PfGameInfo &gamerules) {
 		return vbox({
 			text(TT("You are going to play with ").str() + (player1 ? player1->GetName() : "???")),
+			text(player0->GetGame().state & PfGame::other_ready ? TT("[The other player is ready.]").str() : "") | color(Color::Green),
 			text(TT("Number of planes: ").str() + std::to_string(gamerules.n)),
 			text(gamerules.cw ? TT("✓ Cross-border mode enabled").str() : ""),
 			text(gamerules.cd ? TT("✓ Completely-destroy enabled").str() : ""),
@@ -555,5 +556,11 @@ namespace ftxui::pfext { // planeFight's extension
 			return ti->radiobox->Render();
 		});
 		// the ToggleInfo will be destroyed when the Renderer is destroyed.
+	}
+	Component TurnStatus() {
+		return Renderer([]() {
+			return text((player0->GetGame().isMyTurn() ? TT("(Your turn) ").str() : "")
+						+ "#" + std::to_string(player0->GetGame().turn) + " ");
+		});
 	}
 };

@@ -4,7 +4,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: planeFight console application 2.6 (Zjl37/planefight2)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-02-06 22:14+0800\n"
+"POT-Creation-Date: 2022-02-20 10:51+0800\n"
 "PO-Revision-Date: 2021-09-20 18:56+0800\n"
 "Last-Translator: <EMAIL@ADDRESS>\n"
 "Language-Team: English\n"
@@ -20,57 +20,86 @@ msgstr ""
 msgid "AI"
 msgstr "AI"
 
-#: src/game.cpp:338
+#: src/game.cpp:340
 msgid "The other player gave up this game."
 msgstr "The other player gave up this game."
+
+#: src/pfExtFtxui.cpp:253
+msgid "Facing"
+msgstr "Facing"
+
+#: src/pfExtFtxui.cpp:256
+msgid "up"
+msgstr "up"
+
+#: src/pfExtFtxui.cpp:257
+msgid "right"
+msgstr "right"
+
+#: src/pfExtFtxui.cpp:258
+msgid "down"
+msgstr "down"
+
+#: src/pfExtFtxui.cpp:259
+msgid "left"
+msgstr "left"
 
 #: src/pfExtFtxui.cpp:315 src/pfExtFtxui.cpp:351
 msgid "You are going to play with "
 msgstr "You are going to play with "
 
-#: src/pfExtFtxui.cpp:319 src/ui.cpp:458
+#: src/pfExtFtxui.cpp:319 src/ui.cpp:460
 msgid "－"
 msgstr "－"
 
-#: src/pfExtFtxui.cpp:324 src/pfExtFtxui.cpp:352 src/ui.cpp:462
+#: src/pfExtFtxui.cpp:324 src/pfExtFtxui.cpp:353 src/ui.cpp:464
 msgid "Number of planes: "
 msgstr "Number of planes: "
 
-#: src/pfExtFtxui.cpp:326 src/ui.cpp:464
+#: src/pfExtFtxui.cpp:326 src/ui.cpp:466
 msgid "＋"
 msgstr "＋"
 
-#: src/pfExtFtxui.cpp:330 src/ui.cpp:469
+#: src/pfExtFtxui.cpp:330 src/ui.cpp:471
 msgid "Enable cross-border mode"
 msgstr "Enable cross-border mode"
 
-#: src/pfExtFtxui.cpp:331 src/ui.cpp:471
+#: src/pfExtFtxui.cpp:331 src/ui.cpp:473
 msgid "Enable completely destroy"
 msgstr "Enable completely destroy"
 
-#: src/pfExtFtxui.cpp:334 src/pfExtFtxui.cpp:355 src/ui.cpp:336 src/ui.cpp:475
+#: src/pfExtFtxui.cpp:334 src/pfExtFtxui.cpp:356 src/ui.cpp:337 src/ui.cpp:477
 msgid "Map size: "
 msgstr "Map size: "
 
-#: src/pfExtFtxui.cpp:340 src/ui.cpp:481
+#: src/pfExtFtxui.cpp:340 src/ui.cpp:483
 msgid "[adjust]"
 msgstr "[adjust]"
 
-#: src/pfExtFtxui.cpp:353
+#: src/pfExtFtxui.cpp:352
+#, fuzzy
+msgid "[The other player is ready.]"
+msgstr "The other player is ready."
+
+#: src/pfExtFtxui.cpp:354
 msgid "✓ Cross-border mode enabled"
 msgstr "✓ Cross-border mode enabled"
 
-#: src/pfExtFtxui.cpp:354
+#: src/pfExtFtxui.cpp:355
 msgid "✓ Completely-destroy enabled"
 msgstr "✓ Completely-destroy enabled"
 
-#: src/pfExtFtxui.cpp:356 src/pfExtFtxui.cpp:538
+#: src/pfExtFtxui.cpp:357 src/pfExtFtxui.cpp:539
 msgid "I goes first"
 msgstr "I go first"
 
-#: src/pfExtFtxui.cpp:356 src/pfExtFtxui.cpp:537
+#: src/pfExtFtxui.cpp:357 src/pfExtFtxui.cpp:538
 msgid "The other player goes first"
 msgstr "The other player goes first"
+
+#: src/pfExtFtxui.cpp:562
+msgid "(Your turn) "
+msgstr "(Your turn) "
 
 #: src/remotePlayer.cpp:46 src/remotePlayer.cpp:51 src/remotePlayer.cpp:362
 #: src/remotePlayer.cpp:371 src/remotePlayer.cpp:399
@@ -98,83 +127,83 @@ msgstr "Failed to receive message: connection lost."
 msgid "Failed to send message: connection lost."
 msgstr "Failed to send message: connection lost."
 
-#: src/ui.cpp:62
+#: src/ui.cpp:63
 msgid " Confirm "
 msgstr " Confirm "
 
-#: src/ui.cpp:64
+#: src/ui.cpp:65
 msgid " Exit "
 msgstr " Exit "
 
-#: src/ui.cpp:67
+#: src/ui.cpp:68
 msgid " PlaneFight TUI Game"
 msgstr " PlaneFight TUI Game"
 
-#: src/ui.cpp:73 src/ui.cpp:293 src/ui.cpp:323 src/ui.cpp:501 src/ui.cpp:522
+#: src/ui.cpp:74 src/ui.cpp:294 src/ui.cpp:324 src/ui.cpp:503 src/ui.cpp:524
 msgid "<<Back"
 msgstr "<<Back"
 
-#: src/ui.cpp:83
+#: src/ui.cpp:84
 msgid "Welcome to planeFight TUI Game!"
 msgstr "Welcome to planeFight TUI Game!"
 
-#: src/ui.cpp:90
+#: src/ui.cpp:91
 msgid "Enter your username: "
 msgstr "Enter your username: "
 
-#: src/ui.cpp:113
+#: src/ui.cpp:114
 msgid "  Play against computer"
 msgstr "  Play against computer"
 
-#: src/ui.cpp:115
+#: src/ui.cpp:116
 msgid " Multiplayer game"
 msgstr " Multiplayer game"
 
-#: src/ui.cpp:117
+#: src/ui.cpp:118
 msgid " Start a server "
 msgstr " Start a server "
 
-#: src/ui.cpp:121
+#: src/ui.cpp:122
 msgid " Join a game "
 msgstr " Join a game "
 
-#: src/ui.cpp:125
+#: src/ui.cpp:126
 msgid "  Gamerules / About"
 msgstr "  Gamerules / About"
 
-#: src/ui.cpp:127
+#: src/ui.cpp:128
 msgid "  Exit  "
 msgstr "  Exit  "
 
-#: src/ui.cpp:128
+#: src/ui.cpp:129
 msgid "  Back  "
 msgstr "  Back  "
 
-#: src/ui.cpp:149
+#: src/ui.cpp:150
 msgid "Game starting..."
 msgstr "Game starting..."
 
-#: src/ui.cpp:152
+#: src/ui.cpp:153
 msgid "  I'm ready  "
 msgstr "  I'm ready  "
 
-#: src/ui.cpp:153
+#: src/ui.cpp:154
 msgid " CLEAR "
 msgstr " CLEAR "
 
-#: src/ui.cpp:176
+#: src/ui.cpp:177
 msgid " Copyright and License "
 msgstr " Copyright and License "
 
-#: src/ui.cpp:177
+#: src/ui.cpp:178
 msgid " About FTXUI "
 msgstr " About FTXUI "
 
-#: src/ui.cpp:187
+#: src/ui.cpp:188
 msgid "This program is free software licensed under GNU GPL v3 or later."
 msgstr "This program is free software licensed under GNU GPL v3 or later."
 
-#: src/ui.cpp:189
+#: src/ui.cpp:190
 msgid ""
 "The source code of this program is hosted on GitHub: <https://github.com/"
 "Zjl37/planeFight2>."
@@ -182,7 +211,7 @@ msgstr ""
 "The source code of this program is hosted on GitHub: <https://github.com/"
 "Zjl37/planeFight2>."
 
-#: src/ui.cpp:192
+#: src/ui.cpp:193
 msgid ""
 "This program uses FTXUI, a simple C++ library for terminal based user "
 "interface."
@@ -190,50 +219,50 @@ msgstr ""
 "This program uses FTXUI, a simple C++ library for terminal based user "
 "interface."
 
-#: src/ui.cpp:194
+#: src/ui.cpp:195
 msgid ""
 "Please visit <https://github.com/ArthurSonzogni/FTXUI> for more information."
 msgstr ""
 "Please visit <https://github.com/ArthurSonzogni/FTXUI> for more information."
 
-#: src/ui.cpp:230
+#: src/ui.cpp:231
 msgid " DESTROY "
 msgstr " DESTROY "
 
-#: src/ui.cpp:232
+#: src/ui.cpp:233
 msgid " HIT "
 msgstr " HIT "
 
-#: src/ui.cpp:233
+#: src/ui.cpp:234
 msgid " VOID "
 msgstr " VOID "
 
-#: src/ui.cpp:258
+#: src/ui.cpp:259
 msgid ""
 "Run ipconfig in command line to check your IP address and tell your friend."
 msgstr ""
 "Run ipconfig in command line to check your IP address and tell your friend."
 
-#: src/ui.cpp:260
+#: src/ui.cpp:261
 msgid ""
 "Run ifconfig in command line to check your IP address and tell your friend."
 msgstr ""
 "Run “ip addr” or other commands in command line to check your IP address and "
 "tell your friend."
 
-#: src/ui.cpp:267
+#: src/ui.cpp:268
 msgid "Server IP address:"
 msgstr "Server IP address:"
 
-#: src/ui.cpp:294
+#: src/ui.cpp:295
 msgid "<<Give up"
 msgstr "<<Give up"
 
-#: src/ui.cpp:387
+#: src/ui.cpp:388
 msgid "planeFight TUI game "
 msgstr "planeFight TUI game "
 
-#: src/ui.cpp:390
+#: src/ui.cpp:391
 msgid ""
 "For an introduction to the gamerules, please visit <https://github.com/Zjl37/"
 "planeFight2/wiki/Game-Introduction>."
@@ -241,39 +270,39 @@ msgstr ""
 "For an introduction to the gamerules, please visit <https://github.com/Zjl37/"
 "planeFight2/wiki/Game-Introduction>."
 
-#: src/ui.cpp:406
+#: src/ui.cpp:407
 msgid "<<Surrender"
 msgstr "<<Surrender"
 
-#: src/ui.cpp:435
+#: src/ui.cpp:437
 msgid " The other player surrendered. "
 msgstr " The other player surrendered. "
 
-#: src/ui.cpp:437
+#: src/ui.cpp:439
 msgid " You surrendered. "
 msgstr " You surrendered. "
 
-#: src/ui.cpp:439
+#: src/ui.cpp:441
 msgid " You lose. "
 msgstr " You lose. "
 
-#: src/ui.cpp:441
+#: src/ui.cpp:443
 msgid " You won! "
 msgstr " You won! "
 
-#: src/ui.cpp:442
+#: src/ui.cpp:444
 msgid " Gameover. "
 msgstr " Gameover. "
 
-#: src/ui.cpp:455
+#: src/ui.cpp:457
 msgid "Please set gamerules before starting a server."
 msgstr "Please set gamerules before starting a server."
 
-#: src/ui.cpp:490
+#: src/ui.cpp:492
 msgid "  START  "
 msgstr "  START  "
 
-#: src/ui.cpp:510
+#: src/ui.cpp:512
 msgid "Waiting for a player to join in..."
 msgstr "Waiting for a player to join in..."
 
@@ -302,9 +331,6 @@ msgstr ""
 
 #~ msgid "□ Enable completely-destroy"
 #~ msgstr "□ Enable completely-destroy"
-
-#~ msgid "The other player is ready."
-#~ msgstr "The other player is ready."
 
 #~ msgid " Visit GitHub repo "
 #~ msgstr " Visit GitHub repo "

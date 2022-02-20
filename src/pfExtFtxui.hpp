@@ -36,4 +36,5 @@ namespace ftxui::pfext {
 	Component PfBattleFieldGame();
 	Component FirstPlayerToggle(bool &state);
 	Element GameInfoStatic(const PfGameInfo &gamerules);
+	Component TurnStatus();
 }

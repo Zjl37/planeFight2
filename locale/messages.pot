@@ -5,7 +5,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: planeFight console application 2.6 (Zjl37/planefight2)\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2022-02-06 22:14+0800\n"
+"POT-Creation-Date: 2022-02-20 10:51+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,56 +18,84 @@ msgstr ""
 msgid "AI"
 msgstr ""
 
-#: src/game.cpp:338
+#: src/game.cpp:340
 msgid "The other player gave up this game."
+msgstr ""
+
+#: src/pfExtFtxui.cpp:253
+msgid "Facing"
+msgstr ""
+
+#: src/pfExtFtxui.cpp:256
+msgid "up"
+msgstr ""
+
+#: src/pfExtFtxui.cpp:257
+msgid "right"
+msgstr ""
+
+#: src/pfExtFtxui.cpp:258
+msgid "down"
+msgstr ""
+
+#: src/pfExtFtxui.cpp:259
+msgid "left"
 msgstr ""
 
 #: src/pfExtFtxui.cpp:315 src/pfExtFtxui.cpp:351
 msgid "You are going to play with "
 msgstr ""
 
-#: src/pfExtFtxui.cpp:319 src/ui.cpp:458
+#: src/pfExtFtxui.cpp:319 src/ui.cpp:460
 msgid "－"
 msgstr ""
 
-#: src/pfExtFtxui.cpp:324 src/pfExtFtxui.cpp:352 src/ui.cpp:462
+#: src/pfExtFtxui.cpp:324 src/pfExtFtxui.cpp:353 src/ui.cpp:464
 msgid "Number of planes: "
 msgstr ""
 
-#: src/pfExtFtxui.cpp:326 src/ui.cpp:464
+#: src/pfExtFtxui.cpp:326 src/ui.cpp:466
 msgid "＋"
 msgstr ""
 
-#: src/pfExtFtxui.cpp:330 src/ui.cpp:469
+#: src/pfExtFtxui.cpp:330 src/ui.cpp:471
 msgid "Enable cross-border mode"
 msgstr ""
 
-#: src/pfExtFtxui.cpp:331 src/ui.cpp:471
+#: src/pfExtFtxui.cpp:331 src/ui.cpp:473
 msgid "Enable completely destroy"
 msgstr ""
 
-#: src/pfExtFtxui.cpp:334 src/pfExtFtxui.cpp:355 src/ui.cpp:336 src/ui.cpp:475
+#: src/pfExtFtxui.cpp:334 src/pfExtFtxui.cpp:356 src/ui.cpp:337 src/ui.cpp:477
 msgid "Map size: "
 msgstr ""
 
-#: src/pfExtFtxui.cpp:340 src/ui.cpp:481
+#: src/pfExtFtxui.cpp:340 src/ui.cpp:483
 msgid "[adjust]"
 msgstr ""
 
-#: src/pfExtFtxui.cpp:353
-msgid "✓ Cross-border mode enabled"
+#: src/pfExtFtxui.cpp:352
+msgid "[The other player is ready.]"
 msgstr ""
 
 #: src/pfExtFtxui.cpp:354
+msgid "✓ Cross-border mode enabled"
+msgstr ""
+
+#: src/pfExtFtxui.cpp:355
 msgid "✓ Completely-destroy enabled"
 msgstr ""
 
-#: src/pfExtFtxui.cpp:356 src/pfExtFtxui.cpp:538
+#: src/pfExtFtxui.cpp:357 src/pfExtFtxui.cpp:539
 msgid "I goes first"
 msgstr ""
 
-#: src/pfExtFtxui.cpp:356 src/pfExtFtxui.cpp:537
+#: src/pfExtFtxui.cpp:357 src/pfExtFtxui.cpp:538
 msgid "The other player goes first"
+msgstr ""
+
+#: src/pfExtFtxui.cpp:562
+msgid "(Your turn) "
 msgstr ""
 
 #: src/remotePlayer.cpp:46 src/remotePlayer.cpp:51 src/remotePlayer.cpp:362
@@ -96,172 +124,172 @@ msgstr ""
 msgid "Failed to send message: connection lost."
 msgstr ""
 
-#: src/ui.cpp:62
+#: src/ui.cpp:63
 msgid " Confirm "
 msgstr ""
 
-#: src/ui.cpp:64
+#: src/ui.cpp:65
 msgid " Exit "
 msgstr ""
 
-#: src/ui.cpp:67
+#: src/ui.cpp:68
 msgid " PlaneFight TUI Game"
 msgstr ""
 
-#: src/ui.cpp:73 src/ui.cpp:293 src/ui.cpp:323 src/ui.cpp:501 src/ui.cpp:522
+#: src/ui.cpp:74 src/ui.cpp:294 src/ui.cpp:324 src/ui.cpp:503 src/ui.cpp:524
 msgid "<<Back"
 msgstr ""
 
-#: src/ui.cpp:83
+#: src/ui.cpp:84
 msgid "Welcome to planeFight TUI Game!"
 msgstr ""
 
-#: src/ui.cpp:90
+#: src/ui.cpp:91
 msgid "Enter your username: "
 msgstr ""
 
-#: src/ui.cpp:113
+#: src/ui.cpp:114
 msgid "  Play against computer"
 msgstr ""
 
-#: src/ui.cpp:115
+#: src/ui.cpp:116
 msgid " Multiplayer game"
 msgstr ""
 
-#: src/ui.cpp:117
+#: src/ui.cpp:118
 msgid " Start a server "
 msgstr ""
 
-#: src/ui.cpp:121
+#: src/ui.cpp:122
 msgid " Join a game "
 msgstr ""
 
-#: src/ui.cpp:125
+#: src/ui.cpp:126
 msgid "  Gamerules / About"
 msgstr ""
 
-#: src/ui.cpp:127
+#: src/ui.cpp:128
 msgid "  Exit  "
 msgstr ""
 
-#: src/ui.cpp:128
+#: src/ui.cpp:129
 msgid "  Back  "
 msgstr ""
 
-#: src/ui.cpp:149
+#: src/ui.cpp:150
 msgid "Game starting..."
 msgstr ""
 
-#: src/ui.cpp:152
+#: src/ui.cpp:153
 msgid "  I'm ready  "
 msgstr ""
 
-#: src/ui.cpp:153
+#: src/ui.cpp:154
 msgid " CLEAR "
 msgstr ""
 
-#: src/ui.cpp:176
+#: src/ui.cpp:177
 msgid " Copyright and License "
 msgstr ""
 
-#: src/ui.cpp:177
+#: src/ui.cpp:178
 msgid " About FTXUI "
 msgstr ""
 
-#: src/ui.cpp:187
+#: src/ui.cpp:188
 msgid "This program is free software licensed under GNU GPL v3 or later."
 msgstr ""
 
-#: src/ui.cpp:189
+#: src/ui.cpp:190
 msgid ""
 "The source code of this program is hosted on GitHub: <https://github.com/"
 "Zjl37/planeFight2>."
 msgstr ""
 
-#: src/ui.cpp:192
+#: src/ui.cpp:193
 msgid ""
 "This program uses FTXUI, a simple C++ library for terminal based user "
 "interface."
 msgstr ""
 
-#: src/ui.cpp:194
+#: src/ui.cpp:195
 msgid ""
 "Please visit <https://github.com/ArthurSonzogni/FTXUI> for more information."
 msgstr ""
 
-#: src/ui.cpp:230
+#: src/ui.cpp:231
 msgid " DESTROY "
 msgstr ""
 
-#: src/ui.cpp:232
+#: src/ui.cpp:233
 msgid " HIT "
 msgstr ""
 
-#: src/ui.cpp:233
+#: src/ui.cpp:234
 msgid " VOID "
 msgstr ""
 
-#: src/ui.cpp:258
+#: src/ui.cpp:259
 msgid ""
 "Run ipconfig in command line to check your IP address and tell your friend."
 msgstr ""
 
-#: src/ui.cpp:260
+#: src/ui.cpp:261
 msgid ""
 "Run ifconfig in command line to check your IP address and tell your friend."
 msgstr ""
 
-#: src/ui.cpp:267
+#: src/ui.cpp:268
 msgid "Server IP address:"
 msgstr ""
 
-#: src/ui.cpp:294
+#: src/ui.cpp:295
 msgid "<<Give up"
 msgstr ""
 
-#: src/ui.cpp:387
+#: src/ui.cpp:388
 msgid "planeFight TUI game "
 msgstr ""
 
-#: src/ui.cpp:390
+#: src/ui.cpp:391
 msgid ""
 "For an introduction to the gamerules, please visit <https://github.com/Zjl37/"
 "planeFight2/wiki/Game-Introduction>."
 msgstr ""
 
-#: src/ui.cpp:406
+#: src/ui.cpp:407
 msgid "<<Surrender"
 msgstr ""
 
-#: src/ui.cpp:435
+#: src/ui.cpp:437
 msgid " The other player surrendered. "
 msgstr ""
 
-#: src/ui.cpp:437
+#: src/ui.cpp:439
 msgid " You surrendered. "
 msgstr ""
 
-#: src/ui.cpp:439
+#: src/ui.cpp:441
 msgid " You lose. "
 msgstr ""
 
-#: src/ui.cpp:441
+#: src/ui.cpp:443
 msgid " You won! "
 msgstr ""
 
-#: src/ui.cpp:442
+#: src/ui.cpp:444
 msgid " Gameover. "
 msgstr ""
 
-#: src/ui.cpp:455
+#: src/ui.cpp:457
 msgid "Please set gamerules before starting a server."
 msgstr ""
 
-#: src/ui.cpp:490
+#: src/ui.cpp:492
 msgid "  START  "
 msgstr ""
 
-#: src/ui.cpp:510
+#: src/ui.cpp:512
 msgid "Waiting for a player to join in..."
 msgstr ""
 
