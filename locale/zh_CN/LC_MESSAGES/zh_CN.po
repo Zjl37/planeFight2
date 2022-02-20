@@ -2,7 +2,7 @@
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: planeFight console application 2.6 (Zjl37/planefight2)\n"
+"Project-Id-Version: Zjl37/planefight2\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2022-02-20 10:51+0800\n"
 "PO-Revision-Date: 2022-02-20 11:01+0800\n"

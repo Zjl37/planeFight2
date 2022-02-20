@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#define pfVersion "2.6"
+#define pfVersion "2.7"
 #define pfUA "planeFight TUI game " pfVersion " (Zjl37/planeFight2)"
 
 // A structure to describe the shape of a "plane", storing a short string at

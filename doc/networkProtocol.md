@@ -2,7 +2,7 @@
 
 Zjl37's planeFight protocol
 
-version 0.3.0
+version 0.3.1
 
 ## Overview
 
@@ -30,7 +30,7 @@ Each line should end with CR LF (`"\r\n"`). After all headers there should be an
 
 ```
 PLAY Zjl37's planeFight protocol 0.3.0
-User-Agent: Zjl37's planeFight console application 2.6 (Zjl37/planefight2)
+User-Agent: planeFight TUI game 2.6 (Zjl37/planefight2)
 
 ```
 

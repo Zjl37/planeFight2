@@ -1,18 +1,18 @@
-![planeFight introduction image](https://i.loli.net/2020/08/29/GsaIE34g5zuV7BX.png)
+![pf-2.7-intro.png](https://s2.loli.net/2022/02/20/XNugP8YHGcepD54.png)
 
 [English](README.md) | 简体中文
 
 **关于游戏规则的介绍，请前往 [Wiki 页面](https://github.com/Zjl37/planeFight2/wiki/%E6%B8%B8%E6%88%8F%E4%BB%8B%E7%BB%8D)查看。**
 
-## PlaneFight Tui 游戏
+## 打飞机 TUI 游戏
 
-planeFight2 是用 C++ 编写 tui 游戏（tui 是文本用户界面。与窗口程序相对，这类程序常被称为控制台程序）的综合实践，也是我的 GitHub 入门项目。由于飞机的形状适合用[制表符](https://unicode-table.com/cn/blocks/box-drawing/)表现，tui 加上现代化的终端成为了实现这个游戏的最好方式。
+项目 planeFight2 以 TUI（基于终端文字界面）的形式实现了一种纸上游戏，也是我的 GitHub 入门项目。由于飞机的形状适合用[制表符](https://unicode-table.com/cn/blocks/box-drawing/)表现，TUI 加上现代化的终端成为了实现这个游戏的最好方式。
 
-本程序支持人机对战和局域网内的联机功能，支持键盘和鼠标操作。这主要是通过 FTXUI 界面库实现的。跨平台，在 Windows 和 Linux 上都能运行。
+本程序支持人机对战和局域网内的联机功能，支持键盘和鼠标操作。这是通过 FTXUI 界面库实现的。跨平台，经测试可在 Windows 和 Linux 上运行。
 
-特别注意：
+Windows 用户请特别注意：
 
-- 在 Windows 上不支持也不打算支持[旧版控制台](https://go.microsoft.com/fwlink/?LinkId=871150)，也就是需要较新版本的 Windows 10。
+- 不支持也不打算支持[旧版控制台](https://go.microsoft.com/fwlink/?LinkId=871150)，也就是操作系统版本至少要是 Windows 10 秋季创意者更新。
 
 - 在 Windows 上，如果你的 conhost 控制台字体是默认的新宋体等，将会显示错位。这是因为这些字体将某些特殊字符（具体的，是 Unicode 标准中 east asian width 属性为模糊的字符）显示为全宽。推荐使用新的现代化的终端 Windows Terminal 或使用其他字体。
 
@@ -20,7 +20,7 @@ planeFight2 是用 C++ 编写 tui 游戏（tui 是文本用户界面。与窗口
 
 用 cmake 构建。编译器应当支持 C++17 语言标准。
 
-依赖 [boost](https://www.boost.org/)。Boost 的 locale 模块需要构建。如果 cmake 找不到 boost 在哪，定义 `BOOST_ROOT` 这个环境变量。
+依赖 [boost](https://www.boost.org/) 库。Boost 的 locale 模块需要构建。如果 cmake 找不到 boost 在哪，定义 `BOOST_ROOT` 这个环境变量。
 
 Cmake 在配置阶段会把 FTXUI 仓库从 GitHub 上下载下来，不用你再手动下载。
 
