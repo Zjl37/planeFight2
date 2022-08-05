@@ -18,8 +18,11 @@
  *
  */
 
-#include "boost/locale.hpp"
 #include "pfLocale.hpp"
+
+#ifdef PF_NO_LOCALE
+#else
+#include "boost/locale.hpp"
 
 void PfLocaleInit(const std::string id) {
 	boost::locale::generator gen;
@@ -29,3 +32,4 @@ void PfLocaleInit(const std::string id) {
 	std::locale::global(gen(id));
 	std::cout.imbue(std::locale());
 }
+#endif

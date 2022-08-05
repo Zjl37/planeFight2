@@ -20,7 +20,9 @@
  */
 
 #include <ctime>
-#include "remotePlayer.hpp"
+#ifndef PF_NO_NW
+	#include "remotePlayer.hpp"
+#endif
 #include "pfLocale.hpp"
 #include "ai.hpp"
 #include "uiCtrl.hpp"
@@ -74,13 +76,18 @@ int main(int argc, char **argv) {
 
 	processArg(argc, argv); // parse command line arguments
 	// atexit(PfAtExit);
+
+#ifndef PF_NO_LOCALE
 	PfLocaleInit("");
+#endif
 
 	NextPage(PfPage::welcome);
 
 	pfui::Build();
 	pfui::Loop();
 
+#ifndef PF_NO_NW
 	PfServerStop(); // join tServer
+#endif
 	return 0;
 }

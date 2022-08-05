@@ -18,9 +18,27 @@
  *
  */
 
-#include <boost/locale/message.hpp>
 #include <string>
+
+#ifdef PF_NO_LOCALE
+
+class PfLocaleStringProxy {
+	std::string s;
+
+    public:
+	template<class T> PfLocaleStringProxy(T _s): s(_s) {}
+	std::string &str() { return s; }
+	operator std::string() { return s; }
+};
+
+#define TT(s) (PfLocaleStringProxy(s))
+
+#else
+
+#include <boost/locale/message.hpp>
 
 void PfLocaleInit(const std::string id);
 
 #define TT(s) (boost::locale::translate((s)))
+
+#endif

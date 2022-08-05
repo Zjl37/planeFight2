@@ -20,10 +20,12 @@
 
 #include "uiCtrl.hpp"
 #include "ui.hpp"
-#include "remotePlayer.hpp"
+#ifndef PF_NO_NW
+	#include "remotePlayer.hpp"
+	#include <boost/system/system_error.hpp>
+#endif
 #include "pfLocale.hpp"
 #include "ai.hpp"
-#include <boost/system/system_error.hpp>
 
 extern std::mt19937 rng;
 
@@ -82,19 +84,26 @@ namespace pfui {
 			curGameType = pf_remote_game_server;
 			pfui::p2IsNetworkGame = true;
 			NextPage(PfPage::server_init);
+#ifndef PF_NO_NW
 			PfServerInit();
+#endif
 		}
 		void P8ServerStop() {
 			player1.reset();
 			PrevPage();
+#ifndef PF_NO_NW
 			PfServerStop();
+#endif
 		}
 		void P9ClientStop() {
 			player1.reset();
 			PrevPage();
+#ifndef PF_NO_NW
 			PfStopConnect();
+#endif
 		}
 		void P9StartClient() {
+#ifndef PF_NO_NW
 			static bool connecting = 0;
 			if(connecting) {
 				return;
@@ -112,6 +121,7 @@ namespace pfui {
 				showErrorMsg(TT("Error: Cannot connect to server. Please check if the IP is correct and if the server is running."));
 			}
 			connecting = 0;
+#endif
 		}
 	}
 }

@@ -29,6 +29,7 @@
 #include <numeric>
 #include <random>
 #include <string>
+#include <sstream>
 
 extern std::mt19937 rng;
 

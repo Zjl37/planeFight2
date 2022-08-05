@@ -448,6 +448,13 @@ namespace pfui {
 			}),
 
 			/* page 7 gamerule setting (server) */
+#ifdef PF_NO_NW
+			Container::Vertical({
+				Renderer([]() { return pfTitle; }),
+				btnBackLn(),
+				Renderer([]() { return text(TT("Sorry, this build of planeFight does not support network game.")); }),
+			}),
+#else
 			Container::Vertical({
 				Renderer([]() { return pfTitle; }),
 				btnBackLn(),
@@ -495,6 +502,7 @@ namespace pfui {
 					Renderer([]() { return filler() | size(WIDTH, EQUAL, 4); }),
 				})
 			}),
+#endif
 
 			/* page 8 server init */
 			Container::Vertical({
@@ -518,6 +526,13 @@ namespace pfui {
 			}),
 
 			/* page 9 client init */
+#ifdef PF_NO_NW
+			Container::Vertical({
+				Renderer([]() { return pfTitle; }),
+				btnBackLn(),
+				Renderer([]() { return text(TT("Sorry, this build of planeFight does not support network game.")); }),
+			}),
+#else
 			Container::Vertical({
 				Renderer([]() { return pfTitle; }),
 				Container::Horizontal({
@@ -532,6 +547,7 @@ namespace pfui {
 					});
 				})
 			}),
+#endif
 
 			/* page 10 error */
 			Container::Vertical({
