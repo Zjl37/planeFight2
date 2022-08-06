@@ -19,6 +19,7 @@
  */
 
 #include "pfExtFtxui.hpp"
+#include "ftxui/component/component_options.hpp"
 #include "uiCtrl.hpp"
 #include "ui.hpp"
 #include "pfLocale.hpp"
@@ -33,15 +34,19 @@ extern std::mt19937 rng;
 
 /* clang-format off */
 namespace ftxui::pfext { // planeFight's extension
-	Component FlatButton(ConstStringRef label, std::function<void()> on_click, Decorator dec) {
-		static ButtonOption btnNoBorder{false};
-		auto btn = Button(label, on_click, btnNoBorder);
-		return Renderer(btn, [=]() { return btn->Render() | dec; });
-	}
-	Component FlatButton(ConstStringRef label, std::function<void()> on_click) {
-		static ButtonOption btnNoBorder{false};
-		auto btn = Button(label, on_click, btnNoBorder);
-		return Renderer(btn, [=]() { return btn->Render(); });
+	namespace BtnOpt {
+		ftxui::ButtonOption flat(Color color) {
+			ftxui::ButtonOption option;
+			option.transform = [](const EntryState& s) {
+				auto element = text(s.label);
+				if (s.focused) {
+					element |= bold;
+				}
+				return element;
+			};
+			option.animated_colors.background.Set(color, Color::Interpolate(0.8F, color, Color::White));
+			return option;
+		}
 	}
 	Element BasicPfBattleField(const PfBF &bf, Box *box) {
 		const int PFBF_CELL_WIDTH = 2;
@@ -316,16 +321,16 @@ namespace ftxui::pfext { // planeFight's extension
 			}),
 			
 			Container::Horizontal({
-				FlatButton(TT("－").str(), [&]() {
+				Button(TT("－").str(), [&]() {
 					gamerules.n = std::max(gamerules.n - 1, 1);
 					if(gamerules.n < bf.nPlaced) bf.clear();
-				}, bgcolor(Color::Yellow)),
+				}, BtnOpt::flat(Color::Yellow)),
 				Renderer([&]() {
 					return text("  "s + TT("Number of planes: ").str() + std::to_string(gamerules.n) + "  ");
 				}),
-				FlatButton(TT("＋").str(), [&]() {
+				Button(TT("＋").str(), [&]() {
 					++gamerules.n;
-				}, bgcolor(Color::Yellow)),
+				}, BtnOpt::flat(Color::Yellow)),
 			}),
 			Checkbox(TT("Enable cross-border mode").str(), &gamerules.cw, chkboxToggleCwOpt),
 			Checkbox(TT("Enable completely destroy").str(), &gamerules.cd),
@@ -336,10 +341,10 @@ namespace ftxui::pfext { // planeFight's extension
 				Renderer([&]() {
 					return filler();
 				}),
-				FlatButton(
+				Button(
 					TT("[adjust]").str(),
 					[]() { NextPage(PfPage::adjust_map); },
-					bgcolor(Color::Yellow)
+					BtnOpt::flat(Color::Yellow)
 				)
 			}),
 			pfext::FirstPlayerToggle(gamerules.isFirst),

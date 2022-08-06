@@ -60,9 +60,9 @@ namespace pfui {
 
 		auto p0BtnRow = Container::Horizontal({
 			Renderer([]() { return filler() | size(WIDTH, EQUAL, 2); }),
-			pfext::FlatButton(TT(" Confirm ").str(), ctrl::P0InputOK, bgcolor(Color::Yellow)),
+			Button(TT(" Confirm ").str(), ctrl::P0InputOK, pfext::BtnOpt::flat(Color::Yellow)),
 			Renderer([]() { return filler() | size(WIDTH, EQUAL, 2); }),
-			pfext::FlatButton(TT(" Exit ").str(), scr.ExitLoopClosure(), bgcolor(Color::Red)),
+			Button(TT(" Exit ").str(), scr.ExitLoopClosure(), pfext::BtnOpt::flat(Color::Red)),
 		});
 
 		static auto pfTitle = text(TT(" PlaneFight TUI Game")) | bgcolor(Color::Blue);
@@ -71,7 +71,7 @@ namespace pfui {
 
 		auto btnBackLn = []() {
 			return Container::Horizontal({
-				pfext::FlatButton(TT("<<Back").str(), PrevPage, bgcolor(Color::Yellow)),
+				Button(TT("<<Back").str(), PrevPage, pfext::BtnOpt::flat(Color::Yellow)),
 				Renderer([]() { return filler(); })
 			});
 		};
@@ -291,11 +291,11 @@ namespace pfui {
 				Renderer([]() { return pfTitle; }),
 				Container::Horizontal({
 					Container::Tab({
-						pfext::FlatButton(TT("<<Back").str(), PrevPage, bgcolor(Color::Yellow)),
-						pfext::FlatButton(TT("<<Give up").str(), []() {
+						Button(TT("<<Back").str(), PrevPage, pfext::BtnOpt::flat(Color::Yellow)),
+						Button(TT("<<Give up").str(), []() {
 							player0->Giveup();
 							PrevPage();
-						}, bgcolor(Color::Yellow)),
+						}, pfext::BtnOpt::flat(Color::Yellow)),
 					}, &p2IsNetworkGame),
 					Renderer([]() { return filler(); })
 				}),
@@ -321,12 +321,12 @@ namespace pfui {
 			Container::Vertical({
 				Renderer([]() { return pfTitle; }),
 				Container::Horizontal({
-					pfext::FlatButton(TT("<<Back").str(), []() {
+					Button(TT("<<Back").str(), []() {
 						if(bf1.w != curGame.w || bf1.h != curGame.h) {
 							bf1.resize(curGame.w, curGame.h);
 						}
 						PrevPage();
-					}, bgcolor(Color::Yellow)),
+					}, pfext::BtnOpt::flat(Color::Yellow)),
 					Renderer([]() { return filler(); })
 				}),
 				Container::Horizontal({
@@ -404,7 +404,7 @@ namespace pfui {
 			Container::Vertical({
 				Renderer([]() { return pfTitle; }),
 				Container::Horizontal({
-					pfext::FlatButton(TT("<<Surrender").str(), ctrl::P5Surrender, bgcolor(Color::Yellow)),
+					Button(TT("<<Surrender").str(), ctrl::P5Surrender, pfext::BtnOpt::flat(Color::Yellow)),
 					Renderer([]() { return filler(); }),
 					pfext::TurnStatus(),
 				}),
@@ -457,15 +457,15 @@ namespace pfui {
 						Renderer([]() { return text(TT("Please set gamerules before starting a server.")); }),
 						Renderer([]() { return text(""); }),
 						Container::Horizontal({
-							pfext::FlatButton(TT("－").str(), [&]() {
+							Button(TT("－").str(), [&]() {
 								curGame.n = std::max(curGame.n - 1, 1);
-							}, bgcolor(Color::Yellow)),
+							}, pfext::BtnOpt::flat(Color::Yellow)),
 							Renderer([&]() {
 								return text("  "s + TT("Number of planes: ").str() + std::to_string(curGame.n) + "  ");
 							}),
-							pfext::FlatButton(TT("＋").str(), [&]() {
+							Button(TT("＋").str(), [&]() {
 								++curGame.n;
-							}, bgcolor(Color::Yellow)),
+							}, pfext::BtnOpt::flat(Color::Yellow)),
 						}),
 						Renderer([]() { return text(""); }),
 						Checkbox(TT("Enable cross-border mode").str(), &curGame.cw),
@@ -479,10 +479,10 @@ namespace pfui {
 							Renderer([&]() {
 								return filler();
 							}),
-							pfext::FlatButton(
+							Button(
 								TT("[adjust]").str(),
 								[]() { NextPage(PfPage::adjust_map); },
-								bgcolor(Color::Yellow)
+								pfext::BtnOpt::flat(Color::Yellow)
 							)
 						}),
 						Renderer([]() { return text(""); }),
@@ -500,7 +500,7 @@ namespace pfui {
 			Container::Vertical({
 				Renderer([]() { return pfTitle; }),
 				Container::Horizontal({
-					pfext::FlatButton(TT("<<Back").str(), ctrl::P8ServerStop, bgcolor(Color::Yellow)),
+					Button(TT("<<Back").str(), ctrl::P8ServerStop, pfext::BtnOpt::flat(Color::Yellow)),
 					Renderer([]() { return filler(); })
 				}),
 				Renderer([]() {
@@ -521,14 +521,14 @@ namespace pfui {
 			Container::Vertical({
 				Renderer([]() { return pfTitle; }),
 				Container::Horizontal({
-					pfext::FlatButton(TT("<<Back").str(), ctrl::P9ClientStop, bgcolor(Color::Yellow)),
+					Button(TT("<<Back").str(), ctrl::P9ClientStop, pfext::BtnOpt::flat(Color::Yellow)),
 					Renderer([]() { return filler(); })
 				}),
 				Renderer(p9Content, [=]() {
 					return hbox({
 						filler() | size(WIDTH, EQUAL, 4),
 						p9Content->Render() | xflex_grow,
-						filler() | size(WIDTH, EQUAL, 4), 
+						filler() | size(WIDTH, EQUAL, 4),
 					});
 				})
 			}),

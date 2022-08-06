@@ -24,8 +24,9 @@
 #include "ftxui/component/component.hpp"
 
 namespace ftxui::pfext {
-	Component FlatButton(ConstStringRef label, std::function<void()> on_click, Decorator dec);
-	Component FlatButton(ConstStringRef label, std::function<void()> on_click);
+	namespace BtnOpt {
+		ftxui::ButtonOption flat(Color color);
+	};
 	Element BasicPfBattleField(const PfBF &bf, Box *box = nullptr);
 	Element PfBattleFieldStatic(const PfBF &bf, Box *box = nullptr);
 	Component PfBattleFieldPrepare(PfBF &bf, const PfGameInfo &gamerules, int &selectedFacing);
